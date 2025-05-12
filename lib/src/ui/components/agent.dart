@@ -1,11 +1,12 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:rogueverse/src/engine/ecs.dart' as esc;
+import 'package:rogueverse/src/engine/engine.gen.dart';
+import 'package:rogueverse/src/ui/components/components.gen.dart';
 
 
-class Agent extends SvgTileComponent with esc.Disposer {
-  final esc.Chunk chunk;
-  final esc.Entity entity;
+class Agent extends SvgTileComponent with Disposer {
+  final Chunk chunk;
+  final Entity entity;
 
   Agent({
     required this.chunk,
@@ -17,7 +18,7 @@ class Agent extends SvgTileComponent with esc.Disposer {
 
   @override
   Future<void> onLoad() {
-    entity.onSet<esc.DidMove>(updatePosition).asDisposable().disposeLater(this);
+    entity.onSet<DidMove>(updatePosition).asDisposable().disposeLater(this);
     entity
         .onDelete((id) {
           removeFromParent();

@@ -1,10 +1,8 @@
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
 import 'package:rogueverse/main.dart';
-import 'package:rogueverse/src/engine/ecs.dart';
-import 'package:rogueverse/src/ui/components/agent.dart';
-import 'package:rogueverse/src/ui/components/opponent.dart';
-import 'package:rogueverse/src/ui/components/player.dart';
+import 'package:rogueverse/src/engine/engine.gen.dart';
+import 'package:rogueverse/src/ui/components/components.gen.dart';
 
 class GameWorld extends flame.World with Disposer {
   final _spawnedEntityIds = <int>{};

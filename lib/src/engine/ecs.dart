@@ -1,4 +1,4 @@
-import 'package:meta/meta.dart';
+import 'package:flutter/widgets.dart';
 
 /// A lightweight wrapper around a teardown function, providing a consistent
 /// interface for managing and invoking resource cleanup logic.
@@ -422,7 +422,7 @@ class Chunk {
   }
 
 
-  ComponentStorage<T> components<T>() =>  _stores[T] as ComponentStorage<T>;
+  ComponentStorage<T> components<T>() =>   _stores.putIfAbsent(T, () => ComponentStorage<T>()) as ComponentStorage<T>;
   void register<T>() =>  _stores.putIfAbsent(T, () => ComponentStorage<T>()) as ComponentStorage<T>;
 
   ComponentStorage componentsByType(Type t) => _stores[t] as ComponentStorage;

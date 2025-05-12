@@ -1,7 +1,5 @@
 import 'dart:math';
 
-import 'package:rogueverse/src/engine/ecs.dart';
-
 /// Status returned by behavior tree nodes after execution.
 enum BehaviorStatus {
   /// Node completed its task successfully

@@ -1,9 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:rogueverse/src/engine/ecs.dart' as esc;
+import 'package:rogueverse/src/engine/engine.gen.dart';
 
-class WallPlacer extends PositionComponent with  TapCallbacks, esc.Disposer {
-  final esc.Chunk chunk;
+class WallPlacer extends PositionComponent with  TapCallbacks, Disposer {
+  final Chunk chunk;
 
   WallPlacer({
     required this.chunk
@@ -22,13 +22,13 @@ class WallPlacer extends PositionComponent with  TapCallbacks, esc.Disposer {
   @override
   void onTapUp(TapUpEvent event) {
     var screenPosition = event.localPosition;
-    var escPosition = esc.LocalPosition(
+    var escPosition = LocalPosition(
         x: (screenPosition.x / 32.0).floor(),
         y: (screenPosition.y / 32.0).floor());
 
-    var matches = esc.Query()
-      .require<esc.LocalPosition>((lp) => lp.x == escPosition.x && lp.y == escPosition.y)
-      .require<esc.BlocksMovement>()
+    var matches = Query()
+      .require<LocalPosition>((lp) => lp.x == escPosition.x && lp.y == escPosition.y)
+      .require<BlocksMovement>()
     .find(chunk).toList();
 
     if (matches.isNotEmpty) {
@@ -40,10 +40,10 @@ class WallPlacer extends PositionComponent with  TapCallbacks, esc.Disposer {
 
     final wall = chunk.create();
 
-    esc.Transaction(chunk, wall)
-      ..set<esc.Renderable>(esc.Renderable('images/wall.svg'))
-      ..set<esc.LocalPosition>(escPosition)
-      ..set(esc.BlocksMovement())
+    Transaction(chunk, wall)
+      ..set<Renderable>(Renderable('images/wall.svg'))
+      ..set<LocalPosition>(escPosition)
+      ..set(BlocksMovement())
       ..commit();
   }
 }

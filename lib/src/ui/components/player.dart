@@ -1,11 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/services.dart';
-
-import '../../main.dart';
-import '../engine/ecs.dart' as esc;
-import 'svg_component.dart';
-import 'agent.dart';
+import 'package:rogueverse/main.dart';
+import 'package:rogueverse/src/ui/components/components.gen.dart';
+import 'package:rogueverse/src/engine/engine.gen.dart';
 
 class KeyBindingMap<T> {
   final Map<Set<LogicalKeyboardKey>, T> _bindings = {};
@@ -78,16 +76,16 @@ class PlayerControlledAgent extends Agent with KeyboardHandler {
 
       switch (result) {
         case Movement.up:
-          entity.set(esc.MoveByIntent(dx: 0, dy: -1));
+          entity.set(MoveByIntent(dx: 0, dy: -1));
           break;
         case Movement.right:
-          entity.set(esc.MoveByIntent(dx: 1, dy: 0));
+          entity.set(MoveByIntent(dx: 1, dy: 0));
           break;
         case Movement.down:
-          entity.set(esc.MoveByIntent(dx: 0, dy: 1));
+          entity.set(MoveByIntent(dx: 0, dy: 1));
           break;
         case Movement.left:
-          entity.set(esc.MoveByIntent(dx: -1, dy: 0));
+          entity.set(MoveByIntent(dx: -1, dy: 0));
           break;
       }
       (parent?.findGame() as MyGame).tickEcs(); // Run tick after input
