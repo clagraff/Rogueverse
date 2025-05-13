@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
 import 'package:rogueverse/main.dart';
@@ -88,11 +90,19 @@ class GameWorld extends flame.World with Disposer {
       ..commit();
 
 
-    Transaction(chunk, chunk.create())
-      ..set(Renderable('images/item_small.svg'))
-      ..set(LocalPosition(x: -1, y: 2))
-      ..set(Pickupable())
-      ..commit();
+    var r = Random();
+    var next = r.nextInt(5) + 1;
+    for(var i = 0; i < next; i++) {
+      var x = r.nextInt(18) * (r.nextBool() ? 1 : -1);
+      var y = r.nextInt(10) * (r.nextBool() ? 1 : -1);
+      Transaction(chunk, chunk.create())
+        ..set(Renderable('images/item_small.svg'))
+        ..set(LocalPosition(x: x, y: y))
+        ..set(Pickupable())
+        ..commit();
+    }
+
+
 
     //add(WallPlacer(chunk: chunk));
 
