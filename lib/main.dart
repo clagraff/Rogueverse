@@ -17,11 +17,13 @@ class MyGame extends FlameGame with HasKeyboardHandlerComponents {
 
     liveChunk = Chunk();
 
-    engine = GameEngine([liveChunk], [
+    engine = GameEngine([
+      liveChunk
+    ], [
       CollisionSystem(),
       MovementSystem(),
       InventorySystem(),
-    ]    );
+    ]);
   }
 
   void tickEcs() {

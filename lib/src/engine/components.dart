@@ -115,7 +115,9 @@ class Inventory {
 
 extension InventoryExtension on Inventory {
   Inventory cloneWith(List<int> newIds) {
-    return Inventory([...entityIds, ...newIds], );
+    return Inventory(
+      [...entityIds, ...newIds],
+    );
   }
 }
 

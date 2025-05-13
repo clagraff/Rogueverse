@@ -3,7 +3,8 @@ import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
 import 'package:rogueverse/src/engine/engine.gen.dart';
 
-class EntityPlacer extends PositionComponent with DragCallbacks, TapCallbacks, Disposer {
+class EntityPlacer extends PositionComponent
+    with DragCallbacks, TapCallbacks, Disposer {
   final Chunk chunk;
   final Archetype archetype;
 
@@ -27,18 +28,20 @@ class EntityPlacer extends PositionComponent with DragCallbacks, TapCallbacks, D
   @override
   bool containsLocalPoint(Vector2 point) => true;
 
-
   @override
   void onDragStart(DragStartEvent event) {
     _dragStartScreen = event.localPosition;
     _dragStartGrid = _toGridPosition(_dragStartScreen!);
     _dragUpdateGrid = _toGridPosition(_dragStartScreen!);
-    _isShiftDown = HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
-        HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight);
-    _isCtrlDown = HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.controlLeft) ||
-        HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.controlRight);
+    _isShiftDown = HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.shiftLeft) ||
+        HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.shiftRight);
+    _isCtrlDown = HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.controlLeft) ||
+        HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.controlRight);
   }
-
 
   @override
   void onDragUpdate(DragUpdateEvent event) {
@@ -54,8 +57,10 @@ class EntityPlacer extends PositionComponent with DragCallbacks, TapCallbacks, D
   void onTapDown(TapDownEvent event) {
     _dragStartScreen = event.localPosition;
     _dragStartGrid = _toGridPosition(_dragStartScreen!);
-    _isShiftDown = HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftLeft) ||
-        HardwareKeyboard.instance.logicalKeysPressed.contains(LogicalKeyboardKey.shiftRight);
+    _isShiftDown = HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.shiftLeft) ||
+        HardwareKeyboard.instance.logicalKeysPressed
+            .contains(LogicalKeyboardKey.shiftRight);
   }
 
   @override
@@ -65,7 +70,6 @@ class EntityPlacer extends PositionComponent with DragCallbacks, TapCallbacks, D
 
     process(start, endGrid);
   }
-
 
   void process(LocalPosition? start, LocalPosition endGrid) {
     if (start == null) return;
@@ -99,11 +103,15 @@ class EntityPlacer extends PositionComponent with DragCallbacks, TapCallbacks, D
     } else {
       // constrain to straight line
       if ((endGrid.x - start.x).abs() > (endGrid.y - start.y).abs()) {
-        for (var x = start.x; x != endGrid.x + (start.x < endGrid.x ? 1 : -1); x += (start.x < endGrid.x ? 1 : -1)) {
+        for (var x = start.x;
+            x != endGrid.x + (start.x < endGrid.x ? 1 : -1);
+            x += (start.x < endGrid.x ? 1 : -1)) {
           positions.add(LocalPosition(x: x, y: start.y));
         }
       } else {
-        for (var y = start.y; y != endGrid.y + (start.y < endGrid.y ? 1 : -1); y += (start.y < endGrid.y ? 1 : -1)) {
+        for (var y = start.y;
+            y != endGrid.y + (start.y < endGrid.y ? 1 : -1);
+            y += (start.y < endGrid.y ? 1 : -1)) {
           positions.add(LocalPosition(x: start.x, y: y));
         }
       }

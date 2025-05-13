@@ -90,10 +90,9 @@ class GameWorld extends flame.World with Disposer {
       ..set(BlocksMovement())
       ..commit();
 
-
     var r = Random();
     var next = r.nextInt(5) + 3;
-    for(var i = 0; i < next; i++) {
+    for (var i = 0; i < next; i++) {
       var x = 0;
       var y = 0;
 
@@ -108,8 +107,6 @@ class GameWorld extends flame.World with Disposer {
         ..set(Pickupable())
         ..commit();
     }
-
-
 
     //add(WallPlacer(chunk: chunk));
 

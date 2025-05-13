@@ -6,7 +6,8 @@ class SvgTileComponent extends PositionComponent {
 
   final String svgAssetPath;
 
-  SvgTileComponent({required this.svgAssetPath, Vector2? position, Vector2? size}) {
+  SvgTileComponent(
+      {required this.svgAssetPath, Vector2? position, Vector2? size}) {
     this.position = position ?? Vector2.zero();
     this.size = size ?? Vector2.all(32); // Default tile size
   }

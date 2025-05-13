@@ -70,7 +70,6 @@ extension DisposableFunction on void Function() {
   Disposable asDisposable() => Disposable(this);
 }
 
-
 class Transaction {
   final Chunk chunk;
   final int entityId;
@@ -120,19 +119,22 @@ class Transaction {
 T? cast<T>(x) => x is T ? x : null;
 void mustBe<T>(x) => x is T == false ? throw Exception("Invalid types") : '';
 
-
 /// Stores and manages multiple components of type [T] mapped to entity IDs.
 class ComponentStorage {
   late Type expectedType;
   final Map<int, dynamic> _comps = {};
 
-  final Map<int, List<void Function(int entityId, dynamic comp)>> _setCallbacks = {};
-  final Map<int, List<void Function(int entityId, dynamic comp)>> _initCallbacks = {};
-  final Map<int, List<void Function(int entityId, dynamic comp)>> _removeCallbacks = {};
+  final Map<int, List<void Function(int entityId, dynamic comp)>>
+      _setCallbacks = {};
+  final Map<int, List<void Function(int entityId, dynamic comp)>>
+      _initCallbacks = {};
+  final Map<int, List<void Function(int entityId, dynamic comp)>>
+      _removeCallbacks = {};
 
   final List<void Function(int entityId, dynamic comp)> _anySetCallbacks = [];
   final List<void Function(int entityId, dynamic comp)> _anyInitCallbacks = [];
-  final List<void Function(int entityId, dynamic comp)> _anyRemoveCallbacks = [];
+  final List<void Function(int entityId, dynamic comp)> _anyRemoveCallbacks =
+      [];
 
   dynamic get(int id) => _comps[id];
 
@@ -191,7 +193,6 @@ class ComponentStorage {
     return () => _anySetCallbacks.remove(fn);
   }
 
-
   void Function() onInit(int id, void Function(int entityId, dynamic comp) fn) {
     _initCallbacks[id] ??= [];
     _initCallbacks[id]!.add(fn);
@@ -203,7 +204,8 @@ class ComponentStorage {
     return () => _anyInitCallbacks.remove(fn);
   }
 
-  void Function() onRemove(int id, void Function(int entityId, dynamic? comp) fn) {
+  void Function() onRemove(
+      int id, void Function(int entityId, dynamic? comp) fn) {
     _removeCallbacks[id] ??= [];
     _removeCallbacks[id]!.add(fn);
     return () => _removeCallbacks[id]?.remove(fn);
@@ -251,10 +253,8 @@ class Entity {
 
   void Function() onDelete(Function(int entityId) fn) {
     return world.onDestroy((e) => {
-      if (e == id) {
-        fn(id)
-      }
-    });
+          if (e == id) {fn(id)}
+        });
   }
 
   /// Registers a callback to be fired when this entity satisfies [query]
@@ -274,13 +274,11 @@ class Entity {
   }
 }
 
-
 // Replace the _stores map to use string keys instead of Type keys
 final Map<String, ComponentStorage> _stores = {};
 
 // Replace _typeName function for consistency
 String _typeName<T>() => T.toString();
-
 
 /// A container for entities and their components that provides methods for creation,
 /// component access, and querying.
@@ -295,7 +293,6 @@ class Chunk {
 
   final List<void Function(int entityId)> _onCreate = [];
   final List<void Function(int entityId)> _onDestroy = [];
-
 
   void Function() onBeforeTick(Function(Chunk chunk) fn) {
     _onPreTick.add(fn);
@@ -317,7 +314,7 @@ class Chunk {
     _preTick(); // TODO should this come before or after we clear lifetime components?
     clearLifetimeComponents<BeforeTick>();
 
-    for(var system in systems) {
+    for (var system in systems) {
       system.update(this);
     }
 
@@ -373,11 +370,13 @@ class Chunk {
     }
   }
 
+  ComponentStorage components<T>() =>
+      _stores.putIfAbsent(T.toString(), () => ComponentStorage());
+  void register<T>() =>
+      _stores.putIfAbsent(T.toString(), () => ComponentStorage());
 
-  ComponentStorage components<T>() =>   _stores.putIfAbsent(T.toString(), () => ComponentStorage());
-  void register<T>() =>  _stores.putIfAbsent(T.toString(), () => ComponentStorage());
-
-  ComponentStorage componentsByType(String typeName) => _stores.putIfAbsent(typeName, () => ComponentStorage());
+  ComponentStorage componentsByType(String typeName) =>
+      _stores.putIfAbsent(typeName, () => ComponentStorage());
 
   void Function() onSet<T>(int entityId, void Function<T>(int, T) fn) =>
       components<T>().onSet(entityId, fn);
@@ -428,7 +427,6 @@ class Chunk {
     });
   }
 
-
   /// Registers a callback to be fired when an entity satisfies [query]
   /// as a result of any component being added.
   ///
@@ -462,7 +460,6 @@ class Chunk {
       }
     });
   }
-
 
   T? get<T>(int id) => components<T>().get(id);
 
@@ -510,8 +507,6 @@ class Chunk {
   }
 }
 
-
-
 /// A reusable filter that can be built ahead of time to select
 /// entities with specific component requirements.
 ///
@@ -535,17 +530,15 @@ class Query {
 
   /// Require component [T] with optional [predicate].
   Query require<T>([bool Function(T comp)? predicate]) {
-    _required[T] = predicate != null
-        ? (dynamic comp) => predicate(comp as T)
-        : null;
+    _required[T] =
+        predicate != null ? (dynamic comp) => predicate(comp as T) : null;
     return this;
   }
 
   /// Exclude component [T] with optional [predicate].
   Query exclude<T>([bool Function(T comp)? predicate]) {
-    _excluded[T] = predicate != null
-        ? (dynamic comp) => predicate(comp as T)
-        : null;
+    _excluded[T] =
+        predicate != null ? (dynamic comp) => predicate(comp as T) : null;
     return this;
   }
 
@@ -606,9 +599,6 @@ class Query {
     return q;
   }
 }
-
-
-
 
 /// A template for spawning entities with a predefined set of components.
 ///

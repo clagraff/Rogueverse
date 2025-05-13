@@ -102,7 +102,8 @@ class Selector extends BehaviorNode {
   BehaviorStatus tick(Blackboard blackboard) {
     for (final child in children) {
       final status = child.tick(blackboard);
-      if (status == BehaviorStatus.running || status == BehaviorStatus.success) {
+      if (status == BehaviorStatus.running ||
+          status == BehaviorStatus.success) {
         _resetLowerPriorityNodes(child);
         return status;
       }
@@ -279,7 +280,8 @@ class Parallel extends BehaviorNode {
   /// If false, fails if any child fails.
   final bool requireAllFailure;
 
-  Parallel(this.children, {this.requireAllSuccess = true, this.requireAllFailure = false});
+  Parallel(this.children,
+      {this.requireAllSuccess = true, this.requireAllFailure = false});
 
   @override
   BehaviorStatus tick(Blackboard blackboard) {
@@ -375,7 +377,9 @@ class ConditionNode extends BehaviorNode {
 
   @override
   BehaviorStatus tick(Blackboard blackboard) {
-    return condition(blackboard) ? BehaviorStatus.success : BehaviorStatus.failure;
+    return condition(blackboard)
+        ? BehaviorStatus.success
+        : BehaviorStatus.failure;
   }
 
   @override

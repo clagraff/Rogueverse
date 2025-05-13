@@ -11,13 +11,12 @@ class Opponent extends Agent {
   Effect? effect;
   late BehaviorTree tree;
 
-  Opponent({
-    required super.chunk,
-    required super.entity,
-    required super.svgAssetPath,
-    super.position,
-    super.size
-  }) {
+  Opponent(
+      {required super.chunk,
+      required super.entity,
+      required super.svgAssetPath,
+      super.position,
+      super.size}) {
     tree = BehaviorTree(ActionNode((b) {
       entity.set<MoveByIntent>(
           MoveByIntent(dx: random.nextInt(3) - 1, dy: random.nextInt(3) - 1));
@@ -35,9 +34,12 @@ class Opponent extends Agent {
 
   @override
   Future<void> onLoad() {
-    chunk.onBeforeTick((c) {
-      tree.tick();
-    }).asDisposable().disposeLater(this as Disposer);
+    chunk
+        .onBeforeTick((c) {
+          tree.tick();
+        })
+        .asDisposable()
+        .disposeLater(this as Disposer);
     return super.onLoad();
   }
 }

@@ -123,19 +123,24 @@ class InventorySystem extends System {
       source.remove<PickupIntent>();
 
       var invMax = source.get<InventoryMaxCount>();
-      if (invMax != null && source.get<Inventory>()!.entityIds.length + 1 > invMax.maxAmount) {
+      if (invMax != null &&
+          source.get<Inventory>()!.entityIds.length + 1 > invMax.maxAmount) {
         // Inventory is maxed out, set a failure state and return.
         source.set<InventoryFullFailure>(InventoryFullFailure(target.id));
         return;
       }
 
-      target.remove<Pickupable>(); // Cannot be picked up again once in inventory.
+      target
+          .remove<Pickupable>(); // Cannot be picked up again once in inventory.
       target.remove<Renderable>();
       target.remove<LocalPosition>();
 
-      var cloneWith = source.get<Inventory>()!.cloneWith([pickupIntent.targetEntityId]);
-      source.set<Inventory>(cloneWith); // Update inventory to include latest object
-      source.set<PickedUp>(PickedUp(pickupIntent.targetEntityId)); // Allow for notifying of new item
+      var cloneWith =
+          source.get<Inventory>()!.cloneWith([pickupIntent.targetEntityId]);
+      source.set<Inventory>(
+          cloneWith); // Update inventory to include latest object
+      source.set<PickedUp>(PickedUp(
+          pickupIntent.targetEntityId)); // Allow for notifying of new item
     });
   }
 }

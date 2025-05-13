@@ -3,7 +3,6 @@ import 'package:flame/effects.dart';
 import '../../engine/engine.gen.dart';
 import '../../ui/components/components.gen.dart';
 
-
 class Agent extends SvgTileComponent with Disposer {
   final Chunk chunk;
   final Entity entity;

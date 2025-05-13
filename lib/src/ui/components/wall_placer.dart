@@ -2,13 +2,10 @@ import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:rogueverse/src/engine/engine.gen.dart';
 
-class WallPlacer extends PositionComponent with  TapCallbacks, Disposer {
+class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
   final Chunk chunk;
 
-  WallPlacer({
-    required this.chunk
-  });
-
+  WallPlacer({required this.chunk});
 
   @override
   void onRemove() {
@@ -27,12 +24,14 @@ class WallPlacer extends PositionComponent with  TapCallbacks, Disposer {
         y: (screenPosition.y / 32.0).floor());
 
     var matches = Query()
-      .require<LocalPosition>((lp) => lp.x == escPosition.x && lp.y == escPosition.y)
-      .require<BlocksMovement>()
-    .find(chunk).toList();
+        .require<LocalPosition>(
+            (lp) => lp.x == escPosition.x && lp.y == escPosition.y)
+        .require<BlocksMovement>()
+        .find(chunk)
+        .toList();
 
     if (matches.isNotEmpty) {
-      for(var match in matches) {
+      for (var match in matches) {
         match.destroy();
       }
       return;
