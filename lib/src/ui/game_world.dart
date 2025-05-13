@@ -69,6 +69,7 @@ class GameWorld extends flame.World with Disposer {
       ..set(PlayerControlled())
       ..set(BlocksMovement())
       ..set(Inventory([]))
+      ..set(InventoryMaxCount(3))
       ..commit();
 
     // Create other
@@ -91,10 +92,16 @@ class GameWorld extends flame.World with Disposer {
 
 
     var r = Random();
-    var next = r.nextInt(5) + 1;
+    var next = r.nextInt(5) + 3;
     for(var i = 0; i < next; i++) {
-      var x = r.nextInt(18) * (r.nextBool() ? 1 : -1);
-      var y = r.nextInt(10) * (r.nextBool() ? 1 : -1);
+      var x = 0;
+      var y = 0;
+
+      while (x == 0 && y == 0) {
+        x = r.nextInt(18) * (r.nextBool() ? 1 : -1);
+        y = r.nextInt(10) * (r.nextBool() ? 1 : -1);
+      }
+
       Transaction(chunk, chunk.create())
         ..set(Renderable('images/item_small.svg'))
         ..set(LocalPosition(x: x, y: y))

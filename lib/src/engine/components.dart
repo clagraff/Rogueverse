@@ -125,6 +125,12 @@ class InventoryMaxCount {
   InventoryMaxCount(this.maxAmount);
 }
 
+class InventoryFullFailure extends BeforeTick {
+  final int targetEntityId;
+
+  InventoryFullFailure(this.targetEntityId);
+}
+
 class Pickupable {}
 
 class PickupIntent extends AfterTick {

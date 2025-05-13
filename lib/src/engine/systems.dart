@@ -100,7 +100,10 @@ class InventorySystem extends System {
       return;
     }
 
-    pickupIntents.components.forEach((sourceId, intent) {
+    // need to use a copy so we can modify elements within our loop...
+    var components = Map.from(pickupIntents.components);
+
+    components.forEach((sourceId, intent) {
       var pickupIntent = intent as PickupIntent;
       var source = world.entity(sourceId);
       var target = world.entity(pickupIntent.targetEntityId);
@@ -114,6 +117,16 @@ class InventorySystem extends System {
           .get<LocalPosition>()!
           .sameLocation(target.get<LocalPosition>()!)) {
         return; // Skip
+      }
+
+      // At this point, no matter what happens, we can remove this intent.
+      source.remove<PickupIntent>();
+
+      var invMax = source.get<InventoryMaxCount>();
+      if (invMax != null && source.get<Inventory>()!.entityIds.length + 1 > invMax.maxAmount) {
+        // Inventory is maxed out, set a failure state and return.
+        source.set<InventoryFullFailure>(InventoryFullFailure(target.id));
+        return;
       }
 
       target.remove<Pickupable>(); // Cannot be picked up again once in inventory.
