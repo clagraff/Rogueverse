@@ -34,8 +34,10 @@ class Agent extends SvgTileComponent with Disposer {
     super.onRemove();
   }
 
-  void updatePosition(entityId, comp) {
-    add(MoveToEffect(Vector2(comp.to.x * 32.0, comp.to.y * 32.0),
+  void updatePosition(int entityId, dynamic comp) {
+    var didMove = cast<DidMove>(comp)!;
+
+    add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
         EffectController(duration: 0.1)));
   }
 }

@@ -204,29 +204,34 @@ class Transaction {
   }
 }
 
+T? cast<T>(x) => x is T ? x : null;
+void mustBe<T>(x) => x is T == false ? throw Exception("Invalid types") : '';
+
+
 /// Stores and manages multiple components of type [T] mapped to entity IDs.
-class ComponentStorage<T> {
-  final Map<int, T> _comps = {};
+class ComponentStorage {
+  late Type expectedType;
+  final Map<int, dynamic> _comps = {};
 
-  final Map<int, List<void Function(int entityId, T comp)>> _setCallbacks = {};
-  final Map<int, List<void Function(int entityId, T comp)>> _initCallbacks = {};
-  final Map<int, List<void Function(int entityId, T? comp)>> _removeCallbacks = {};
+  final Map<int, List<void Function(int entityId, dynamic comp)>> _setCallbacks = {};
+  final Map<int, List<void Function(int entityId, dynamic comp)>> _initCallbacks = {};
+  final Map<int, List<void Function(int entityId, dynamic comp)>> _removeCallbacks = {};
 
-  final List<void Function(int entityId, T comp)> _anySetCallbacks = [];
-  final List<void Function(int entityId, T comp)> _anyInitCallbacks = [];
-  final List<void Function(int entityId, T? comp)> _anyRemoveCallbacks = [];
+  final List<void Function(int entityId, dynamic comp)> _anySetCallbacks = [];
+  final List<void Function(int entityId, dynamic comp)> _anyInitCallbacks = [];
+  final List<void Function(int entityId, dynamic comp)> _anyRemoveCallbacks = [];
 
-  T? get(int id) => _comps[id];
+  dynamic get(int id) => _comps[id];
 
   List<int> get ids {
     return _comps.keys.toList();
   }
 
-  void unhandledSet(int id, T c) {
+  void unhandledSet(int id, dynamic c) {
     _comps[id] = c;
   }
 
-  void set(int id, T c) {
+  void set(int id, dynamic c) {
     var isInit = _comps[id] == null;
 
     _comps[id] = c;
@@ -258,36 +263,36 @@ class ComponentStorage<T> {
 
   bool has(int id) => _comps.containsKey(id);
 
-  void Function() onSet(int id, void Function(int entityId, T comp) fn) {
+  void Function() onSet(int id, void Function(int entityId, dynamic comp) fn) {
     _setCallbacks[id] ??= [];
     _setCallbacks[id]!.add(fn);
     return () => _setCallbacks[id]?.remove(fn);
   }
 
-  void Function() onSetAny(void Function(int entityId, T comp) fn) {
+  void Function() onSetAny(void Function(int entityId, dynamic comp) fn) {
     _anySetCallbacks.add(fn);
     return () => _anySetCallbacks.remove(fn);
   }
 
 
-  void Function() onInit(int id, void Function(int entityId, T comp) fn) {
+  void Function() onInit(int id, void Function(int entityId, dynamic comp) fn) {
     _initCallbacks[id] ??= [];
     _initCallbacks[id]!.add(fn);
     return () => _initCallbacks[id]?.remove(fn);
   }
 
-  void Function() onInitAny(void Function(int entityId, T comp) fn) {
+  void Function() onInitAny(void Function(int entityId, dynamic comp) fn) {
     _anyInitCallbacks.add(fn);
     return () => _anyInitCallbacks.remove(fn);
   }
 
-  void Function() onRemove(int id, void Function(int entityId, T? comp) fn) {
+  void Function() onRemove(int id, void Function(int entityId, dynamic? comp) fn) {
     _removeCallbacks[id] ??= [];
     _removeCallbacks[id]!.add(fn);
     return () => _removeCallbacks[id]?.remove(fn);
   }
 
-  void Function() onRemoveAny(void Function(int entityId, T? comp) fn) {
+  void Function() onRemoveAny(void Function(int entityId, dynamic? comp) fn) {
     _anyRemoveCallbacks.add(fn);
     return () => _anyRemoveCallbacks.remove(fn);
   }
@@ -315,10 +320,10 @@ class Entity {
   bool has2<T1, T2>() =>
       world.components<T1>().has(id) && world.components<T2>().has(id);
 
-  void Function() onSet<T>(void Function(int entityId, T comp) fn) =>
+  void Function() onSet<T>(void Function(int entityId, dynamic comp) fn) =>
       world.components<T>().onSet(id, fn);
 
-  void Function() onRemove<T>(void Function(int entityId, T? comp) fn) =>
+  void Function() onRemove<T>(void Function(int entityId, dynamic? comp) fn) =>
       world.components<T>().onRemove(id, fn);
 
   void Function() onDelete(Function(int entityId) fn) {
@@ -422,27 +427,27 @@ class Chunk {
   }
 
 
-  ComponentStorage<T> components<T>() =>   _stores.putIfAbsent(T, () => ComponentStorage<T>()) as ComponentStorage<T>;
-  void register<T>() =>  _stores.putIfAbsent(T, () => ComponentStorage<T>()) as ComponentStorage<T>;
+  ComponentStorage components<T>() =>   _stores.putIfAbsent(T, () => ComponentStorage());
+  void register<T>() =>  _stores.putIfAbsent(T, () => ComponentStorage());
 
-  ComponentStorage componentsByType(Type t) => _stores[t] as ComponentStorage;
+  ComponentStorage componentsByType(Type t) => _stores.putIfAbsent(t, () => ComponentStorage());
 
-  void Function() onSet<T>(int entityId, void Function(int, T) fn) =>
+  void Function() onSet<T>(int entityId, void Function<T>(int, T) fn) =>
       components<T>().onSet(entityId, fn);
 
-  void Function() onSetAny<T>(void Function(int, T) fn) =>
+  void Function() onSetAny<T>(void Function<T>(int, T) fn) =>
       components<T>().onSetAny(fn);
 
-  void Function() onInit<T>(int entityId, void Function(int, T) fn) =>
+  void Function() onInit<T>(int entityId, void Function<T>(int, T) fn) =>
       components<T>().onInit(entityId, fn);
 
-  void Function() onInitAny<T>(void Function(int, T) fn) =>
+  void Function() onInitAny<T>(void Function<T>(int, T) fn) =>
       components<T>().onInitAny(fn);
 
-  void Function() onRemove<T>(int entityId, void Function(int, T?) fn) =>
+  void Function() onRemove<T>(int entityId, void Function<T>(int, T?) fn) =>
       components<T>().onRemove(entityId, fn);
 
-  void Function() onRemoveAny<T>(void Function(int, T?) fn) =>
+  void Function() onRemoveAny<T>(void Function<T>(int, T?) fn) =>
       components<T>().onRemoveAny(fn);
 
   /// Registers a callback to be fired when an entity satisfies [query]

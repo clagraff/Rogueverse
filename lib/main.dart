@@ -16,19 +16,11 @@ class MyGame extends FlameGame    with HasKeyboardHandlerComponents {
     world = GameWorld();
 
     liveChunk = Chunk();
-    // liveChunk.register<Renderable>();
-    // liveChunk.register<LocalPosition>();
-    // liveChunk.register<PlayerControlled>();
-    // liveChunk.register<BlocksMovement>();
-    // liveChunk.register<DidMove>();
-    // liveChunk.register<BlockedMove>();
-    // liveChunk.register<MoveByIntent>();
-    // liveChunk.register<AiControlled>();
 
     engine = GameEngine([liveChunk], [
       CollisionSystem(),
       MovementSystem(),
-    ]);
+    ]    );
   }
 
   void tickEcs() {
