@@ -298,6 +298,12 @@ class ComponentStorage {
   }
 }
 
+extension EntityExtension on int {
+  Entity asEntity(Chunk chunk) {
+    return Entity(chunk, this);
+  }
+}
+
 /// A utility wrapper around an entity ID, scoped to a specific [Chunk].
 ///
 /// Provides convenience methods to access and mutate components
@@ -365,7 +371,7 @@ String _typeName<T>() => T.toString();
 /// This is the primary data structure for storing and updating ECS state.
 class Chunk {
   int _nextId = 0;
-  final Map<Type, ComponentStorage> _stores = {};
+  final Map<String, ComponentStorage> _stores = {};
 
   final List<void Function(Chunk chunk)> _onPreTick = [];
   final List<void Function(Chunk chunk)> _onPostTick = [];
@@ -427,10 +433,10 @@ class Chunk {
   }
 
 
-  ComponentStorage components<T>() =>   _stores.putIfAbsent(T, () => ComponentStorage());
-  void register<T>() =>  _stores.putIfAbsent(T, () => ComponentStorage());
+  ComponentStorage components<T>() =>   _stores.putIfAbsent(T.toString(), () => ComponentStorage());
+  void register<T>() =>  _stores.putIfAbsent(T.toString(), () => ComponentStorage());
 
-  ComponentStorage componentsByType(Type t) => _stores.putIfAbsent(t, () => ComponentStorage());
+  ComponentStorage componentsByType(String typeName) => _stores.putIfAbsent(typeName, () => ComponentStorage());
 
   void Function() onSet<T>(int entityId, void Function<T>(int, T) fn) =>
       components<T>().onSet(entityId, fn);
@@ -458,7 +464,7 @@ class Chunk {
     for (final entry in query._required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = componentsByType(type);
+      final store = componentsByType(type.toString());
 
       if (store != null) {
         final disposer = store.onSetAny((id, comp) {
@@ -494,7 +500,7 @@ class Chunk {
     for (final entry in query._required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = componentsByType(type);
+      final store = componentsByType(type.toString());
       if (store != null) {
         final disposer = store.onInitAny((id, comp) {
           // Only check the entity if this specific component matches its predicate
@@ -709,7 +715,7 @@ class Query {
     }
 
     final firstRequiredType = _required.keys.first;
-    final store = chunk.componentsByType(firstRequiredType);
+    final store = chunk.componentsByType(firstRequiredType.toString());
 
     for (final id in store._comps.keys) {
       if (isMatching(chunk, id)) {
@@ -726,8 +732,8 @@ class Query {
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = chunk.componentsByType(type);
-      if (store == null || !store.has(entityId)) return false;
+      final store = chunk.componentsByType(type.toString());
+      if (!store.has(entityId)) return false;
 
       if (predicate != null && !predicate(store.get(entityId))) {
         return false;
@@ -737,8 +743,8 @@ class Query {
     for (final entry in _excluded.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = chunk.componentsByType(type);
-      if (store == null || !store.has(entityId)) continue;
+      final store = chunk.componentsByType(type.toString());
+      if (!store.has(entityId)) continue;
 
       if (predicate == null || predicate(store.get(entityId))) {
         return false;
