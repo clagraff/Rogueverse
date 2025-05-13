@@ -66,6 +66,7 @@ class GameWorld extends flame.World with Disposer {
       ..set(LocalPosition(x: 0, y: 0))
       ..set(PlayerControlled())
       ..set(BlocksMovement())
+      ..set(Inventory([]))
       ..commit();
 
     // Create other
@@ -84,6 +85,13 @@ class GameWorld extends flame.World with Disposer {
       ..set(Renderable('images/wall.svg'))
       ..set(LocalPosition(x: 1, y: 0))
       ..set(BlocksMovement())
+      ..commit();
+
+
+    Transaction(chunk, chunk.create())
+      ..set(Renderable('images/item_small.svg'))
+      ..set(LocalPosition(x: -1, y: 2))
+      ..set(Pickupable())
       ..commit();
 
     //add(WallPlacer(chunk: chunk));

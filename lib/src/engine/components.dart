@@ -52,6 +52,12 @@ class LocalPosition {
   LocalPosition({required this.x, required this.y});
 }
 
+extension LocalPositionExtension on LocalPosition {
+  bool sameLocation(LocalPosition other) {
+    return x == other.x && y == other.y;
+  }
+}
+
 /// Component that signals an intent to move the entity by a relative offset.
 class MoveByIntent extends AfterTick {
   final int dx, dy;
@@ -88,4 +94,41 @@ class Renderable {
   final String svgAssetPath;
 
   Renderable(this.svgAssetPath);
+}
+
+class Health {
+  final int current;
+  final int max;
+
+  Health(this.current, this.max) {
+    if (current > max) {
+      throw Exception("[current] health cannot exceed [max] health");
+    }
+  }
+}
+
+class Inventory {
+  final List<int> entityIds;
+
+  Inventory(this.entityIds);
+}
+
+extension InventoryExtension on Inventory {
+  Inventory cloneWith(List<int> newIds) {
+    return Inventory([...entityIds, ...newIds]);
+  }
+}
+
+class Pickupable {}
+
+class PickupIntent extends AfterTick {
+  final int targetEntityId;
+
+  PickupIntent(this.targetEntityId);
+}
+
+class PickedUp extends BeforeTick {
+  final int targetEntityId;
+
+  PickedUp(this.targetEntityId);
 }

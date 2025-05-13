@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import 'package:rogueverse/src/engine/engine.gen.dart';
-import 'package:rogueverse/src/ui/components/components.gen.dart';
+import '../../engine/engine.gen.dart';
+import '../../ui/components/components.gen.dart';
 
 
 class Agent extends SvgTileComponent with Disposer {
@@ -19,6 +19,8 @@ class Agent extends SvgTileComponent with Disposer {
   @override
   Future<void> onLoad() {
     entity.onSet<DidMove>(updatePosition).asDisposable().disposeLater(this);
+    entity.onRemove<LocalPosition>(unmount).asDisposable().disposeLater(this);
+    entity.onRemove<Renderable>(unmount).asDisposable().disposeLater(this);
     entity
         .onDelete((id) {
           removeFromParent();
@@ -32,6 +34,10 @@ class Agent extends SvgTileComponent with Disposer {
   void onRemove() {
     disposeAll();
     super.onRemove();
+  }
+
+  void unmount(int id, dynamic comp) {
+    removeFromParent();
   }
 
   void updatePosition(int entityId, dynamic comp) {

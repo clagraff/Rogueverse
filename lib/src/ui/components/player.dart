@@ -2,8 +2,8 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flutter/services.dart';
 import 'package:rogueverse/main.dart';
-import 'package:rogueverse/src/ui/components/components.gen.dart';
-import 'package:rogueverse/src/engine/engine.gen.dart';
+import '../../ui/components/components.gen.dart';
+import '../../engine/engine.gen.dart';
 
 class KeyBindingMap<T> {
   final Map<Set<LogicalKeyboardKey>, T> _bindings = {};
@@ -38,16 +38,20 @@ enum Meta { paused }
 final metaControls = KeyBindingMap<Meta>()
   ..bind(Meta.paused, [LogicalKeyboardKey.space]);
 
+enum Interactions { interactAtPosition }
+
+final interactionControls = KeyBindingMap<Interactions>()
+  ..bind(Interactions.interactAtPosition, [LogicalKeyboardKey.keyE]);
+
 class PlayerControlledAgent extends Agent with KeyboardHandler {
   Effect? effect;
 
-  PlayerControlledAgent({
-    required super.chunk,
-    required super.entity,
-    required super.svgAssetPath,
-    super.position,
-    super.size
-  });
+  PlayerControlledAgent(
+      {required super.chunk,
+      required super.entity,
+      required super.svgAssetPath,
+      super.position,
+      super.size});
 
   static const movementDistance = 1; // ECS units, not pixels!
 
@@ -60,35 +64,58 @@ class PlayerControlledAgent extends Agent with KeyboardHandler {
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    var game = (parent?.findGame() as MyGame);
+
     if (event is KeyDownEvent) {
       var check = metaControls.resolve(keysPressed, event.logicalKey);
       if (check != null && check == Meta.paused) {
-        print("Ticking!");
-        (parent?.findGame() as MyGame).tickEcs();
-        return true;
-      }
-
-
-      var result = movementControls.resolve(keysPressed, event.logicalKey);
-      if (result == null) {
+        game.tickEcs();
         return false;
       }
 
-      switch (result) {
-        case Movement.up:
-          entity.set(MoveByIntent(dx: 0, dy: -1));
-          break;
-        case Movement.right:
-          entity.set(MoveByIntent(dx: 1, dy: 0));
-          break;
-        case Movement.down:
-          entity.set(MoveByIntent(dx: 0, dy: 1));
-          break;
-        case Movement.left:
-          entity.set(MoveByIntent(dx: -1, dy: 0));
-          break;
+      var interaction =
+          interactionControls.resolve(keysPressed, event.logicalKey);
+      if (interaction != null) {
+        switch (interaction) {
+          case Interactions.interactAtPosition:
+            var pos = entity.get<LocalPosition>()!;
+
+            var firstItemAtFeet = Query()
+                .require<LocalPosition>((c) {
+                  return c.x == pos.x && c.y == pos.y;
+                })
+                .require<Pickupable>()
+                .first(chunk);
+            if (firstItemAtFeet != null) {
+              entity.set<PickupIntent>(PickupIntent(firstItemAtFeet.id));
+
+              game.tickEcs();
+              return false;
+            }
+          default:
+            break; // no-op
+        }
       }
-      (parent?.findGame() as MyGame).tickEcs(); // Run tick after input
+
+      var result = movementControls.resolve(keysPressed, event.logicalKey);
+      if (result != null) {
+        switch (result) {
+          case Movement.up:
+            entity.set(MoveByIntent(dx: 0, dy: -1));
+            break;
+          case Movement.right:
+            entity.set(MoveByIntent(dx: 1, dy: 0));
+            break;
+          case Movement.down:
+            entity.set(MoveByIntent(dx: 0, dy: 1));
+            break;
+          case Movement.left:
+            entity.set(MoveByIntent(dx: -1, dy: 0));
+            break;
+        }
+        game.tickEcs(); // Run tick after input
+        return false;
+      }
     }
     return true;
   }

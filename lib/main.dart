@@ -20,6 +20,7 @@ class MyGame extends FlameGame with HasKeyboardHandlerComponents {
     engine = GameEngine([liveChunk], [
       CollisionSystem(),
       MovementSystem(),
+      InventorySystem(),
     ]    );
   }
 

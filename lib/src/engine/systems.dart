@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'components.dart';
 import 'ecs.dart';
 
@@ -40,7 +42,8 @@ class CollisionSystem extends System {
       var blocked = false;
 
       positions.components.forEach((key, value) {
-        if (value.x == dest.x && value.y == dest.y &&
+        if (value.x == dest.x &&
+            value.y == dest.y &&
             world.has<BlocksMovement>(key)) {
           blocked = true;
         }
@@ -81,6 +84,49 @@ class MovementSystem extends System {
   }
 }
 
+class InventorySystem extends System {
+  final Query canPickup = Query().require<Inventory>().require<LocalPosition>();
+
+  final Query canBePickedUp =
+      Query().require<Pickupable>().require<LocalPosition>();
+
+  @override
+  int get priority => 1;
+
+  @override
+  void update(Chunk world) {
+    final pickupIntents = world.components<PickupIntent>();
+    if (pickupIntents.components.isEmpty) {
+      return;
+    }
+
+    pickupIntents.components.forEach((sourceId, intent) {
+      var pickupIntent = intent as PickupIntent;
+      var source = world.entity(sourceId);
+      var target = world.entity(pickupIntent.targetEntityId);
+
+      if (!canPickup.isMatchEntity(source) ||
+          !canBePickedUp.isMatchEntity(target)) {
+        return; // Skip. TODO: Add some kind of error feedback or message?
+      }
+
+      if (!source
+          .get<LocalPosition>()!
+          .sameLocation(target.get<LocalPosition>()!)) {
+        return; // Skip
+      }
+
+      target.remove<Pickupable>(); // Cannot be picked up again once in inventory.
+      target.remove<Renderable>();
+      target.remove<LocalPosition>();
+
+      var cloneWith = source.get<Inventory>()!.cloneWith([pickupIntent.targetEntityId]);
+      source.set<Inventory>(cloneWith); // Update inventory to include latest object
+      source.set<PickedUp>(PickedUp(pickupIntent.targetEntityId)); // Allow for notifying of new item
+    });
+  }
+}
+
 /// A high-level coordinator that advances ECS game logic by executing systems.
 class GameEngine {
   final List<Chunk> chunks;
@@ -91,7 +137,8 @@ class GameEngine {
   /// Executes a single ECS update tick.
   void tick() {
     var sortedSystems = systems
-      ..sort((a, b) => a.priority.compareTo(b.priority)); // TODO: move this elsewhere? Just sort once? Or when new systems are added?
+      ..sort((a, b) => a.priority.compareTo(b
+          .priority)); // TODO: move this elsewhere? Just sort once? Or when new systems are added?
 
     for (var chunk in chunks) {
       chunk.tick(sortedSystems);
