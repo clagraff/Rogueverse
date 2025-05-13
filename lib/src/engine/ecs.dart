@@ -1,4 +1,8 @@
+import 'dart:collection';
+
 import 'package:flutter/widgets.dart';
+import 'components.dart';
+import 'systems.dart';
 
 /// A lightweight wrapper around a teardown function, providing a consistent
 /// interface for managing and invoking resource cleanup logic.
@@ -66,97 +70,6 @@ extension DisposableFunction on void Function() {
   Disposable asDisposable() => Disposable(this);
 }
 
-/// Base class for components with a limited lifespan that can expire
-/// after a certain number of ticks. When lifetime reaches 0, the component
-/// is removed when processed.
-abstract class Lifetime {
-  int _lifetime;
-
-  Lifetime(this._lifetime);
-
-  /// Remaining lifetime of the current component.
-  int get lifetime => _lifetime;
-
-  /// Check if the lifetime of the current component has expired.
-  /// Otherwise, decrement it by one.
-  bool tick() {
-    if (_lifetime <= 0) return true;
-    _lifetime--;
-    return false;
-  }
-}
-
-/// Component that is removed before a tick update if its [lifetime]
-/// has expired.
-///
-/// Used for temporary effects that should be cleared at start of tick.
-abstract class BeforeTick extends Lifetime {
-  BeforeTick([super.lifetime = 0]);
-}
-
-/// Component that is removed after a tick update if its [lifetime]
-/// has expired.
-///
-/// Used for temporary effects that should be cleared at end of tick.
-abstract class AfterTick extends Lifetime {
-  AfterTick([super.lifetime = 0]);
-}
-
-/// A user-friendly, non-unique label for an entity.
-///
-/// Useful for debugging, UI display, or tagging entities.
-class Name {
-  final String name;
-
-  Name({required this.name});
-}
-
-/// The grid-based position of an entity within the game world.
-///
-/// Currently represents a global position until region support is added.
-class LocalPosition {
-  final int x, y;
-
-  LocalPosition({required this.x, required this.y});
-}
-
-/// Component that signals an intent to move the entity by a relative offset.
-class MoveByIntent extends AfterTick {
-  final int dx, dy;
-
-  MoveByIntent({required this.dx, required this.dy});
-}
-
-/// Component added when an entity has successfully moved in a tick.
-///
-/// Stores the previous and new positions for downstream logic.
-class DidMove extends BeforeTick {
-  final LocalPosition from, to;
-
-  DidMove({required this.from, required this.to}) : super(1);
-}
-
-/// Marker component indicating this entity blocks movement.
-class BlocksMovement {}
-
-/// Component added when an entity's movement was blocked by another entity.
-class BlockedMove extends BeforeTick {
-  final LocalPosition attempted;
-
-  BlockedMove(this.attempted);
-}
-
-/// Marker component indicating the entity is controlled by the player.
-class PlayerControlled {}
-
-class AiControlled {}
-
-/// Component that provides a visual asset path for rendering the entity.
-class Renderable {
-  final String svgAssetPath;
-
-  Renderable(this.svgAssetPath);
-}
 
 class Transaction {
   final Chunk chunk;
@@ -222,6 +135,10 @@ class ComponentStorage {
   final List<void Function(int entityId, dynamic comp)> _anyRemoveCallbacks = [];
 
   dynamic get(int id) => _comps[id];
+
+  UnmodifiableMapView<int, dynamic> get components {
+    return UnmodifiableMapView(_comps);
+  }
 
   List<int> get ids {
     return _comps.keys.toList();
@@ -388,6 +305,30 @@ class Chunk {
   void Function() onAfterTick(Function(Chunk chunk) fn) {
     _onPostTick.add(fn);
     return () => _onPostTick.remove(fn);
+  }
+
+  void _preTick() {
+    for (var fn in _onPreTick) {
+      fn(this);
+    }
+  }
+
+  void tick(List<System> systems) {
+    _preTick(); // TODO should this come before or after we clear lifetime components?
+    clearLifetimeComponents<BeforeTick>();
+
+    for(var system in systems) {
+      system.update(this);
+    }
+
+    clearLifetimeComponents<AfterTick>();
+    _postTick(); // TODO should this come before or after we clear lifetime components?
+  }
+
+  void _postTick() {
+    for (var fn in _onPostTick) {
+      fn(this);
+    }
   }
 
   void Function() onCreate(Function(int entityId) fn) {
@@ -569,107 +510,7 @@ class Chunk {
   }
 }
 
-/// A base class for all systems that operate over a [Chunk] of ECS data.
-abstract class System {
-  static const int defaultPriority = 1;
 
-  /// Systems are executed in ascending order of priority.
-  int get priority => System.defaultPriority;
-
-  /// Called once per tick to apply logic to the given [world].
-  void update(Chunk world);
-}
-
-/// A system that handles collision detection by checking for blocked movement.
-///
-/// If an entity attempts to move into an occupied tile, its move is cancelled.
-class CollisionSystem extends System {
-  @override
-  int get priority => 1;
-
-  @override
-  void update(Chunk world) {
-    final positions = world.components<LocalPosition>();
-    final blocks = world.components<BlocksMovement>();
-    final moveIntents = world.components<MoveByIntent>();
-
-    final movingEntityIds = moveIntents.ids;
-
-    if (blocks._comps.isEmpty) return;
-
-    for (final id in movingEntityIds) {
-      final e = world.entity(id);
-      final pos = e.get<LocalPosition>();
-      final intent = e.get<MoveByIntent>();
-
-      if (pos == null || intent == null) continue;
-
-      final dest = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-      var blocked = false;
-
-      positions._comps.forEach((key, value) {
-        if (value.x == dest.x && value.y == dest.y &&
-            world.has<BlocksMovement>(key)) {
-          blocked = true;
-        }
-      });
-
-      if (blocked) {
-        e.set(BlockedMove(dest));
-        e.remove<MoveByIntent>();
-      }
-    }
-  }
-}
-
-/// A system that processes unblocked movement requests.
-///
-/// Updates positions and adds [DidMove] to track movement history.
-class MovementSystem extends System {
-  @override
-  int get priority => CollisionSystem().priority + 1;
-
-  @override
-  void update(Chunk world) {
-    final moveIntents = world.components<MoveByIntent>();
-    final ids = List<int>.from(moveIntents._comps.keys);
-
-    for (final id in ids) {
-      final e = world.entity(id);
-      final pos = e.get<LocalPosition>();
-      final intent = e.get<MoveByIntent>();
-      if (pos == null || intent == null) continue;
-
-      final from = LocalPosition(x: pos.x, y: pos.y);
-      final to = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-      e.set(to);
-      e.set(DidMove(from: from, to: to));
-      e.remove<MoveByIntent>();
-    }
-  }
-}
-
-/// A high-level coordinator that advances ECS game logic by executing systems.
-class GameEngine {
-  final List<Chunk> chunks;
-  final List<System> systems;
-
-  GameEngine(this.chunks, this.systems);
-
-  /// Executes a single ECS update tick.
-  void tick() {
-    for (var chunk in chunks) {
-      chunk._onPreTick.forEach((fn) => fn(chunk));
-      chunk.clearLifetimeComponents<BeforeTick>();
-
-      systems
-        ..sort((a, b) => a.priority.compareTo(b.priority))
-        ..forEach((s) => s.update(chunk));
-
-      chunk.clearLifetimeComponents<AfterTick>();
-    }
-  }
-}
 
 /// A reusable filter that can be built ahead of time to select
 /// entities with specific component requirements.

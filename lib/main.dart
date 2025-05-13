@@ -2,10 +2,10 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
-import 'src/engine/ecs.dart';
+import 'src/engine/engine.gen.dart';
 import 'src/ui/game_world.dart';
 
-class MyGame extends FlameGame    with HasKeyboardHandlerComponents {
+class MyGame extends FlameGame with HasKeyboardHandlerComponents {
   @override
   var debugMode = false;
 
