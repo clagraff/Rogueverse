@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flame/components.dart';
 import 'package:flame_svg/flame_svg.dart';
 
@@ -6,10 +8,12 @@ class SvgTileComponent extends PositionComponent {
 
   final String svgAssetPath;
 
+  Paint? paint;
+
   SvgTileComponent(
-      {required this.svgAssetPath, Vector2? position, Vector2? size}) {
+      {required this.svgAssetPath, Vector2? position, Vector2? size, this.paint}) {
     this.position = position ?? Vector2.zero();
-    this.size = size ?? Vector2.all(32); // Default tile size
+    this.size = size ?? Vector2.all(32);
   }
 
   @override
@@ -20,6 +24,7 @@ class SvgTileComponent extends PositionComponent {
     _svg = SvgComponent(
       svg: svg,
       size: size,
+      paint: paint
     );
 
     add(_svg); // Adds it as a child

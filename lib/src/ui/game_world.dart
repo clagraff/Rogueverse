@@ -5,6 +5,7 @@ import 'package:flame/debug.dart';
 import 'package:rogueverse/main.dart';
 import 'package:rogueverse/src/engine/engine.gen.dart';
 import 'package:rogueverse/src/ui/components/components.gen.dart';
+import 'package:rogueverse/src/ui/hud/health_bar.dart';
 
 class GameWorld extends flame.World with Disposer {
   final _spawnedEntityIds = <int>{};
@@ -24,6 +25,14 @@ class GameWorld extends flame.World with Disposer {
 
     add(FpsComponent());
     add(TimeTrackComponent());
+
+    var playerHealth = Query()
+        .require<PlayerControlled>()
+        .require<Health>();
+
+    var healthHud = HealthBar();
+    chunk.onSetQuery(playerHealth, healthHud.onHealthChange).disposeLater(this);
+    game.camera.viewport.add(healthHud);
 
     var visibleTiles = Query().require<Renderable>().require<LocalPosition>();
 
@@ -70,6 +79,7 @@ class GameWorld extends flame.World with Disposer {
       ..set(BlocksMovement())
       ..set(Inventory([]))
       ..set(InventoryMaxCount(3))
+      ..set(Health(4, 5))
       ..commit();
 
     // Create other

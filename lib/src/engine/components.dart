@@ -102,8 +102,24 @@ class Health {
 
   Health(this.current, this.max) {
     if (current > max) {
+      // TODO just clamp to max?
       throw Exception("[current] health cannot exceed [max] health");
     }
+    // TODO check for under zero?
+  }
+}
+
+extension HealthExtension on Health {
+  Health cloneRelative(int change) {
+    var next = current + change;
+    if (next > max) {
+      next = max;
+    }
+    if (next < 0) {
+      next = 0;
+    }
+
+    return Health(next, max);
   }
 }
 

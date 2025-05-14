@@ -71,6 +71,8 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks  {
     if (event is KeyDownEvent) {
       var check = metaControls.resolve(keysPressed, event.logicalKey);
       if (check != null && check == Meta.paused) {
+        var health = entity.get<Health>()!;
+        entity.set<Health>(health.cloneRelative(-1));
         game.tickEcs();
         return false;
       }
