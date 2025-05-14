@@ -16,7 +16,7 @@ This roadmap provides a structured, bite-sized progression from MVP to a deeper 
 
 ### 🔹 Slightly More Involved
 
-- [ ] **Limit inventory size** – Prevent picking up items over a max capacity.
+- [x] **Limit inventory size** – Prevent picking up items over a max capacity.
 - [ ] **Basic UI overlay** – Show current health or inventory via Flame HUD text.
 
 ---

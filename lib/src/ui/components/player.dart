@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
+import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
 import 'package:rogueverse/main.dart';
 import '../../ui/components/components.gen.dart';
@@ -43,7 +44,8 @@ enum Interactions { interactAtPosition }
 final interactionControls = KeyBindingMap<Interactions>()
   ..bind(Interactions.interactAtPosition, [LogicalKeyboardKey.keyE]);
 
-class PlayerControlledAgent extends Agent with KeyboardHandler {
+
+class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks  {
   Effect? effect;
 
   PlayerControlledAgent(
