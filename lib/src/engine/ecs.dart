@@ -124,14 +124,20 @@ class ComponentStorage {
   late Type expectedType;
   final Map<int, dynamic> _comps = {};
 
+  final Map<int, List<void Function(int entityId, dynamic? comp)>>
+  _changeCallbacks = {};
   final Map<int, List<void Function(int entityId, dynamic comp)>>
       _setCallbacks = {};
+  final Map<int, List<void Function(int entityId, dynamic comp)>>
+      _updateCallbacks = {};
   final Map<int, List<void Function(int entityId, dynamic comp)>>
       _initCallbacks = {};
   final Map<int, List<void Function(int entityId, dynamic comp)>>
       _removeCallbacks = {};
 
+  final List<void Function(int entityId, dynamic? comp)> _anyChangeCallbacks = [];
   final List<void Function(int entityId, dynamic comp)> _anySetCallbacks = [];
+  final List<void Function(int entityId, dynamic comp)> _anyUpdateCallbacks = [];
   final List<void Function(int entityId, dynamic comp)> _anyInitCallbacks = [];
   final List<void Function(int entityId, dynamic comp)> _anyRemoveCallbacks =
       [];
@@ -162,8 +168,40 @@ class ComponentStorage {
       }
     }
 
+    _changeCallbacks[id]?.forEach((fn) => fn(id, c));
     _setCallbacks[id]?.forEach((fn) => fn(id, c));
     for (final fn in _anySetCallbacks) {
+      fn(id, c);
+    }
+    for (final fn in _anyChangeCallbacks) {
+      fn(id, c);
+    }
+  }
+
+
+  void unhandledUpdate(int id, Function(dynamic c) applyChange) {
+    var c = _comps[id];
+    if (c == null) {
+      return;
+    }
+
+    applyChange(c);
+  }
+
+  void update(int id, void Function(dynamic c) applyChange) {
+    var c = _comps[id];
+    if (c == null) {
+      return;
+    }
+
+    applyChange(c);
+
+    _changeCallbacks[id]?.forEach((fn) => fn(id, c));
+    _updateCallbacks[id]?.forEach((fn) => fn(id, c));
+    for (final fn in _anyUpdateCallbacks) {
+      fn(id, c);
+    }
+    for (final fn in _anyChangeCallbacks) {
       fn(id, c);
     }
   }
@@ -174,9 +212,14 @@ class ComponentStorage {
 
   void remove(int id) {
     final c = _comps.remove(id);
+
+    _changeCallbacks[id]?.forEach((fn) => fn(id, null));
     _removeCallbacks[id]?.forEach((fn) => fn(id, c));
     for (final fn in _anyRemoveCallbacks) {
       fn(id, c);
+    }
+    for (final fn in _anyChangeCallbacks) {
+      fn(id, null);
     }
   }
 
@@ -191,6 +234,28 @@ class ComponentStorage {
   void Function() onSetAny(void Function(int entityId, dynamic comp) fn) {
     _anySetCallbacks.add(fn);
     return () => _anySetCallbacks.remove(fn);
+  }
+
+  void Function() onUpdate(int id, void Function(int entityId, dynamic comp) fn) {
+    _updateCallbacks[id] ??= [];
+    _updateCallbacks[id]!.add(fn);
+    return () => _updateCallbacks[id]?.remove(fn);
+  }
+
+  void Function() onUpdateAny(void Function(int entityId, dynamic comp) fn) {
+    _anyUpdateCallbacks.add(fn);
+    return () => _anyUpdateCallbacks.remove(fn);
+  }
+
+  void Function() onChange(int id, void Function(int entityId, dynamic comp) fn) {
+    _changeCallbacks[id] ??= [];
+    _changeCallbacks[id]!.add(fn);
+    return () => _updateCallbacks[id]?.remove(fn);
+  }
+
+  void Function() onChangeAny(void Function(int entityId, dynamic? comp) fn) {
+    _anyChangeCallbacks.add(fn);
+    return () => _anyChangeCallbacks.remove(fn);
   }
 
   void Function() onInit(int id, void Function(int entityId, dynamic comp) fn) {
@@ -236,6 +301,8 @@ class Entity {
   T? get<T>() => world.components<T>().get(id);
 
   void set<T>(T c) => world.components<T>().set(id, c);
+  void update<T>(void Function(T) fn) =>
+      world.components<T>().update(id, (c) => fn(c as T));
 
   void remove<T>() => world.components<T>().remove(id);
   void destroy() => world.destroy(id);
@@ -247,6 +314,12 @@ class Entity {
 
   void Function() onSet<T>(void Function(int entityId, dynamic comp) fn) =>
       world.components<T>().onSet(id, fn);
+
+  void Function() onUpdate<T>(void Function(int entityId, dynamic comp) fn) =>
+      world.components<T>().onUpdate(id, fn);
+
+  void Function() onChange<T>(void Function(int entityId, dynamic? comp) fn) =>
+      world.components<T>().onChange(id, fn);
 
   void Function() onRemove<T>(void Function(int entityId, dynamic? comp) fn) =>
       world.components<T>().onRemove(id, fn);
@@ -383,6 +456,18 @@ class Chunk {
 
   void Function() onSetAny<T>(void Function<T>(int, T) fn) =>
       components<T>().onSetAny(fn);
+
+  void Function() onUpdate<T>(int entityId, void Function<T>(int, T) fn) =>
+      components<T>().onUpdate(entityId, fn);
+
+  void Function() onUpdateAny<T>(void Function<T>(int, T) fn) =>
+      components<T>().onUpdateAny(fn);
+
+  void Function() onChange<T>(int entityId, void Function<T>(int, T?) fn) =>
+      components<T>().onChange(entityId, fn);
+
+  void Function() onChangeAny<T>(void Function<T>(int, T?) fn) =>
+      components<T>().onChangeAny(fn);
 
   void Function() onInit<T>(int entityId, void Function<T>(int, T) fn) =>
       components<T>().onInit(entityId, fn);

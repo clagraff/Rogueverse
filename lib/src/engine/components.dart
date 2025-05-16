@@ -47,7 +47,7 @@ class Name {
 ///
 /// Currently represents a global position until region support is added.
 class LocalPosition {
-  final int x, y;
+  int x, y;
 
   LocalPosition({required this.x, required this.y});
 }

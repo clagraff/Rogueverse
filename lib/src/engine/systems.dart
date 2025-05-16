@@ -77,7 +77,13 @@ class MovementSystem extends System {
 
       final from = LocalPosition(x: pos.x, y: pos.y);
       final to = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-      e.set(to);
+      //e.set(to);
+
+      e.update<LocalPosition>((p) {
+        p.x = pos.x + intent.dx;
+        p.y = pos.y + intent.dy;
+      });
+
       e.set(DidMove(from: from, to: to));
       e.remove<MoveByIntent>();
     }
