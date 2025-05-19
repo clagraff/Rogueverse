@@ -5,13 +5,15 @@ import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:rogueverse/src/application_ui/overlays/example.dart';
 
 import 'src/ui/mixins/scroll_callback.dart';
 import 'src/ui/hud/camera_controls.dart';
 import 'src/engine/engine.gen.dart';
 import 'src/ui/game_world.dart';
 
-class MyGame extends FlameGame with HasKeyboardHandlerComponents, ScrollDetector {
+class MyGame extends FlameGame
+    with HasKeyboardHandlerComponents, ScrollDetector {
   @override
   var debugMode = false;
 
@@ -32,7 +34,6 @@ class MyGame extends FlameGame with HasKeyboardHandlerComponents, ScrollDetector
       InventorySystem(),
     ]);
   }
-
 
   @override
   FutureOr<void> onLoad() {
@@ -75,7 +76,8 @@ void main() {
     //   if (record.error != null) 'error': record.error?.toString(),
     // };
 
-    var message = "[ ${record.level} : ${record.loggerName} ] ${record.message}";
+    var message =
+        "[ ${record.level} : ${record.loggerName} ] ${record.message}";
     if (record.error != null) {
       message += " ${record.error!.toString()}";
     }
@@ -88,7 +90,32 @@ void main() {
   parentLogger.info({'notice': 'Hello world!'});
   childLogger.warning('Database connection slow', {'latency': '200ms'});
 
+  // runApp(
+  //   GameWidget(game: MyGame(), overlayBuilderMap: {
+  //     'Example': (BuildContext context, MyGame game) {
+  //       return Example();
+  //     }
+  //   }),
+  // );
   runApp(
-    GameWidget(game: MyGame()),
+    MyApp(),
   );
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData.dark(),
+      // Root widget
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('My Home Page'),
+        ),
+        body: GameWidget(game: MyGame()),
+      ),
+    );
+  }
 }
