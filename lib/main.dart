@@ -114,7 +114,9 @@ class MyApp extends StatelessWidget {
         appBar: AppBar(
           title: const Text('My Home Page'),
         ),
-        body: GameWidget(game: MyGame()),
+        body: Stack(children: [
+          GameWidget(game: MyGame()),
+        ]),
       ),
     );
   }

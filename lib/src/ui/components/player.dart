@@ -1,6 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
+import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -84,87 +85,181 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
     // Optional: Store `entry` somewhere if you want to remove it later
   }
 
-  void showTable(BuildContext context) {
-    final overlay = Overlay.of(context);
+  void showTable(FlameGame game, BuildContext sourceContext) {
+    final overlay = Overlay.of(sourceContext);
     if (overlay == null) return;
 
-    final entry = OverlayEntry(
-      builder: (context) => Material(type: MaterialType.transparency, child: Theme(data: ThemeData.dark(), child: Center(
-        child: Container(
-          width: 300, // Control width
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.8), // Semi-transparent background
-            border: Border.all(color: Colors.white, width: 2), // Game-style border
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                  "Inventory",
-                  style: TextStyle(
-                    fontSize: 18,
-                  ),
-              ),
-              SizedBox(height: 12),
-              DataTable(
-                columnSpacing: 24,
-                horizontalMargin: 12,
-                sortColumnIndex: 0,
-                sortAscending: true,
-                columns: <DataColumn>[
-                  DataColumn(label: Text("Item")),
-                  DataColumn(label: Text("Qty"), numeric: true),
-                  DataColumn(label: Text("Value"), numeric: true),
-                ],
-                rows: <DataRow>[
-                  DataRow(cells: [
-                    DataCell(Text("Long Sword")),
-                    DataCell(Text("1")),
-                    DataCell(Text("350")),
-                  ]),
-                  DataRow(cells: [
-                    DataCell(Text("Iron Helm")),
-                    DataCell(Text("1")),
-                    DataCell(Text("50")),
-                  ]),
-                  DataRow(cells: [
-                    DataCell(Text("Copper Greaves")),
-                    DataCell(Text("2")),
-                    DataCell(Text("100")),
-                  ]),
-                  DataRow(cells: [
-                    DataCell(Text("Gold")),
-                    DataCell(Text("1500")),
-                    DataCell(Text("1500")),
-                  ]),
-                  DataRow(cells: [
-                    DataCell(Text("Magic Potion")),
-                    DataCell(Text("16")),
-                    DataCell(Text("3600")),
-                  ]),
-                  // ... other rows remain the same
-                ],
-              ),
-              SizedBox(height: 12),
-              ElevatedButton(
-                onPressed: () => {
+    print(" ======= showing table ====== ");
+    print(" ======= showing table ====== ");
+    print(" ======= showing table ====== ");
+    // final entry = OverlayEntry(
+    //   builder: (context) => Theme(
+    //       data: Theme.of(sourceContext),
+    //       child: Center(
+    //         child: Material(
+    //           child: Container(
+    //             width: 300, // Control width
+    //             padding: EdgeInsets.all(16),
+    //             decoration: BoxDecoration(
+    //               color: Theme.of(context).dialogBackgroundColor,
+    //               // Semi-transparent background
+    //               //color: Colors.black.withValues(alpha: 0.8), // Semi-transparent background
+    //               border: Border.all(color: Colors.white, width: 2),
+    //               // Game-style border
+    //               borderRadius: BorderRadius.circular(8),
+    //             ),
+    //             child: Column(
+    //               mainAxisSize: MainAxisSize.min,
+    //               children: [
+    //                 Text(
+    //                   "Inventory",
+    //                   style: TextStyle(
+    //                     fontSize: 18,
+    //                   ),
+    //                 ),
+    //                 SizedBox(height: 12),
+    //                 DataTable(
+    //                   columnSpacing: 24,
+    //                   horizontalMargin: 12,
+    //                   sortColumnIndex: 0,
+    //                   sortAscending: true,
+    //                   columns: <DataColumn>[
+    //                     DataColumn(label: Text("Item")),
+    //                     DataColumn(label: Text("Qty"), numeric: true),
+    //                     DataColumn(label: Text("Value"), numeric: true),
+    //                   ],
+    //                   rows: <DataRow>[
+    //                     DataRow(cells: [
+    //                       DataCell(Text("Long Sword")),
+    //                       DataCell(Text("1")),
+    //                       DataCell(Text("350")),
+    //                     ]),
+    //                     DataRow(cells: [
+    //                       DataCell(Text("Iron Helm")),
+    //                       DataCell(Text("1")),
+    //                       DataCell(Text("50")),
+    //                     ]),
+    //                     DataRow(cells: [
+    //                       DataCell(Text("Copper Greaves")),
+    //                       DataCell(Text("2")),
+    //                       DataCell(Text("100")),
+    //                     ]),
+    //                     DataRow(cells: [
+    //                       DataCell(Text("Gold")),
+    //                       DataCell(Text("1500")),
+    //                       DataCell(Text("1500")),
+    //                     ]),
+    //                     DataRow(cells: [
+    //                       DataCell(Text("Magic Potion")),
+    //                       DataCell(Text("16")),
+    //                       DataCell(Text("3600")),
+    //                     ]),
+    //                     // ... other rows remain the same
+    //                   ],
+    //                 ),
+    //                 SizedBox(height: 12),
+    //                 ElevatedButton(
+    //                   onPressed: () => {},
+    //                   // style: ElevatedButton.styleFrom(
+    //                   //   backgroundColor: Colors.white,
+    //                   //   foregroundColor: Colors.black,
+    //                   // ),
+    //                   child: Text("Close"),
+    //                 ),
+    //               ],
+    //             ),
+    //           ),
+    //         ),
+    //       )),
+    // );
 
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
+    game.overlays.addEntry("Inventory", (
+      BuildContext context,
+      Game game,
+    ) {
+      return Theme(
+          data: Theme.of(sourceContext),
+          child: Center(
+            child: Material(
+              child: Container(
+                width: 300, // Control width
+                padding: EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).dialogBackgroundColor,
+                  // Semi-transparent background
+                  //color: Colors.black.withValues(alpha: 0.8), // Semi-transparent background
+                  border: Border.all(color: Colors.white, width: 2),
+                  // Game-style border
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Text("Close"),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      "Inventory",
+                      style: TextStyle(
+                        fontSize: 18,
+                      ),
+                    ),
+                    SizedBox(height: 12),
+                    DataTable(
+                      columnSpacing: 24,
+                      horizontalMargin: 12,
+                      sortColumnIndex: 0,
+                      sortAscending: true,
+                      columns: <DataColumn>[
+                        DataColumn(label: Text("Item")),
+                        DataColumn(label: Text("Qty"), numeric: true),
+                        DataColumn(label: Text("Value"), numeric: true),
+                      ],
+                      rows: <DataRow>[
+                        DataRow(cells: [
+                          DataCell(Text("Long Sword")),
+                          DataCell(Text("1")),
+                          DataCell(Text("350")),
+                        ]),
+                        DataRow(cells: [
+                          DataCell(Text("Iron Helm")),
+                          DataCell(Text("1")),
+                          DataCell(Text("50")),
+                        ]),
+                        DataRow(cells: [
+                          DataCell(Text("Copper Greaves")),
+                          DataCell(Text("2")),
+                          DataCell(Text("100")),
+                        ]),
+                        DataRow(cells: [
+                          DataCell(Text("Gold")),
+                          DataCell(Text("1500")),
+                          DataCell(Text("1500")),
+                        ]),
+                        DataRow(cells: [
+                          DataCell(Text("Magic Potion")),
+                          DataCell(Text("16")),
+                          DataCell(Text("3600")),
+                        ]),
+                        // ... other rows remain the same
+                      ],
+                    ),
+                    SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => {
+                      game.overlays.toggle("Inventory")
+                      },
+                      // style: ElevatedButton.styleFrom(
+                      //   backgroundColor: Colors.white,
+                      //   foregroundColor: Colors.black,
+                      // ),
+                      child: Text("Close"),
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
-        ),
-      ))),
-    );
+            ),
+          ));
+    });
 
-    overlay.insert(entry);
+    game.overlays.toggle("Inventory");
   }
 
   @override
@@ -179,17 +274,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
         var health = entity.get<Health>()!;
         entity.set<Health>(health.cloneRelative(-1));
 
-        // var i = entity.get<Inventory>();
-        // if (i != null && i.entityIds.length > 0) {
-        //   List<InventoryItem> items = [];
-        //   for (var id in i.entityIds) {
-        //     var itemEntity = chunk.get<Name>(id)!;
-        //     items.add(InventoryItem(name: itemEntity.name, quantity: 1));
-        //   }
-        //   showInventoryOverlay(game.buildContext!, items);
-        // }
-
-        showTable(game.buildContext!);
+        showTable(game, game.buildContext!);
 
         // -----------
 

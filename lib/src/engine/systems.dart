@@ -3,6 +3,25 @@ import 'dart:math';
 import 'components.dart';
 import 'ecs.dart';
 
+// TODO: Example of a potentially better way to do Systems
+// abstract class ProcessingSystem extends System {
+//   // Define a filter method that returns true for entities this system should process
+//   bool filter(Entity entity);
+//
+//   // Process a single entity
+//   void process(Entity entity, double dt);
+//
+//   @override
+//   void update(Chunk world) {
+//     // Find all entities that match the filter
+//     for (final entity in world.entities.where(filter)) {
+//       process(entity, world.deltaTime);
+//     }
+//   }
+// }
+
+
+
 /// A base class for all systems that operate over a [Chunk] of ECS data.
 abstract class System {
   static const int defaultPriority = 1;
