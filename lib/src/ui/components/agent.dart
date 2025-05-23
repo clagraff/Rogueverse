@@ -1,5 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
+import '../../ui/components/agent_health_bar.dart';
 import '../../engine/engine.gen.dart';
 import '../../ui/components/components.gen.dart';
 
@@ -26,6 +27,10 @@ class Agent extends SvgTileComponent with Disposer {
         })
         .asDisposable()
         .disposeLater(this);
+
+    add(AgentHealthBar(entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
+
+
     return super.onLoad();
   }
 

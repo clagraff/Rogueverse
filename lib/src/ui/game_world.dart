@@ -119,6 +119,15 @@ class GameWorld extends flame.World with Disposer {
         ..commit();
     }
 
+
+    Transaction(chunk, chunk.create())
+      ..set(Renderable('images/mineral.svg'))
+      ..set(LocalPosition(x: 3, y: 2))
+      ..set(Name(name: 'Iron'))
+      ..set(BlocksMovement())
+      ..set(Health(2, 2))
+      ..commit();
+
     //add(WallPlacer(chunk: chunk));
 
     // var wallType = Archetype()

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 32 32.000001"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="grass.svg"
+   inkscape:version="1.4-beta (62f545ba5e, 2024-04-22)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#111111"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="12.984375"
+     inkscape:cx="7.9711191"
+     inkscape:cy="19.600481"
+     inkscape:window-width="1920"
+     inkscape:window-height="1009"
+     inkscape:window-x="1912"
+     inkscape:window-y="363"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <defs
+     id="defs1" />
+  <path
+     d="m 14.401715,20.770667 -0.70843,9.123186 h -2.678207 l -0.70843,-9.123186 z m 7.291637,0 -0.70843,9.123186 h -2.678207 l -0.70843,-9.123186 z"
+     id="text1"
+     style="font-size:35.3869px;line-height:1;font-family:'Noto Mono';-inkscape-font-specification:'Noto Mono';text-align:center;text-anchor:middle;fill:#ffffff;stroke-width:2.21168"
+     aria-label="&quot;" />
+</svg>
