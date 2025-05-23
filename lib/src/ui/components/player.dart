@@ -39,18 +39,20 @@ final movementControls = KeyBindingMap<Movement>()
   ..bind(Movement.up, [LogicalKeyboardKey.keyW])
   ..bind(Movement.down, [LogicalKeyboardKey.keyS]);
 
-enum Meta { paused }
+enum Meta { paused, inventory }
 
 final metaControls = KeyBindingMap<Meta>()
-  ..bind(Meta.paused, [LogicalKeyboardKey.space]);
+  ..bind(Meta.paused, [LogicalKeyboardKey.space])
+  ..bind(Meta.inventory, [LogicalKeyboardKey.tab]);
 
-enum Interactions { interactAtPosition }
+enum Action { interactAtPosition }
 
-final interactionControls = KeyBindingMap<Interactions>()
-  ..bind(Interactions.interactAtPosition, [LogicalKeyboardKey.keyE]);
+final actionControls = KeyBindingMap<Action>()
+  ..bind(Action.interactAtPosition, [LogicalKeyboardKey.keyE]);
 
 class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   Effect? effect;
+  bool showingInventory = false;
 
   PlayerControlledAgent(
       {required super.chunk,
@@ -68,13 +70,22 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
     LogicalKeyboardKey.keyS: Vector2(0, 1),
   };
 
-  void showTable(FlameGame game, BuildContext sourceContext, Chunk chunk) {
+  void showTable(FlameGame game) {
+    var sourceContext = game.buildContext!;
     var player = chunk.entitiesWith<PlayerControlled>().first;
     var itemIds = player.get<Inventory>()?.entityIds ?? [];
     var items = itemIds.map((id) => chunk.entity(id)).toList();
 
-
-    addOverlay(game: game, sourceContext: sourceContext, child: PlayerInventoryWidget(game: game, inventory:  items));
+    addOverlay(
+        game: game,
+        sourceContext: sourceContext,
+        child: PlayerInventoryWidget(
+          game: game,
+          inventory: items,
+          onClose: () {
+            showingInventory = false;
+          },
+        ));
   }
 
   @override
@@ -83,64 +94,78 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
 
     if (event is KeyDownEvent) {
       var check = metaControls.resolve(keysPressed, event.logicalKey);
-      if (check != null && check == Meta.paused) {
-        // TODO remove this later
-        // ----------
-        var health = entity.get<Health>()!;
-        entity.set<Health>(health.cloneRelative(-1));
-
-        showTable(game, game.buildContext!, game.liveChunk);
-
-        // -----------
-
-        game.tickEcs();
-        return false;
+      if (check != null) {
+        return handleMetaControls(check, game);
       }
 
-      var interaction =
-          interactionControls.resolve(keysPressed, event.logicalKey);
-      if (interaction != null) {
-        switch (interaction) {
-          case Interactions.interactAtPosition:
-            var pos = entity.get<LocalPosition>()!;
-
-            var firstItemAtFeet = Query()
-                .require<LocalPosition>((c) {
-                  return c.x == pos.x && c.y == pos.y;
-                })
-                .require<Pickupable>()
-                .first(chunk);
-            if (firstItemAtFeet != null) {
-              entity.set<PickupIntent>(PickupIntent(firstItemAtFeet.id));
-
-              game.tickEcs();
-              return false;
-            }
-          default:
-            break; // no-op
+      var action = actionControls.resolve(keysPressed, event.logicalKey);
+      if (action != null) {
+        if (handleActions(action, game)) {
+          return false;
         }
       }
 
       var result = movementControls.resolve(keysPressed, event.logicalKey);
       if (result != null) {
-        switch (result) {
-          case Movement.up:
-            entity.set(MoveByIntent(dx: 0, dy: -1));
-            break;
-          case Movement.right:
-            entity.set(MoveByIntent(dx: 1, dy: 0));
-            break;
-          case Movement.down:
-            entity.set(MoveByIntent(dx: 0, dy: 1));
-            break;
-          case Movement.left:
-            entity.set(MoveByIntent(dx: -1, dy: 0));
-            break;
-        }
-        game.tickEcs(); // Run tick after input
+        handleMovement(result, game); // Run tick after input
         return false;
       }
     }
     return true;
+  }
+
+  void handleMovement(Movement result, MyGame game) {
+    switch (result) {
+      case Movement.up:
+        entity.set(MoveByIntent(dx: 0, dy: -1));
+        break;
+      case Movement.right:
+        entity.set(MoveByIntent(dx: 1, dy: 0));
+        break;
+      case Movement.down:
+        entity.set(MoveByIntent(dx: 0, dy: 1));
+        break;
+      case Movement.left:
+        entity.set(MoveByIntent(dx: -1, dy: 0));
+        break;
+    }
+    game.tickEcs(); // Run tick after input
+  }
+
+  /// Attempt to handle any triggered interactions. Returns [true] if an interaction
+  /// was handled, otherwise [false].
+  bool handleActions(Action interaction, MyGame game) {
+    switch (interaction) {
+      case Action.interactAtPosition:
+        var pos = entity.get<LocalPosition>()!;
+
+        var firstItemAtFeet = Query()
+            .require<LocalPosition>((c) {
+              return c.x == pos.x && c.y == pos.y;
+            })
+            .require<Pickupable>()
+            .first(chunk);
+        if (firstItemAtFeet != null) {
+          entity.set<PickupIntent>(PickupIntent(firstItemAtFeet.id));
+
+          game.tickEcs();
+          return true; // handled
+        }
+    }
+    return false; // didnt handle
+  }
+
+  bool handleMetaControls(Meta check, MyGame game) {
+    switch (check) {
+      case Meta.paused:
+        game.tickEcs();
+        break;
+      case Meta.inventory:
+        if (!showingInventory) {
+          showTable(game);
+          showingInventory = true;
+        }
+    }
+    return false;
   }
 }

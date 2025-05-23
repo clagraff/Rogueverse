@@ -17,12 +17,13 @@ extension MapSelect<K, V> on Map<K, V> {
 
 class PlayerInventoryWidget extends StatelessWidget {
   final Game game;
-  final List<Entity> inventory;
+  final List<Entity> inventory; // TODO: take in a Player Entity instead, to keep this list up-to-date while the game runs
+  final Function()? onClose;
 
   final Query query = Query().require<Name>();
 
   PlayerInventoryWidget(
-      {super.key, required this.game, required this.inventory});
+      {super.key, required this.game, required this.inventory, this.onClose});
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +101,12 @@ class PlayerInventoryWidget extends StatelessWidget {
           ),
           SizedBox(height: 12),
           ElevatedButton(
-            onPressed: () => {game.overlays.toggle("PlayerInventoryWidget")},
+            onPressed: () {
+              game.overlays.toggle("PlayerInventoryWidget");
+              if (onClose != null) {
+                onClose!();
+              }
+            },
             // style: ElevatedButton.styleFrom(
             //   backgroundColor: Colors.white,
             //   foregroundColor: Colors.black,
