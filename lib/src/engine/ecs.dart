@@ -643,6 +643,26 @@ class Query {
     }
   }
 
+  /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
+  Iterable<Entity> findFromIds(Chunk chunk, List<int> possibleIds) sync* {
+    if (_required.isEmpty) {
+      throw StateError('Query must have at least one required component.');
+    }
+
+    final firstRequiredType = _required.keys.first;
+    final store = chunk.componentsByType(firstRequiredType.toString());
+
+    for (final id in store._comps.keys) {
+      if (!possibleIds.contains(id)) {
+        continue;
+      }
+
+      if (isMatching(chunk, id)) {
+        yield chunk.entity(id);
+      }
+    }
+  }
+
   /// Returns the first matching entity or null.
   Entity? first(Chunk chunk) => find(chunk).firstOrNull;
 
