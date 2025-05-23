@@ -1,120 +1,125 @@
 import 'package:collection/collection.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../../engine/components.dart';
 import '../../engine/ecs.dart';
 
+// Extension for select-like mapping on map entries
 extension MapSelect<K, V> on Map<K, V> {
   List<T> select<T>(T Function(MapEntry<K, V>) fn) {
     List<T> results = [];
     for (var entry in entries) {
       results.add(fn(entry));
     }
-
     return results;
   }
 }
 
-class PlayerInventoryWidget extends StatelessWidget {
+class PlayerInventoryWidget extends StatefulWidget {
   final Game game;
-  final List<Entity> inventory; // TODO: take in a Player Entity instead, to keep this list up-to-date while the game runs
+  final List<Entity> inventory;
   final Function()? onClose;
 
-  final Query query = Query().require<Name>();
+  const PlayerInventoryWidget({
+    super.key,
+    required this.game,
+    required this.inventory,
+    this.onClose,
+  });
 
-  PlayerInventoryWidget(
-      {super.key, required this.game, required this.inventory, this.onClose});
+  @override
+  State<PlayerInventoryWidget> createState() => _PlayerInventoryWidgetState();
+}
+
+class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void closeOverlay() {
+    widget.game.overlays.toggle("PlayerInventoryWidget");
+    if (widget.onClose != null) {
+      widget.onClose!();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    var lines = inventory.groupListsBy((entity) {
-      return entity.get<Name>()?.name;
-    }).select((entry) {
-      return (name: entry.key, count: entry.value.length);
-    }).map((entry) {
-      return DataRow(cells: [
-        DataCell(Text(entry.name as String)),
-        DataCell(Text((entry.count).toString())),
-      ]);
-    }).toList();
+    // Group items by name and build rows
+    var lines = widget.inventory
+        .groupListsBy((entity) => entity.get<Name>()?.name)
+        .select((entry) => (name: entry.key, count: entry.value.length))
+        .map((entry) => DataRow(cells: [
+      DataCell(Text(entry.name ?? 'Unknown')),
+      DataCell(Text(entry.count.toString())),
+    ]))
+        .toList();
 
-    return Container(
-      width: 300, // Control width
-      padding: EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).dialogBackgroundColor,
-        // Semi-transparent background
-        //color: Colors.black.withValues(alpha: 0.8), // Semi-transparent background
-        border: Border.all(color: Colors.white, width: 2),
-        // Game-style border
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "Inventory",
-            style: TextStyle(
-              fontSize: 18,
+    return Focus(
+      focusNode: _focusNode,
+      onKeyEvent: (FocusNode node, KeyEvent event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.tab) {
+          closeOverlay();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: Container(
+        width: 300,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).dialogBackgroundColor,
+          border: Border.all(color: Colors.white, width: 2),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Inventory",
+              style: TextStyle(fontSize: 18),
             ),
-          ),
-          SizedBox(height: 12),
-          DataTable(
-            columnSpacing: 24,
-            horizontalMargin: 12,
-            sortColumnIndex: 0,
-            sortAscending: true,
-            columns: <DataColumn>[
-              DataColumn(label: Text("Item")),
-              DataColumn(label: Text("Qty"), numeric: true),
-              //DataColumn(label: Text("Value"), numeric: true),
-            ],
-            rows: lines,
-            // rows: <DataRow>[
-            //   DataRow(cells: [
-            //     DataCell(Text("Long Sword")),
-            //     DataCell(Text("1")),
-            //     DataCell(Text("350")),
-            //   ]),
-            //   DataRow(cells: [
-            //     DataCell(Text("Iron Helm")),
-            //     DataCell(Text("1")),
-            //     DataCell(Text("50")),
-            //   ]),
-            //   DataRow(cells: [
-            //     DataCell(Text("Copper Greaves")),
-            //     DataCell(Text("2")),
-            //     DataCell(Text("100")),
-            //   ]),
-            //   DataRow(cells: [
-            //     DataCell(Text("Gold")),
-            //     DataCell(Text("1500")),
-            //     DataCell(Text("1500")),
-            //   ]),
-            //   DataRow(cells: [
-            //     DataCell(Text("Magic Potion")),
-            //     DataCell(Text("16")),
-            //     DataCell(Text("3600")),
-            //   ]),
-            //   // ... other rows remain the same
-            // ],
-          ),
-          SizedBox(height: 12),
-          ElevatedButton(
-            onPressed: () {
-              game.overlays.toggle("PlayerInventoryWidget");
-              if (onClose != null) {
-                onClose!();
-              }
-            },
-            // style: ElevatedButton.styleFrom(
-            //   backgroundColor: Colors.white,
-            //   foregroundColor: Colors.black,
-            // ),
-            child: Text("Close"),
-          ),
-        ],
+            const SizedBox(height: 12),
+            buildDataTable(lines),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: closeOverlay,
+              child: const Text("Close"),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  DataTable buildDataTable(List<DataRow> lines) {
+    return DataTable(
+      columnSpacing: 24,
+      horizontalMargin: 12,
+      sortColumnIndex: 0,
+      sortAscending: true,
+      columns: const [
+        DataColumn(label: Text("Item")),
+        DataColumn(label: Text("Qty"), numeric: true),
+      ],
+      rows: lines,
     );
   }
 }

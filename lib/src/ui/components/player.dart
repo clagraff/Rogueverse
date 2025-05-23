@@ -52,7 +52,7 @@ final actionControls = KeyBindingMap<Action>()
 
 class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   Effect? effect;
-  bool showingInventory = false;
+  Function()? toggleInventoryOverlay;
 
   PlayerControlledAgent(
       {required super.chunk,
@@ -70,20 +70,24 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
     LogicalKeyboardKey.keyS: Vector2(0, 1),
   };
 
+
   void showTable(FlameGame game) {
     var sourceContext = game.buildContext!;
     var player = chunk.entitiesWith<PlayerControlled>().first;
     var itemIds = player.get<Inventory>()?.entityIds ?? [];
     var items = itemIds.map((id) => chunk.entity(id)).toList();
 
-    addOverlay(
+    toggleInventoryOverlay = addOverlay(
         game: game,
         sourceContext: sourceContext,
         child: PlayerInventoryWidget(
           game: game,
           inventory: items,
           onClose: () {
-            showingInventory = false;
+            // Don't need to manually call toggleInventoryOverlay() as it will
+            // already be closed when this onClose callback executes. Just clear
+            // out the callback.
+            toggleInventoryOverlay = null;
           },
         ));
   }
@@ -115,20 +119,28 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   }
 
   void handleMovement(Movement result, MyGame game) {
+    var dv = Vector2.zero();
+
     switch (result) {
       case Movement.up:
-        entity.set(MoveByIntent(dx: 0, dy: -1));
+        dv.y = -1;
+        // entity.set(MoveByIntent(dx: 0, dy: -1));
         break;
       case Movement.right:
-        entity.set(MoveByIntent(dx: 1, dy: 0));
+        dv.x = 1;
+        // entity.set(MoveByIntent(dx: 1, dy: 0));
         break;
       case Movement.down:
-        entity.set(MoveByIntent(dx: 0, dy: 1));
+        dv.y = 1;
+        // entity.set(MoveByIntent(dx: 0, dy: 1));
         break;
       case Movement.left:
-        entity.set(MoveByIntent(dx: -1, dy: 0));
+        dv.x = -1;
+        // entity.set(MoveByIntent(dx: -1, dy: 0));
         break;
     }
+
+    entity.set(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
     game.tickEcs(); // Run tick after input
   }
 
@@ -161,9 +173,11 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
         game.tickEcs();
         break;
       case Meta.inventory:
-        if (!showingInventory) {
+        if (toggleInventoryOverlay == null) {
           showTable(game);
-          showingInventory = true;
+        } else {
+          toggleInventoryOverlay!();
+          toggleInventoryOverlay = null;
         }
     }
     return false;
