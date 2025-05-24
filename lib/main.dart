@@ -32,6 +32,7 @@ class MyGame extends FlameGame
       CollisionSystem(),
       MovementSystem(),
       InventorySystem(),
+      CombatSystem(),
     ]);
   }
 

@@ -170,6 +170,42 @@ class InventorySystem extends System {
   }
 }
 
+
+class CombatSystem extends System {
+  @override
+  int get priority => CollisionSystem().priority + 2; // TODO: Go after movement I guess?
+
+  @override
+  void update(Chunk world) {
+    final attackIntents = world.components<AttackIntent>();
+
+    var components = Map.from(attackIntents.components);
+    components.forEach((sourceId, intent) {
+      var attackIntent = intent as AttackIntent;
+      var source = world.entity(sourceId);
+      var target = world.entity(attackIntent.targetId);
+
+      target.update<Health>((health) {
+        // TODO change how damage is calculated
+        health.current -= 1;
+        if (health.current <= 0) {
+          health.current = 0;
+          target.set(Dead());
+        }
+
+        // TODO this assumes the Attacked compont already exists. That may not be the case.
+        target.update<Attacked>((attacked) {
+          attacked.add(WasAttacked(sourceId: sourceId, damage: 1));
+        });
+      });
+
+      source.remove<AttackIntent>();
+      source.set<DidAttack>(DidAttack(targetId: target.id, damage: 1));
+    });
+  }
+}
+
+
 /// A high-level coordinator that advances ECS game logic by executing systems.
 class GameEngine {
   final List<Chunk> chunks;

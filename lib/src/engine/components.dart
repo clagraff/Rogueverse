@@ -97,8 +97,8 @@ class Renderable {
 }
 
 class Health {
-  final int current;
-  final int max;
+  int current;
+  int max;
 
   Health(this.current, this.max) {
     if (current > max) {
@@ -123,6 +123,33 @@ extension HealthExtension on Health {
   }
 }
 
+class AttackIntent {
+  final int targetId;
+
+  AttackIntent(this.targetId);
+}
+
+class DidAttack extends BeforeTick {
+  final int targetId;
+  final int damage;
+
+  DidAttack({required this.targetId, required this.damage});
+}
+
+
+class WasAttacked extends BeforeTick {
+  final int sourceId;
+  final int damage;
+
+  WasAttacked({required this.sourceId, required this.damage});
+}
+
+typedef Attacked = List<WasAttacked>;
+
+class Dead {}
+
+
+// TODO: can we change this to a typedef of Inventory = List<entityId> ??
 class Inventory {
   final List<int> entityIds;
 

@@ -178,7 +178,6 @@ class ComponentStorage {
     }
   }
 
-
   void unhandledUpdate(int id, Function(dynamic c) applyChange) {
     var c = _comps[id];
     if (c == null) {
@@ -188,6 +187,7 @@ class ComponentStorage {
     applyChange(c);
   }
 
+  // TODO: work on update, set, etc. Maybe have it return a component, so null entries can be overwritten?
   void update(int id, void Function(dynamic c) applyChange) {
     var c = _comps[id];
     if (c == null) {
@@ -665,6 +665,8 @@ class Query {
 
   /// Returns the first matching entity or null.
   Entity? first(Chunk chunk) => find(chunk).firstOrNull;
+
+  bool any(Chunk chunk) => find(chunk).firstOrNull != null;
 
   /// Returns true if the given [entityId] matches the query.
   bool isMatching(Chunk chunk, int entityId) {

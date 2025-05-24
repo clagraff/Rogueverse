@@ -119,6 +119,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   }
 
   void handleMovement(Movement result, MyGame game) {
+    var curr = entity.get<LocalPosition>()!;
     var dv = Vector2.zero();
 
     switch (result) {
@@ -140,7 +141,22 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
         break;
     }
 
-    entity.set(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
+    var target = Query()
+        .require<BlocksMovement>()
+        .require<LocalPosition>((c) {
+      return c.x == curr.x + dv.x && c.y == curr.y + dv.y;
+    }).first(chunk);
+    if (target == null) {
+      // Nothing obstructing movement, so move
+      entity.set(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
+    } else {
+      var hasHealth = target.get<Health>() != null;
+      if (hasHealth) {
+        entity.set<AttackIntent>(AttackIntent(target.id));
+      }
+    }
+
+    // Will always tick. This includes when movement isnt possible.
     game.tickEcs(); // Run tick after input
   }
 

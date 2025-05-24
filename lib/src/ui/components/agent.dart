@@ -4,7 +4,7 @@ import '../../ui/components/agent_health_bar.dart';
 import '../../engine/engine.gen.dart';
 import '../../ui/components/components.gen.dart';
 
-class Agent extends SvgTileComponent with Disposer {
+class Agent extends SvgTileComponent with HasVisibility, Disposer {
   final Chunk chunk;
   final Entity entity;
 
@@ -18,6 +18,7 @@ class Agent extends SvgTileComponent with Disposer {
 
   @override
   Future<void> onLoad() {
+    entity.onSet<Dead>(updateDead).asDisposable().disposeLater(this);
     entity.onSet<DidMove>(updatePosition).asDisposable().disposeLater(this);
     entity.onRemove<LocalPosition>(unmount).asDisposable().disposeLater(this);
     entity.onRemove<Renderable>(unmount).asDisposable().disposeLater(this);
@@ -49,5 +50,12 @@ class Agent extends SvgTileComponent with Disposer {
 
     add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
         EffectController(duration: 0.1)));
+  }
+
+  void updateDead(int entityId, dynamic comp) {
+    print("shouldnt be visible!!");
+    print("shouldnt be visible!!");
+    print("shouldnt be visible!!");
+    isVisible = false;
   }
 }
