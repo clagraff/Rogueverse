@@ -1,3 +1,7 @@
+import 'package:dart_mappable/dart_mappable.dart';
+
+part 'components.mapper.dart'; // This file will be generated
+
 /// Base class for components with a limited lifespan that can expire
 /// after a certain number of ticks. When lifetime reaches 0, the component
 /// is removed when processed.
@@ -37,7 +41,8 @@ abstract class AfterTick extends Lifetime {
 /// A user-friendly, non-unique label for an entity.
 ///
 /// Useful for debugging, UI display, or tagging entities.
-class Name {
+@MappableClass()
+class Name with NameMappable {
   final String name;
 
   Name({required this.name});
@@ -46,7 +51,8 @@ class Name {
 /// The grid-based position of an entity within the game world.
 ///
 /// Currently represents a global position until region support is added.
-class LocalPosition {
+@MappableClass()
+class LocalPosition with LocalPositionMappable {
   int x, y;
 
   LocalPosition({required this.x, required this.y});
@@ -59,7 +65,8 @@ extension LocalPositionExtension on LocalPosition {
 }
 
 /// Component that signals an intent to move the entity by a relative offset.
-class MoveByIntent extends AfterTick {
+@MappableClass()
+class MoveByIntent extends AfterTick with MoveByIntentMappable {
   final int dx, dy;
 
   MoveByIntent({required this.dx, required this.dy});
@@ -68,35 +75,42 @@ class MoveByIntent extends AfterTick {
 /// Component added when an entity has successfully moved in a tick.
 ///
 /// Stores the previous and new positions for downstream logic.
-class DidMove extends BeforeTick {
+@MappableClass()
+class DidMove extends BeforeTick with DidMoveMappable {
   final LocalPosition from, to;
 
   DidMove({required this.from, required this.to}) : super(1);
 }
 
 /// Marker component indicating this entity blocks movement.
-class BlocksMovement {}
+@MappableClass()
+class BlocksMovement with BlocksMovementMappable {}
 
 /// Component added when an entity's movement was blocked by another entity.
-class BlockedMove extends BeforeTick {
+@MappableClass()
+class BlockedMove extends BeforeTick with BlockedMoveMappable {
   final LocalPosition attempted;
 
   BlockedMove(this.attempted);
 }
 
 /// Marker component indicating the entity is controlled by the player.
-class PlayerControlled {}
+@MappableClass()
+class PlayerControlled with PlayerControlledMappable {}
 
-class AiControlled {}
+@MappableClass()
+class AiControlled with AiControlledMappable {}
 
 /// Component that provides a visual asset path for rendering the entity.
-class Renderable {
+@MappableClass()
+class Renderable with RenderableMappable {
   final String svgAssetPath;
 
   Renderable(this.svgAssetPath);
 }
 
-class Health {
+@MappableClass()
+class Health with HealthMappable {
   int current;
   int max;
 
@@ -123,13 +137,15 @@ extension HealthExtension on Health {
   }
 }
 
-class AttackIntent {
+@MappableClass()
+class AttackIntent with AttackIntentMappable {
   final int targetId;
 
   AttackIntent(this.targetId);
 }
 
-class DidAttack extends BeforeTick {
+@MappableClass()
+class DidAttack extends BeforeTick with DidAttackMappable{
   final int targetId;
   final int damage;
 
@@ -137,7 +153,8 @@ class DidAttack extends BeforeTick {
 }
 
 
-class WasAttacked extends BeforeTick {
+@MappableClass()
+class WasAttacked extends BeforeTick with WasAttackedMappable {
   final int sourceId;
   final int damage;
 
@@ -146,33 +163,39 @@ class WasAttacked extends BeforeTick {
 
 typedef Attacked = List<WasAttacked>;
 
-class Dead {}
+@MappableClass()
+class Dead with DeadMappable {}
 
 
 // TODO: can we change this to a typedef of Inventory = List<entityId> ??
 typedef Inventory = List<int>;
 
-class InventoryMaxCount {
+@MappableClass()
+class InventoryMaxCount with InventoryMaxCountMappable {
   final int maxAmount;
 
   InventoryMaxCount(this.maxAmount);
 }
 
-class InventoryFullFailure extends BeforeTick {
+@MappableClass()
+class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable {
   final int targetEntityId;
 
   InventoryFullFailure(this.targetEntityId);
 }
 
-class Pickupable {}
+@MappableClass()
+class Pickupable with PickupableMappable {}
 
-class PickupIntent extends AfterTick {
+@MappableClass()
+class PickupIntent extends AfterTick with PickupIntentMappable{
   final int targetEntityId;
 
   PickupIntent(this.targetEntityId);
 }
 
-class PickedUp extends BeforeTick {
+@MappableClass()
+class PickedUp extends BeforeTick with PickedUpMappable {
   final int targetEntityId;
 
   PickedUp(this.targetEntityId);

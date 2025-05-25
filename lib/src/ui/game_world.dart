@@ -130,9 +130,9 @@ class GameWorld extends flame.World with Disposer {
 
     //add(WallPlacer(chunk: chunk));
 
-    // var wallType = Archetype()
-    //     ..set<Renderable>(Renderable('images/wall.svg'))
-    //     ..set<BlocksMovement>(BlocksMovement());
+    var wallType = Archetype()
+        ..set<Renderable>(Renderable('images/wall.svg'))
+        ..set<BlocksMovement>(BlocksMovement());
 
     //add(EntityPlacer(chunk: chunk, archetype: wallType));
   }
