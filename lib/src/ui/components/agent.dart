@@ -5,11 +5,11 @@ import '../../engine/engine.gen.dart';
 import '../../ui/components/components.gen.dart';
 
 class Agent extends SvgTileComponent with HasVisibility, Disposer {
-  final Chunk chunk;
-  final Entity entity;
+  final Cell cell;
+  final Entity2 entity;
 
   Agent({
-    required this.chunk,
+    required this.cell,
     required this.entity,
     required super.svgAssetPath,
     super.position,
@@ -18,19 +18,36 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
   @override
   Future<void> onLoad() {
-    entity.onSet<Dead>(updateDead).asDisposable().disposeLater(this);
-    entity.onSet<DidMove>(updatePosition).asDisposable().disposeLater(this);
-    entity.onRemove<LocalPosition>(unmount).asDisposable().disposeLater(this);
-    entity.onRemove<Renderable>(unmount).asDisposable().disposeLater(this);
-    entity
-        .onDelete((id) {
-          removeFromParent();
-        })
-        .asDisposable()
-        .disposeLater(this);
+    EventBus().on<Dead>(entity.entityId).forEach((e) {
+      print("shouldnt be visible222!!");
+      isVisible = false;
+    });
 
-    add(AgentHealthBar(entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
+    EventBus().on<DidMove>(entity.entityId).forEach((e) {
+      var didMove = e.value;
 
+      add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
+          EffectController(duration: 0.1)));
+    });
+
+    EventBus().on<LocalPosition>(entity.entityId, [EventType.removed]).forEach((e) {
+      removeFromParent();
+    });
+
+    EventBus().on<Renderable>(entity.entityId, [EventType.removed]).forEach((e) {
+      removeFromParent();
+    });
+
+    EventBus().on<int>(entity.entityId, [EventType.removed]).forEach((e) {
+      removeFromParent();
+    });
+
+    EventBus().on<Dead>(entity.entityId).first.then((e) {
+      cell.remove(entity.entityId);
+    });
+
+
+    add(AgentHealthBar(entity2: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
 
     return super.onLoad();
   }
@@ -39,23 +56,5 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
   void onRemove() {
     disposeAll();
     super.onRemove();
-  }
-
-  void unmount(int id, dynamic comp) {
-    removeFromParent();
-  }
-
-  void updatePosition(int entityId, dynamic comp) {
-    var didMove = cast<DidMove>(comp)!;
-
-    add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
-        EffectController(duration: 0.1)));
-  }
-
-  void updateDead(int entityId, dynamic comp) {
-    print("shouldnt be visible!!");
-    print("shouldnt be visible!!");
-    print("shouldnt be visible!!");
-    isVisible = false;
   }
 }

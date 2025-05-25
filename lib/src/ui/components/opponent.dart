@@ -8,17 +8,18 @@ import 'package:rogueverse/src/ui/components/components.gen.dart';
 var random = Random();
 
 class Opponent extends Agent {
+  final EcsWorld world;
   Effect? effect;
   late BehaviorTree tree;
 
-  Opponent(
-      {required super.chunk,
+  Opponent(this.world,
+      {required super.cell,
       required super.entity,
       required super.svgAssetPath,
       super.position,
       super.size}) {
     tree = BehaviorTree(ActionNode((b) {
-      entity.set<MoveByIntent>(
+      entity.upsert<MoveByIntent>(
           MoveByIntent(dx: random.nextInt(3) - 1, dy: random.nextInt(3) - 1));
       return BehaviorStatus.success;
     }), blackboard: Blackboard());
@@ -34,12 +35,10 @@ class Opponent extends Agent {
 
   @override
   Future<void> onLoad() {
-    chunk
-        .onBeforeTick((c) {
-          tree.tick();
-        })
-        .asDisposable()
-        .disposeLater(this as Disposer);
+    EventBus().on<PreTick>().forEach((e) {
+      tree.tick();
+    });
+
     return super.onLoad();
   }
 }

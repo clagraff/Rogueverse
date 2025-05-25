@@ -642,6 +642,21 @@ class Query {
       }
     }
   }
+  /// Returns all matching entities in the [chunk].
+  Iterable<Entity2> find2(Cell cell) sync* {
+    if (_required.isEmpty) {
+      throw StateError('Query must have at least one required component.');
+    }
+
+    final firstRequiredType = _required.keys.first;
+    final store = cell.components.putIfAbsent(firstRequiredType.toString(), () => {});
+
+    for (final id in store.keys) {
+      if (isMatching2(cell, id)) {
+        yield cell.getEntity(id);
+      }
+    }
+  }
 
   /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
   Iterable<Entity> findFromIds(Chunk chunk, List<int> possibleIds) sync* {
@@ -665,6 +680,7 @@ class Query {
 
   /// Returns the first matching entity or null.
   Entity? first(Chunk chunk) => find(chunk).firstOrNull;
+  Entity2? first2(Cell cell) => find2(cell).firstOrNull;
 
   bool any(Chunk chunk) => find(chunk).firstOrNull != null;
 
@@ -695,8 +711,36 @@ class Query {
     return true;
   }
 
+  bool isMatching2(Cell cell, int entityId) {
+    for (final entry in _required.entries) {
+      final type = entry.key;
+      final predicate = entry.value;
+      final store = cell.components.putIfAbsent(type.toString(), () => {});
+      if (!store.containsKey(entityId)) return false;
+
+      if (predicate != null && !predicate(store[entityId])) {
+        return false;
+      }
+    }
+
+    for (final entry in _excluded.entries) {
+      final type = entry.key;
+      final predicate = entry.value;
+      final store = cell.components.putIfAbsent(type.toString(), () => {});
+      if (!store.containsKey(entityId)) continue;
+
+      if (predicate == null || predicate(store[entityId])) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+
   /// Returns true if the given [entity] matches the query.
   bool isMatchEntity(Entity entity) => isMatching(entity.world, entity.id);
+  bool isMatchEntity2(Entity2 entity) => isMatching2(entity.parentCell, entity.entityId);
 
   /// Returns a copy of this query.
   Query copy() {

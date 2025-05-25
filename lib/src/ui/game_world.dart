@@ -13,92 +13,41 @@ class GameWorld extends flame.World with Disposer {
   @override
   Future<void> onLoad() async {
     final game = parent!.findGame() as MyGame;
-    final chunk = game.liveChunk;
-
-    // final player = Player(
-    //   ecsWorld: chunk,
-    //   entity: chunk.entity(playerId),
-    //   svgAssetPath: 'images/player.svg',
-    //   position: flame.Vector2(0, 0),
-    // );
-    // add(player);
 
     add(FpsComponent());
     add(TimeTrackComponent());
 
-    var playerHealth = Query()
-        .require<PlayerControlled>()
-        .require<Health>();
+    var activeCell = Cell();
 
-    var healthHud = HealthBar();
-    chunk.onSetQuery(playerHealth, healthHud.onHealthChange).disposeLater(this);
-    game.camera.viewport.add(healthHud);
+    var player = activeCell.add([
+      Renderable('images/player.svg'),
+      LocalPosition(x: 0, y: 0),
+      PlayerControlled(),
+      BlocksMovement(),
+      Inventory([]),
+      InventoryMaxCount(5),
+      Health(4, 5),
+    ]);
+    var snake = activeCell.add([
+      Renderable('images/snake.svg'),
+      LocalPosition(x: 1, y: 2),
+      AiControlled(),
+      BlocksMovement(),
+    ]);
+    var wall = activeCell.add([
+      Renderable('images/wall.svg'),
+      LocalPosition(x: 1, y: 0),
+      BlocksMovement(),
+    ]);
+    activeCell.add([
+      Renderable('images/mineral.svg'),
+      LocalPosition(x: 3, y: 2),
+      Name(name: 'Iron'),
+      BlocksMovement(),
+      Health(2, 2),
+    ]);
 
-    var visibleTiles = Query().require<Renderable>().require<LocalPosition>();
 
-    chunk.onInitQuery(visibleTiles, (entity) {
-      if (_spawnedEntityIds.contains(entity.id)) return;
-      _spawnedEntityIds.add(entity.id);
-
-      var pos = entity.get<LocalPosition>()!;
-      if (entity.has<PlayerControlled>()) {
-        add(PlayerControlledAgent(
-          chunk: chunk,
-          entity: entity,
-          svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
-          position: flame.Vector2(pos.x * 32, pos.y * 32),
-        ));
-      } else {
-        if (entity.has<AiControlled>()) {
-          add(Opponent(
-            chunk: chunk,
-            entity: entity,
-            svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
-            position: flame.Vector2(pos.x * 32, pos.y * 32),
-          ));
-        } else {
-          add(Agent(
-            chunk: chunk,
-            entity: entity,
-            svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
-            position: flame.Vector2(pos.x * 32, pos.y * 32),
-          ));
-        }
-      }
-
-      return;
-    });
-
-    // Create ECS entity
-    final playerId = chunk.create();
-
-    Transaction(chunk, playerId)
-      ..set(Renderable('images/player.svg'))
-      ..set(LocalPosition(x: 0, y: 0))
-      ..set(PlayerControlled())
-      ..set(BlocksMovement())
-      ..set<Inventory>([])
-      ..set(InventoryMaxCount(5))
-      ..set(Health(4, 5))
-      ..commit();
-
-    // Create other
-    final snakeId = chunk.create();
-
-    Transaction(chunk, snakeId)
-      ..set(Renderable('images/snake.svg'))
-      ..set(LocalPosition(x: 1, y: 2))
-      ..set(AiControlled())
-      ..set(BlocksMovement())
-      ..commit();
-
-    final wall = chunk.create();
-
-    Transaction(chunk, wall)
-      ..set(Renderable('images/wall.svg'))
-      ..set(LocalPosition(x: 1, y: 0))
-      ..set(BlocksMovement())
-      ..commit();
 
     var r = Random();
     var next = r.nextInt(5) + 3;
@@ -111,30 +60,58 @@ class GameWorld extends flame.World with Disposer {
         y = r.nextInt(10) * (r.nextBool() ? 1 : -1);
       }
 
-      Transaction(chunk, chunk.create())
-        ..set(Renderable('images/item_small.svg'))
-        ..set(LocalPosition(x: x, y: y))
-        ..set(Pickupable())
-        ..set(Name(name: 'Loot'))
-        ..commit();
+      activeCell.add([
+        Renderable('images/item_small.svg'),
+        LocalPosition(x: x, y: y),
+        Pickupable(),
+        Name(name: 'Loot'),
+      ]);
     }
 
+    game.ecsWorld.cells.add(activeCell);
 
-    Transaction(chunk, chunk.create())
-      ..set(Renderable('images/mineral.svg'))
-      ..set(LocalPosition(x: 3, y: 2))
-      ..set(Name(name: 'Iron'))
-      ..set(BlocksMovement())
-      ..set(Health(2, 2))
-      ..commit();
+    var healthHud = HealthBar();
+    EventBus().on<Health>(player).forEach((e) {
+      healthHud.onHealthChange(e.id);
+    });
+    game.camera.viewport.add(healthHud);
+
+    // TODO: handle EventBus() for new Renderables.
+    activeCell
+        .entities()
+        .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
+        .forEach((entity) {
+      var pos = entity.get<LocalPosition>()!;
+      if (entity.has<PlayerControlled>()) {
+        add(PlayerControlledAgent(
+          cell: activeCell,
+          entity: activeCell.getEntity(player),
+          svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
+          position: flame.Vector2(pos.x * 32, pos.y * 32),
+        ));
+        return;
+      }
+      if (entity.has<AiControlled>()) {
+        add(Opponent(
+          game.ecsWorld,
+          cell: activeCell,
+          entity: activeCell.getEntity(entity.entityId),
+          svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
+          position: flame.Vector2(pos.x * 32, pos.y * 32),
+        ));
+        return;
+      }
+
+      add(Agent(
+        cell: activeCell,
+        entity: activeCell.getEntity(entity.entityId),
+        svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
+        position: flame.Vector2(pos.x * 32, pos.y * 32),
+      ));
+    });
+
 
     //add(WallPlacer(chunk: chunk));
-
-    var wallType = Archetype()
-        ..set<Renderable>(Renderable('images/wall.svg'))
-        ..set<BlocksMovement>(BlocksMovement());
-
-    //add(EntityPlacer(chunk: chunk, archetype: wallType));
   }
 
   @override

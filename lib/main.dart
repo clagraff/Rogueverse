@@ -18,7 +18,9 @@ class MyGame extends FlameGame
   var debugMode = false;
 
   late final Chunk liveChunk;
+  late final Cell liveCell;
   late final GameEngine engine;
+  late final EcsWorld ecsWorld;
   late final ScrollDispatcher scrollDispatcher;
 
   MyGame() {
@@ -26,14 +28,17 @@ class MyGame extends FlameGame
 
     liveChunk = Chunk();
 
-    engine = GameEngine([
-      liveChunk
-    ], [
+    var systems2 = [
       CollisionSystem(),
       MovementSystem(),
       InventorySystem(),
       CombatSystem(),
-    ]);
+    ];
+    engine = GameEngine([
+      liveChunk
+    ], systems2);
+
+    ecsWorld = EcsWorld(systems2, []);
   }
 
   @override
@@ -61,6 +66,7 @@ class MyGame extends FlameGame
 
   void tickEcs() {
     engine.tick();
+    ecsWorld.tick();
   }
 }
 

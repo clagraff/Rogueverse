@@ -55,7 +55,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   Function()? toggleInventoryOverlay;
 
   PlayerControlledAgent(
-      {required super.chunk,
+      {required super.cell,
       required super.entity,
       required super.svgAssetPath,
       super.position,
@@ -73,9 +73,9 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
 
   void showTable(FlameGame game) {
     var sourceContext = game.buildContext!;
-    var player = chunk.entitiesWith<PlayerControlled>().first;
-    var itemIds = player.get<Inventory>() ?? [];
-    var items = itemIds.map((id) => chunk.entity(id)).toList();
+    var player = cell.getEntity(cell.get<PlayerControlled>().keys.first);
+    var itemIds = player.get<Inventory>()?.items ?? [];
+    var items = itemIds.map((id) => cell.getEntity(id)).toList();
 
     toggleInventoryOverlay = addOverlay(
         game: game,
@@ -141,18 +141,20 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
         break;
     }
 
-    var target = Query()
+
+    var target2 = Query()
         .require<BlocksMovement>()
         .require<LocalPosition>((c) {
       return c.x == curr.x + dv.x && c.y == curr.y + dv.y;
-    }).first(chunk);
-    if (target == null) {
+    }).first2(cell);
+
+    if (target2 == null) {
       // Nothing obstructing movement, so move
-      entity.set(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
+      entity.upsert(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
     } else {
-      var hasHealth = target.get<Health>() != null;
+      var hasHealth = target2.get<Health>() != null;
       if (hasHealth) {
-        entity.set<AttackIntent>(AttackIntent(target.id));
+        entity.upsert<AttackIntent>(AttackIntent(target2.entityId));
       }
     }
 
@@ -172,9 +174,10 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
               return c.x == pos.x && c.y == pos.y;
             })
             .require<Pickupable>()
-            .first(chunk);
+            .first2(cell);
+
         if (firstItemAtFeet != null) {
-          entity.set<PickupIntent>(PickupIntent(firstItemAtFeet.id));
+          entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.entityId));
 
           game.tickEcs();
           return true; // handled

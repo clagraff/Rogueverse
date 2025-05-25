@@ -20,7 +20,7 @@ class HealthBar extends Component {
               ));
 
 
-  void onHealthChange(Entity e) {
+  void onHealthChange(Entity2 e) {
     health = max(e.get<Health>()!.current, 0); // Dont allow anything below zero.
     children.clear();
 

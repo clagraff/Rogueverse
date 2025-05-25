@@ -10,7 +10,7 @@ import '../../engine/engine.gen.dart';
 /// The health bar consists of a background bar, foreground bar showing current health,
 /// and numerical health value display.
 class AgentHealthBar extends PositionComponent with Disposer {
-  final Entity entity;
+  final Entity2 entity2;
   late RectangleComponent background;
   late RectangleComponent foreground;
   late TextComponent text;
@@ -23,7 +23,7 @@ class AgentHealthBar extends PositionComponent with Disposer {
   /// - [position]: Position offset for the health bar
   /// - [size]: Dimensions of the health bar
   AgentHealthBar({
-    required this.entity,
+    required this.entity2,
     super.position,
     super.size,
   });
@@ -32,11 +32,9 @@ class AgentHealthBar extends PositionComponent with Disposer {
   /// Creates the background bar, foreground health bar, and health text display.
   @override
   FutureOr<void> onLoad() {
-    entity.onSet<Health>((e, c) => updateBar()).asDisposable().disposeLater(this);
-    entity
-        .onUpdate<Health>((e, c) => updateBar())
-        .asDisposable()
-        .disposeLater(this);
+    EventBus().on<Health>(entity2.entityId).forEach((e) {
+      updateBar();
+    });
 
     // Always spans the whole width.
     background = RectangleComponent(
@@ -81,7 +79,7 @@ class AgentHealthBar extends PositionComponent with Disposer {
   /// Animates the foreground bar size and updates the numerical health display.
   /// Hides the bars if the entity has no health component.
   void updateBar() {
-    var health = entity.get<Health>();
+    var health = entity2.get<Health>();
     if (health != null) {
       // If we have a health component, set the background to full-size.
       background.size.x = size.x;

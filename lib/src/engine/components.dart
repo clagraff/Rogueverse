@@ -1,6 +1,9 @@
 import 'package:dart_mappable/dart_mappable.dart';
+import 'events.dart';
 
 part 'components.mapper.dart'; // This file will be generated
+
+typedef ComponentType = String;
 
 /// Base class for components with a limited lifespan that can expire
 /// after a certain number of ticks. When lifetime reaches 0, the component
@@ -38,6 +41,97 @@ abstract class AfterTick extends Lifetime {
   AfterTick([super.lifetime = 0]);
 }
 
+
+class Entity2 {
+  final Cell parentCell;
+  final int entityId;
+
+  Entity2({required this.parentCell, required this.entityId});
+
+  bool has<C>() {
+    var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
+    return entitiesWithComponent.containsKey(entityId);
+  }
+
+  C? get<C>([C? orDefault]) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
+    if (entitiesWithComponent.containsKey(entityId)) {
+      return entitiesWithComponent[entityId] as C;
+    }
+
+    if (orDefault != null) {
+      entitiesWithComponent[entityId] = orDefault;
+      EventBus().publish(Event<C>(eventType:EventType.added, id: entityId, value: orDefault));
+
+      return orDefault;
+    }
+
+    return null;
+  }
+
+  void upsert<C>(C c) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
+    var alreadyExisted = entitiesWithComponent.containsKey(entityId);
+
+    entitiesWithComponent[entityId] = c;
+
+    EventBus().publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: entityId, value: c));
+  }
+
+  void remove<C>() {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
+    var componentExists = entitiesWithComponent.containsKey(entityId);
+
+    if (componentExists) {
+      var oldComponent = entitiesWithComponent[entityId] as C;
+      entitiesWithComponent.remove(entityId);
+
+      EventBus().publish(Event<C>(eventType: EventType.removed, id: entityId, value: oldComponent));
+    }
+  }
+}
+
+@MappableClass()
+class Cell with CellMappable {
+  int lastId = 0;
+  final Map<String, Map<int, dynamic>> components = {};
+
+  Entity2 getEntity(int entityId) {
+    return Entity2(parentCell: this, entityId: entityId);
+  }
+  
+  List<Entity2> entities() {
+    var entityIds = <int>{};
+    for (var componentMap in components.values) {
+      entityIds.addAll(componentMap.keys);
+    }
+    return entityIds.map((id) => getEntity(id)).toList();
+  }
+
+  Map<int, dynamic> get<C>() {
+    return components.putIfAbsent(C.toString(), () => {});
+  }
+
+  int add(List<dynamic> comps) {
+    var entityId = lastId++;
+    for(var c in comps) {
+      var entitiesWithComponent = components.putIfAbsent(c.runtimeType.toString(), () => {});
+      entitiesWithComponent[entityId] = c;
+    }
+
+    EventBus().publish(Event<int>(eventType: EventType.added, id: null, value: entityId, ));
+    return entityId;
+  }
+
+  void remove(int entityId) {
+    for(var entityComponentMap in components.entries) {
+      entityComponentMap.value.removeWhere((id, c) => id == entityId);
+    }
+
+    EventBus().publish(Event<int>(eventType: EventType.removed, id: null, value: entityId, ));
+  }
+}
+
 /// A user-friendly, non-unique label for an entity.
 ///
 /// Useful for debugging, UI display, or tagging entities.
@@ -59,6 +153,7 @@ class LocalPosition with LocalPositionMappable {
 }
 
 extension LocalPositionExtension on LocalPosition {
+  // TODO: with the dart_mapper, might be able to use `==` comparison.
   bool sameLocation(LocalPosition other) {
     return x == other.x && y == other.y;
   }
@@ -167,8 +262,12 @@ typedef Attacked = List<WasAttacked>;
 class Dead with DeadMappable {}
 
 
-// TODO: can we change this to a typedef of Inventory = List<entityId> ??
-typedef Inventory = List<int>;
+@MappableClass()
+class Inventory with InventoryMappable {
+  final List<int> items;
+
+  Inventory(this.items);
+}
 
 @MappableClass()
 class InventoryMaxCount with InventoryMaxCountMappable {
@@ -200,3 +299,25 @@ class PickedUp extends BeforeTick with PickedUpMappable {
 
   PickedUp(this.targetEntityId);
 }
+
+// class ComponentRegistry {
+//   static final Map<String, dynamic Function(String)> _mappers = {};
+//
+//   static void initialize() {
+//     _mappers['LocalPosition'] = LocalPositionMapper.fromJson;
+//     _mappers['Health'] = HealthMapper.fromJson;
+//     _mappers['Name'] = NameMapper.fromJson;
+//     _mappers['Inventory'] = (String array) => []; // TODO fix this
+//     _mappers['PlayerControlled'] = PlayerControlledMapper.fromJson;
+//     _mappers['BlocksMovement'] = BlocksMovementMapper.fromJson;
+//     // Register all component mappers
+//   }
+//
+//   static dynamic fromJson(String typeName, dynamic json) {
+//     final mapper = _mappers[typeName];
+//     if (mapper == null) {
+//       throw Exception('No mapper registered for component type: $typeName');
+//     }
+//     return mapper(json);
+//   }
+// }

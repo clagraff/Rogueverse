@@ -6,6 +6,103 @@
 
 part of 'components.dart';
 
+class CellMapper extends ClassMapperBase<Cell> {
+  CellMapper._();
+
+  static CellMapper? _instance;
+  static CellMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CellMapper._());
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Cell';
+
+  static int _$lastId(Cell v) => v.lastId;
+  static const Field<Cell, int> _f$lastId =
+      Field('lastId', _$lastId, mode: FieldMode.member);
+  static Map<String, Map<int, dynamic>> _$components(Cell v) => v.components;
+  static const Field<Cell, Map<String, Map<int, dynamic>>> _f$components =
+      Field('components', _$components, mode: FieldMode.member);
+
+  @override
+  final MappableFields<Cell> fields = const {
+    #lastId: _f$lastId,
+    #components: _f$components,
+  };
+
+  static Cell _instantiate(DecodingData data) {
+    return Cell();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Cell fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Cell>(map);
+  }
+
+  static Cell fromJson(String json) {
+    return ensureInitialized().decodeJson<Cell>(json);
+  }
+}
+
+mixin CellMappable {
+  String toJson() {
+    return CellMapper.ensureInitialized().encodeJson<Cell>(this as Cell);
+  }
+
+  Map<String, dynamic> toMap() {
+    return CellMapper.ensureInitialized().encodeMap<Cell>(this as Cell);
+  }
+
+  CellCopyWith<Cell, Cell, Cell> get copyWith =>
+      _CellCopyWithImpl<Cell, Cell>(this as Cell, $identity, $identity);
+  @override
+  String toString() {
+    return CellMapper.ensureInitialized().stringifyValue(this as Cell);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return CellMapper.ensureInitialized().equalsValue(this as Cell, other);
+  }
+
+  @override
+  int get hashCode {
+    return CellMapper.ensureInitialized().hashValue(this as Cell);
+  }
+}
+
+extension CellValueCopy<$R, $Out> on ObjectCopyWith<$R, Cell, $Out> {
+  CellCopyWith<$R, Cell, $Out> get $asCell =>
+      $base.as((v, t, t2) => _CellCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class CellCopyWith<$R, $In extends Cell, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  $R call();
+  CellCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _CellCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Cell, $Out>
+    implements CellCopyWith<$R, Cell, $Out> {
+  _CellCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Cell> $mapper = CellMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  Cell $make(CopyWithData data) => Cell();
+
+  @override
+  CellCopyWith<$R2, Cell, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _CellCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
 class NameMapper extends ClassMapperBase<Name> {
   NameMapper._();
 
@@ -1442,6 +1539,114 @@ class _DeadCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Dead, $Out>
   @override
   DeadCopyWith<$R2, Dead, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
       _DeadCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class InventoryMapper extends ClassMapperBase<Inventory> {
+  InventoryMapper._();
+
+  static InventoryMapper? _instance;
+  static InventoryMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = InventoryMapper._());
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Inventory';
+
+  static List<int> _$items(Inventory v) => v.items;
+  static const Field<Inventory, List<int>> _f$items = Field('items', _$items);
+
+  @override
+  final MappableFields<Inventory> fields = const {
+    #items: _f$items,
+  };
+
+  static Inventory _instantiate(DecodingData data) {
+    return Inventory(data.dec(_f$items));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Inventory fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Inventory>(map);
+  }
+
+  static Inventory fromJson(String json) {
+    return ensureInitialized().decodeJson<Inventory>(json);
+  }
+}
+
+mixin InventoryMappable {
+  String toJson() {
+    return InventoryMapper.ensureInitialized()
+        .encodeJson<Inventory>(this as Inventory);
+  }
+
+  Map<String, dynamic> toMap() {
+    return InventoryMapper.ensureInitialized()
+        .encodeMap<Inventory>(this as Inventory);
+  }
+
+  InventoryCopyWith<Inventory, Inventory, Inventory> get copyWith =>
+      _InventoryCopyWithImpl<Inventory, Inventory>(
+          this as Inventory, $identity, $identity);
+  @override
+  String toString() {
+    return InventoryMapper.ensureInitialized()
+        .stringifyValue(this as Inventory);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return InventoryMapper.ensureInitialized()
+        .equalsValue(this as Inventory, other);
+  }
+
+  @override
+  int get hashCode {
+    return InventoryMapper.ensureInitialized().hashValue(this as Inventory);
+  }
+}
+
+extension InventoryValueCopy<$R, $Out> on ObjectCopyWith<$R, Inventory, $Out> {
+  InventoryCopyWith<$R, Inventory, $Out> get $asInventory =>
+      $base.as((v, t, t2) => _InventoryCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class InventoryCopyWith<$R, $In extends Inventory, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  ListCopyWith<$R, int, ObjectCopyWith<$R, int, int>> get items;
+  $R call({List<int>? items});
+  InventoryCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _InventoryCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Inventory, $Out>
+    implements InventoryCopyWith<$R, Inventory, $Out> {
+  _InventoryCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Inventory> $mapper =
+      InventoryMapper.ensureInitialized();
+  @override
+  ListCopyWith<$R, int, ObjectCopyWith<$R, int, int>> get items => ListCopyWith(
+      $value.items,
+      (v, t) => ObjectCopyWith(v, $identity, t),
+      (v) => call(items: v));
+  @override
+  $R call({List<int>? items}) =>
+      $apply(FieldCopyWithData({if (items != null) #items: items}));
+  @override
+  Inventory $make(CopyWithData data) =>
+      Inventory(data.get(#items, or: $value.items));
+
+  @override
+  InventoryCopyWith<$R2, Inventory, $Out2> $chain<$R2, $Out2>(
+          Then<$Out2, $R2> t) =>
+      _InventoryCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class InventoryMaxCountMapper extends ClassMapperBase<InventoryMaxCount> {

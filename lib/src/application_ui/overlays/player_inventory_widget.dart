@@ -19,7 +19,7 @@ extension MapSelect<K, V> on Map<K, V> {
 
 class PlayerInventoryWidget extends StatefulWidget {
   final Game game;
-  final List<Entity> inventory;
+  final List<Entity2> inventory;
   final Function()? onClose;
 
   const PlayerInventoryWidget({
