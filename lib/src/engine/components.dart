@@ -150,19 +150,7 @@ class Dead {}
 
 
 // TODO: can we change this to a typedef of Inventory = List<entityId> ??
-class Inventory {
-  final List<int> entityIds;
-
-  Inventory(this.entityIds);
-}
-
-extension InventoryExtension on Inventory {
-  Inventory cloneWith(List<int> newIds) {
-    return Inventory(
-      [...entityIds, ...newIds],
-    );
-  }
-}
+typedef Inventory = List<int>;
 
 class InventoryMaxCount {
   final int maxAmount;

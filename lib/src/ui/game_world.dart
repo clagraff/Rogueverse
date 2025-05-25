@@ -77,7 +77,7 @@ class GameWorld extends flame.World with Disposer {
       ..set(LocalPosition(x: 0, y: 0))
       ..set(PlayerControlled())
       ..set(BlocksMovement())
-      ..set(Inventory([]))
+      ..set<Inventory>([])
       ..set(InventoryMaxCount(5))
       ..set(Health(4, 5))
       ..commit();

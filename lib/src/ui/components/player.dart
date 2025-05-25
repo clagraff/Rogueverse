@@ -74,7 +74,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   void showTable(FlameGame game) {
     var sourceContext = game.buildContext!;
     var player = chunk.entitiesWith<PlayerControlled>().first;
-    var itemIds = player.get<Inventory>()?.entityIds ?? [];
+    var itemIds = player.get<Inventory>() ?? [];
     var items = itemIds.map((id) => chunk.entity(id)).toList();
 
     toggleInventoryOverlay = addOverlay(

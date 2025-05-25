@@ -149,7 +149,7 @@ class InventorySystem extends System {
 
       var invMax = source.get<InventoryMaxCount>();
       if (invMax != null &&
-          source.get<Inventory>()!.entityIds.length + 1 > invMax.maxAmount) {
+          source.get<Inventory>()!.length + 1 > invMax.maxAmount) {
         // Inventory is maxed out, set a failure state and return.
         source.set<InventoryFullFailure>(InventoryFullFailure(target.id));
         return;
@@ -160,10 +160,7 @@ class InventorySystem extends System {
       target.remove<Renderable>();
       target.remove<LocalPosition>();
 
-      var cloneWith =
-          source.get<Inventory>()!.cloneWith([pickupIntent.targetEntityId]);
-      source.set<Inventory>(
-          cloneWith); // Update inventory to include latest object
+      source.set<Inventory>([...source.get<Inventory>()!, pickupIntent.targetEntityId]); // Update inventory to include latest object
       source.set<PickedUp>(PickedUp(
           pickupIntent.targetEntityId)); // Allow for notifying of new item
     });
