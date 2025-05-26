@@ -3,9 +3,9 @@ import 'package:flame/events.dart';
 import 'package:rogueverse/src/engine/engine.gen.dart';
 
 class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
-  final Chunk chunk;
+  final Cell cell;
 
-  WallPlacer({required this.chunk});
+  WallPlacer({required this.cell});
 
   @override
   void onRemove() {
@@ -27,7 +27,7 @@ class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
         .require<LocalPosition>(
             (lp) => lp.x == escPosition.x && lp.y == escPosition.y)
         .require<BlocksMovement>()
-        .find(chunk)
+        .find2(cell)
         .toList();
 
     if (matches.isNotEmpty) {
@@ -37,12 +37,10 @@ class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
       return;
     }
 
-    final wall = chunk.create();
-
-    Transaction(chunk, wall)
-      ..set<Renderable>(Renderable('images/wall.svg'))
-      ..set<LocalPosition>(escPosition)
-      ..set(BlocksMovement())
-      ..commit();
+    cell.add([
+      Renderable('images/wall.svg'),
+      escPosition,
+      BlocksMovement(),
+    ]);
   }
 }

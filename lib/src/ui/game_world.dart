@@ -8,8 +8,6 @@ import 'package:rogueverse/src/ui/components/components.gen.dart';
 import 'package:rogueverse/src/ui/hud/health_bar.dart';
 
 class GameWorld extends flame.World with Disposer {
-  final _spawnedEntityIds = <int>{};
-
   @override
   Future<void> onLoad() async {
     final game = parent!.findGame() as MyGame;

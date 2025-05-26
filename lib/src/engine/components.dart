@@ -89,6 +89,10 @@ class Entity2 {
       EventBus().publish(Event<C>(eventType: EventType.removed, id: entityId, value: oldComponent));
     }
   }
+
+  void destroy() {
+    parentCell.remove(entityId);
+  }
 }
 
 @MappableClass()

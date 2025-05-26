@@ -30,10 +30,7 @@ abstract class System {
   /// Systems are executed in ascending order of priority.
   int get priority => System.defaultPriority;
 
-  /// Called once per tick to apply logic to the given [world].
-  void update(Chunk world);
-
-  void update2(EcsWorld world, Cell cell);
+  void update(EcsWorld world, Cell cell);
 }
 
 /// A system that handles collision detection by checking for blocked movement.
@@ -44,42 +41,7 @@ class CollisionSystem extends System {
   int get priority => 1;
 
   @override
-  void update(Chunk world) {
-    final positions = world.components<LocalPosition>();
-    final blocks = world.components<BlocksMovement>();
-    final moveIntents = world.components<MoveByIntent>();
-
-    final movingEntityIds = moveIntents.ids;
-
-    if (blocks.components.isEmpty) return;
-
-    for (final id in movingEntityIds) {
-      final e = world.entity(id);
-      final pos = e.get<LocalPosition>();
-      final intent = e.get<MoveByIntent>();
-
-      if (pos == null || intent == null) continue;
-
-      final dest = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-      var blocked = false;
-
-      positions.components.forEach((key, value) {
-        if (value.x == dest.x &&
-            value.y == dest.y &&
-            world.has<BlocksMovement>(key)) {
-          blocked = true;
-        }
-      });
-
-      if (blocked) {
-        e.set(BlockedMove(dest));
-        e.remove<MoveByIntent>();
-      }
-    }
-  }
-
-  @override
-  void update2(EcsWorld world, Cell cell) {
+  void update(EcsWorld world, Cell cell) {
     final positions = cell.get<LocalPosition>();
     final blocks = cell.get<BlocksMovement>();
     final moveIntents = cell.get<MoveByIntent>();
@@ -122,32 +84,7 @@ class MovementSystem extends System {
   int get priority => CollisionSystem().priority + 1;
 
   @override
-  void update(Chunk world) {
-    final moveIntents = world.components<MoveByIntent>();
-    final ids = List<int>.from(moveIntents.components.keys);
-
-    for (final id in ids) {
-      final e = world.entity(id);
-      final pos = e.get<LocalPosition>();
-      final intent = e.get<MoveByIntent>();
-      if (pos == null || intent == null) continue;
-
-      final from = LocalPosition(x: pos.x, y: pos.y);
-      final to = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-      //e.set(to);
-
-      e.update<LocalPosition>((p) {
-        p.x = pos.x + intent.dx;
-        p.y = pos.y + intent.dy;
-      });
-
-      e.set(DidMove(from: from, to: to));
-      e.remove<MoveByIntent>();
-    }
-  }
-
-  @override
-  void update2(EcsWorld world, Cell cell) {
+  void update(EcsWorld world, Cell cell) {
     final moveIntents = cell.get<MoveByIntent>();
     final ids = moveIntents.keys.toList();
 
@@ -179,55 +116,7 @@ class InventorySystem extends System {
   int get priority => 1;
 
   @override
-  void update(Chunk world) {
-    final pickupIntents = world.components<PickupIntent>();
-    if (pickupIntents.components.isEmpty) {
-      return;
-    }
-
-    // need to use a copy so we can modify elements within our loop...
-    var components = Map.from(pickupIntents.components);
-
-    components.forEach((sourceId, intent) {
-      var pickupIntent = intent as PickupIntent;
-      var source = world.entity(sourceId);
-      var target = world.entity(pickupIntent.targetEntityId);
-
-      if (!canPickup.isMatchEntity(source) ||
-          !canBePickedUp.isMatchEntity(target)) {
-        return; // Skip. TODO: Add some kind of error feedback or message?
-      }
-
-      if (!source
-          .get<LocalPosition>()!
-          .sameLocation(target.get<LocalPosition>()!)) {
-        return; // Skip
-      }
-
-      // At this point, no matter what happens, we can remove this intent.
-      source.remove<PickupIntent>();
-
-      var invMax = source.get<InventoryMaxCount>();
-      if (invMax != null &&
-          source.get<Inventory>()!.items.length + 1 > invMax.maxAmount) {
-        // Inventory is maxed out, set a failure state and return.
-        source.set<InventoryFullFailure>(InventoryFullFailure(target.id));
-        return;
-      }
-
-      target
-          .remove<Pickupable>(); // Cannot be picked up again once in inventory.
-      target.remove<Renderable>();
-      target.remove<LocalPosition>();
-
-      source.set<Inventory>(Inventory([...source.get<Inventory>()!.items, pickupIntent.targetEntityId])); // Update inventory to include latest object
-      source.set<PickedUp>(PickedUp(
-          pickupIntent.targetEntityId)); // Allow for notifying of new item
-    });
-  }
-
-  @override
-  void update2(EcsWorld world, Cell cell) {
+  void update(EcsWorld world, Cell cell) {
     final pickupIntents = cell.get<PickupIntent>();
     if (pickupIntents.isEmpty) {
       return;
@@ -281,39 +170,7 @@ class CombatSystem extends System {
   int get priority => CollisionSystem().priority + 2; // TODO: Go after movement I guess?
 
   @override
-  void update(Chunk world) {
-    final attackIntents = world.components<AttackIntent>();
-
-    var components = Map.from(attackIntents.components);
-    components.forEach((sourceId, intent) {
-      var attackIntent = intent as AttackIntent;
-      var source = world.entity(sourceId);
-      var target = world.entity(attackIntent.targetId);
-
-      target.update<Health>((health) {
-        // TODO change how damage is calculated
-        health.current -= 1;
-        if (health.current <= 0) {
-          health.current = 0;
-
-          // TODO: this doesnt actually prevent other systems from processing
-          // this now-dead entity.
-          target.set(Dead());
-        }
-
-        // TODO this assumes the Attacked compont already exists. That may not be the case.
-        target.update<Attacked>((attacked) {
-          attacked.add(WasAttacked(sourceId: sourceId, damage: 1));
-        });
-      });
-
-      source.remove<AttackIntent>();
-      source.set<DidAttack>(DidAttack(targetId: target.id, damage: 1));
-    });
-  }
-
-  @override
-  void update2(EcsWorld world, Cell cell) {
+  void update(EcsWorld world, Cell cell) {
     final attackIntents = cell.get<AttackIntent>();
 
     var components = Map.from(attackIntents);
@@ -343,26 +200,6 @@ class CombatSystem extends System {
 }
 
 
-/// A high-level coordinator that advances ECS game logic by executing systems.
-class GameEngine {
-  final List<Chunk> chunks;
-  final List<System> systems;
-
-  GameEngine(this.chunks, this.systems);
-
-  /// Executes a single ECS update tick.
-  void tick() {
-    var sortedSystems = systems
-      ..sort((a, b) => a.priority.compareTo(b
-          .priority)); // TODO: move this elsewhere? Just sort once? Or when new systems are added?
-
-    for (var chunk in chunks) {
-      chunk.tick(sortedSystems);
-    }
-  }
-}
-
-
 class PreTick {
   final int tickId;
 
@@ -372,7 +209,6 @@ class PostTick{
   final int tickId;
 
   PostTick(this.tickId);
-
 }
 
 class EcsWorld {
@@ -393,7 +229,7 @@ class EcsWorld {
 
     for(var s in sortedSystems) {
       for(var c in cells) {
-        s.update2(this, c);
+        s.update(this, c);
       }
     }
 
