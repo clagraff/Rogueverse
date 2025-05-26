@@ -8,7 +8,7 @@ import 'package:rogueverse/src/ui/components/components.gen.dart';
 var random = Random();
 
 class Opponent extends Agent {
-  final EcsWorld world;
+  final Registry world;
   Effect? effect;
   late BehaviorTree tree;
 
@@ -35,7 +35,7 @@ class Opponent extends Agent {
 
   @override
   Future<void> onLoad() {
-    EventBus().on<PreTick>().forEach((e) {
+    EventBus().on<PreTickEvent>().forEach((e) {
       tree.tick();
     });
 

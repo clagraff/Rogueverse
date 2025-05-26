@@ -28,9 +28,10 @@ abstract class System {
   static const int defaultPriority = 1;
 
   /// Systems are executed in ascending order of priority.
+  // TODO: Change to just using the order of systems as provided to a world isntance?
   int get priority => System.defaultPriority;
 
-  void update(EcsWorld world, Cell cell);
+  void update(Registry world, Cell cell);
 }
 
 /// A system that handles collision detection by checking for blocked movement.
@@ -41,7 +42,7 @@ class CollisionSystem extends System {
   int get priority => 1;
 
   @override
-  void update(EcsWorld world, Cell cell) {
+  void update(Registry world, Cell cell) {
     final positions = cell.get<LocalPosition>();
     final blocks = cell.get<BlocksMovement>();
     final moveIntents = cell.get<MoveByIntent>();
@@ -84,7 +85,7 @@ class MovementSystem extends System {
   int get priority => CollisionSystem().priority + 1;
 
   @override
-  void update(EcsWorld world, Cell cell) {
+  void update(Registry world, Cell cell) {
     final moveIntents = cell.get<MoveByIntent>();
     final ids = moveIntents.keys.toList();
 
@@ -116,7 +117,7 @@ class InventorySystem extends System {
   int get priority => 1;
 
   @override
-  void update(EcsWorld world, Cell cell) {
+  void update(Registry world, Cell cell) {
     final pickupIntents = cell.get<PickupIntent>();
     if (pickupIntents.isEmpty) {
       return;
@@ -170,7 +171,7 @@ class CombatSystem extends System {
   int get priority => CollisionSystem().priority + 2; // TODO: Go after movement I guess?
 
   @override
-  void update(EcsWorld world, Cell cell) {
+  void update(Registry world, Cell cell) {
     final attackIntents = cell.get<AttackIntent>();
 
     var components = Map.from(attackIntents);
@@ -200,27 +201,32 @@ class CombatSystem extends System {
 }
 
 
-class PreTick {
+/// A simple Event marker to be used to hook into pre-tick processing.
+class PreTickEvent {
+  /// ID of the current tick being process.
   final int tickId;
 
-  PreTick(this.tickId);
+  PreTickEvent(this.tickId);
 }
-class PostTick{
+
+/// A simple Event marker to be used to hook into pre-tick processing.
+class PostTickEvent{
+  /// ID of the current tick being process.
   final int tickId;
 
-  PostTick(this.tickId);
+  PostTickEvent(this.tickId);
 }
 
-class EcsWorld {
+class Registry {
   int tickId = 0;
   final List<Cell> cells;
   final List<System> systems;
 
-  EcsWorld(this.systems, this.cells);
+  Registry(this.systems, this.cells);
 
   /// Executes a single ECS update tick.
   void tick() {
-    EventBus().publish(Event<PreTick>(eventType: EventType.updated, value: PreTick(tickId), id: tickId));
+    EventBus().publish(Event<PreTickEvent>(eventType: EventType.updated, value: PreTickEvent(tickId), id: tickId));
     clearLifetimeComponents<BeforeTick>();
 
     var sortedSystems = systems
@@ -234,7 +240,7 @@ class EcsWorld {
     }
 
     clearLifetimeComponents<AfterTick>();
-    EventBus().publish(Event<PostTick>(eventType: EventType.updated, value: PostTick(tickId), id: tickId));
+    EventBus().publish(Event<PostTickEvent>(eventType: EventType.updated, value: PostTickEvent(tickId), id: tickId));
 
     tickId++; // TODO: wrap around to avoid out of bounds type error?
   }

@@ -8,6 +8,7 @@ typedef ComponentType = String;
 /// Base class for components with a limited lifespan that can expire
 /// after a certain number of ticks. When lifetime reaches 0, the component
 /// is removed when processed.
+// TODO check if this needs to have @MappableClass on it
 abstract class Lifetime {
   int _lifetime;
 
@@ -95,10 +96,16 @@ class Entity {
   }
 }
 
-@MappableClass()
+
+@MappableClass(discriminatorValue: 'cell')
 class Cell with CellMappable {
   int lastId = 0;
-  final Map<String, Map<int, dynamic>> components = {};
+  Map<String, Map<int, dynamic>> components = {};
+
+  Cell({Map<String, Map<int, dynamic>>? components, int? lastId})
+      : components = components ?? {},
+        lastId = lastId ?? 0;
+
 
   Entity getEntity(int entityId) {
     return Entity(parentCell: this, id: entityId);
@@ -136,10 +143,11 @@ class Cell with CellMappable {
   }
 }
 
+
 /// A user-friendly, non-unique label for an entity.
 ///
 /// Useful for debugging, UI display, or tagging entities.
-@MappableClass()
+@MappableClass(discriminatorValue: 'name')
 class Name with NameMappable {
   final String name;
 
@@ -149,7 +157,7 @@ class Name with NameMappable {
 /// The grid-based position of an entity within the game world.
 ///
 /// Currently represents a global position until region support is added.
-@MappableClass()
+@MappableClass(discriminatorValue: 'localPosition')
 class LocalPosition with LocalPositionMappable {
   int x, y;
 
@@ -164,7 +172,7 @@ extension LocalPositionExtension on LocalPosition {
 }
 
 /// Component that signals an intent to move the entity by a relative offset.
-@MappableClass()
+@MappableClass(discriminatorValue: 'moveByIntent')
 class MoveByIntent extends AfterTick with MoveByIntentMappable {
   final int dx, dy;
 
@@ -174,7 +182,7 @@ class MoveByIntent extends AfterTick with MoveByIntentMappable {
 /// Component added when an entity has successfully moved in a tick.
 ///
 /// Stores the previous and new positions for downstream logic.
-@MappableClass()
+@MappableClass(discriminatorValue: 'didMove')
 class DidMove extends BeforeTick with DidMoveMappable {
   final LocalPosition from, to;
 
@@ -182,11 +190,11 @@ class DidMove extends BeforeTick with DidMoveMappable {
 }
 
 /// Marker component indicating this entity blocks movement.
-@MappableClass()
+@MappableClass(discriminatorValue: 'blocksMovement')
 class BlocksMovement with BlocksMovementMappable {}
 
 /// Component added when an entity's movement was blocked by another entity.
-@MappableClass()
+@MappableClass(discriminatorValue: 'blockedMove')
 class BlockedMove extends BeforeTick with BlockedMoveMappable {
   final LocalPosition attempted;
 
@@ -194,21 +202,21 @@ class BlockedMove extends BeforeTick with BlockedMoveMappable {
 }
 
 /// Marker component indicating the entity is controlled by the player.
-@MappableClass()
+@MappableClass(discriminatorValue: 'playerControlled')
 class PlayerControlled with PlayerControlledMappable {}
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'aiControlled')
 class AiControlled with AiControlledMappable {}
 
 /// Component that provides a visual asset path for rendering the entity.
-@MappableClass()
+@MappableClass(discriminatorValue: 'renderable')
 class Renderable with RenderableMappable {
   final String svgAssetPath;
 
   Renderable(this.svgAssetPath);
 }
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'health')
 class Health with HealthMappable {
   int current;
   int max;
@@ -236,14 +244,14 @@ extension HealthExtension on Health {
   }
 }
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'attackIntent')
 class AttackIntent with AttackIntentMappable {
   final int targetId;
 
   AttackIntent(this.targetId);
 }
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'didAttack')
 class DidAttack extends BeforeTick with DidAttackMappable{
   final int targetId;
   final int damage;
@@ -252,7 +260,7 @@ class DidAttack extends BeforeTick with DidAttackMappable{
 }
 
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'wasAttacked')
 class WasAttacked extends BeforeTick with WasAttackedMappable {
   final int sourceId;
   final int damage;
@@ -260,44 +268,45 @@ class WasAttacked extends BeforeTick with WasAttackedMappable {
   WasAttacked({required this.sourceId, required this.damage});
 }
 
+// TODO change this back to a class?
 typedef Attacked = List<WasAttacked>;
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'dead')
 class Dead with DeadMappable {}
 
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'inventory')
 class Inventory with InventoryMappable {
   final List<int> items;
 
   Inventory(this.items);
 }
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'inventoryMaxCount')
 class InventoryMaxCount with InventoryMaxCountMappable {
   final int maxAmount;
 
   InventoryMaxCount(this.maxAmount);
 }
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'inventoryFullFailure')
 class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable {
   final int targetEntityId;
 
   InventoryFullFailure(this.targetEntityId);
 }
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'pickupable')
 class Pickupable with PickupableMappable {}
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'pickupIntent')
 class PickupIntent extends AfterTick with PickupIntentMappable{
   final int targetEntityId;
 
   PickupIntent(this.targetEntityId);
 }
 
-@MappableClass()
+@MappableClass(discriminatorValue: 'pickedUp')
 class PickedUp extends BeforeTick with PickedUpMappable {
   final int targetEntityId;
 

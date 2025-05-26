@@ -20,21 +20,22 @@ class CellMapper extends ClassMapperBase<Cell> {
   @override
   final String id = 'Cell';
 
-  static int _$lastId(Cell v) => v.lastId;
-  static const Field<Cell, int> _f$lastId =
-      Field('lastId', _$lastId, mode: FieldMode.member);
   static Map<String, Map<int, dynamic>> _$components(Cell v) => v.components;
   static const Field<Cell, Map<String, Map<int, dynamic>>> _f$components =
-      Field('components', _$components, mode: FieldMode.member);
+      Field('components', _$components, opt: true);
+  static int _$lastId(Cell v) => v.lastId;
+  static const Field<Cell, int> _f$lastId =
+      Field('lastId', _$lastId, opt: true);
 
   @override
   final MappableFields<Cell> fields = const {
-    #lastId: _f$lastId,
     #components: _f$components,
+    #lastId: _f$lastId,
   };
 
   static Cell _instantiate(DecodingData data) {
-    return Cell();
+    return Cell(
+        components: data.dec(_f$components), lastId: data.dec(_f$lastId));
   }
 
   @override
@@ -83,7 +84,9 @@ extension CellValueCopy<$R, $Out> on ObjectCopyWith<$R, Cell, $Out> {
 
 abstract class CellCopyWith<$R, $In extends Cell, $Out>
     implements ClassCopyWith<$R, $In, $Out> {
-  $R call();
+  MapCopyWith<$R, String, Map<int, dynamic>,
+      ObjectCopyWith<$R, Map<int, dynamic>, Map<int, dynamic>>> get components;
+  $R call({Map<String, Map<int, dynamic>>? components, int? lastId});
   CellCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -94,9 +97,22 @@ class _CellCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Cell, $Out>
   @override
   late final ClassMapperBase<Cell> $mapper = CellMapper.ensureInitialized();
   @override
-  $R call() => $apply(FieldCopyWithData({}));
+  MapCopyWith<$R, String, Map<int, dynamic>,
+          ObjectCopyWith<$R, Map<int, dynamic>, Map<int, dynamic>>>
+      get components => MapCopyWith(
+          $value.components,
+          (v, t) => ObjectCopyWith(v, $identity, t),
+          (v) => call(components: v));
   @override
-  Cell $make(CopyWithData data) => Cell();
+  $R call({Object? components = $none, Object? lastId = $none}) =>
+      $apply(FieldCopyWithData({
+        if (components != $none) #components: components,
+        if (lastId != $none) #lastId: lastId
+      }));
+  @override
+  Cell $make(CopyWithData data) => Cell(
+      components: data.get(#components, or: $value.components),
+      lastId: data.get(#lastId, or: $value.lastId));
 
   @override
   CellCopyWith<$R2, Cell, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dart_mappable/dart_mappable.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -18,19 +19,44 @@ class MyGame extends FlameGame
   var debugMode = false;
 
   late final Cell liveCell;
-  late final EcsWorld ecsWorld;
+  late final Registry registry;
   late final ScrollDispatcher scrollDispatcher;
 
   MyGame() {
     world = GameWorld();
-    var systems2 = [
+    var systems = [
       CollisionSystem(),
       MovementSystem(),
       InventorySystem(),
       CombatSystem(),
     ];
 
-    ecsWorld = EcsWorld(systems2, []);
+    registry = Registry(systems, []);
+    // Register all your component mappers
+    MapperContainer.globals.useAll({
+      CellMapper.ensureInitialized(),
+      NameMapper.ensureInitialized(),
+      LocalPositionMapper.ensureInitialized(),
+      MoveByIntentMapper.ensureInitialized(),
+      DidMoveMapper.ensureInitialized(),
+      BlocksMovementMapper.ensureInitialized(),
+      BlockedMoveMapper.ensureInitialized(),
+      PlayerControlledMapper.ensureInitialized(),
+      AiControlledMapper.ensureInitialized(),
+      RenderableMapper.ensureInitialized(),
+      HealthMapper.ensureInitialized(),
+      AttackIntentMapper.ensureInitialized(),
+      DidAttackMapper.ensureInitialized(),
+      WasAttackedMapper.ensureInitialized(),
+      DeadMapper.ensureInitialized(),
+      InventoryMapper.ensureInitialized(),
+      InventoryMaxCountMapper.ensureInitialized(),
+      InventoryFullFailureMapper.ensureInitialized(),
+      PickupableMapper.ensureInitialized(),
+      PickupIntentMapper.ensureInitialized(),
+      PickedUpMapper.ensureInitialized(),
+      // Register all other component mappers
+    });
   }
 
   @override
@@ -57,7 +83,7 @@ class MyGame extends FlameGame
   }
 
   void tickEcs() {
-    ecsWorld.tick();
+    registry.tick();
   }
 }
 

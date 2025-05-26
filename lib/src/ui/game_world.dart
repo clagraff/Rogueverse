@@ -45,6 +45,8 @@ class GameWorld extends flame.World with Disposer {
       Health(2, 2),
     ]);
 
+    print(activeCell.toJson());
+    print(activeCell.get<LocalPosition>().values.first.toJson());
 
 
     var r = Random();
@@ -66,7 +68,7 @@ class GameWorld extends flame.World with Disposer {
       ]);
     }
 
-    game.ecsWorld.cells.add(activeCell);
+    game.registry.cells.add(activeCell);
 
     var healthHud = HealthBar();
     EventBus().on<Health>(player.id).forEach((e) {
@@ -91,7 +93,7 @@ class GameWorld extends flame.World with Disposer {
       }
       if (entity.has<AiControlled>()) {
         add(Opponent(
-          game.ecsWorld,
+          game.registry,
           cell: activeCell,
           entity: activeCell.getEntity(entity.id),
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
