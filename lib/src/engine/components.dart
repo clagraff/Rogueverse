@@ -44,24 +44,24 @@ abstract class AfterTick extends Lifetime {
 
 class Entity {
   final Cell parentCell;
-  final int entityId;
+  final int id;
 
-  Entity({required this.parentCell, required this.entityId});
+  Entity({required this.parentCell, required this.id});
 
   bool has<C>() {
     var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
-    return entitiesWithComponent.containsKey(entityId);
+    return entitiesWithComponent.containsKey(id);
   }
 
   C? get<C>([C? orDefault]) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
-    if (entitiesWithComponent.containsKey(entityId)) {
-      return entitiesWithComponent[entityId] as C;
+    if (entitiesWithComponent.containsKey(id)) {
+      return entitiesWithComponent[id] as C;
     }
 
     if (orDefault != null) {
-      entitiesWithComponent[entityId] = orDefault;
-      EventBus().publish(Event<C>(eventType:EventType.added, id: entityId, value: orDefault));
+      entitiesWithComponent[id] = orDefault;
+      EventBus().publish(Event<C>(eventType:EventType.added, id: id, value: orDefault));
 
       return orDefault;
     }
@@ -71,27 +71,27 @@ class Entity {
 
   void upsert<C>(C c) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
-    var alreadyExisted = entitiesWithComponent.containsKey(entityId);
+    var alreadyExisted = entitiesWithComponent.containsKey(id);
 
-    entitiesWithComponent[entityId] = c;
+    entitiesWithComponent[id] = c;
 
-    EventBus().publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: entityId, value: c));
+    EventBus().publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c));
   }
 
   void remove<C>() {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
-    var componentExists = entitiesWithComponent.containsKey(entityId);
+    var componentExists = entitiesWithComponent.containsKey(id);
 
     if (componentExists) {
-      var oldComponent = entitiesWithComponent[entityId] as C;
-      entitiesWithComponent.remove(entityId);
+      var oldComponent = entitiesWithComponent[id] as C;
+      entitiesWithComponent.remove(id);
 
-      EventBus().publish(Event<C>(eventType: EventType.removed, id: entityId, value: oldComponent));
+      EventBus().publish(Event<C>(eventType: EventType.removed, id: id, value: oldComponent));
     }
   }
 
   void destroy() {
-    parentCell.remove(entityId);
+    parentCell.remove(id);
   }
 }
 
@@ -101,7 +101,7 @@ class Cell with CellMappable {
   final Map<String, Map<int, dynamic>> components = {};
 
   Entity getEntity(int entityId) {
-    return Entity(parentCell: this, entityId: entityId);
+    return Entity(parentCell: this, id: entityId);
   }
   
   List<Entity> entities() {
@@ -116,7 +116,7 @@ class Cell with CellMappable {
     return components.putIfAbsent(C.toString(), () => {});
   }
 
-  int add(List<dynamic> comps) {
+  Entity add(List<dynamic> comps) {
     var entityId = lastId++;
     for(var c in comps) {
       var entitiesWithComponent = components.putIfAbsent(c.runtimeType.toString(), () => {});
@@ -124,7 +124,7 @@ class Cell with CellMappable {
     }
 
     EventBus().publish(Event<int>(eventType: EventType.added, id: null, value: entityId, ));
-    return entityId;
+    return getEntity(entityId);
   }
 
   void remove(int entityId) {

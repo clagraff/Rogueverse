@@ -69,7 +69,7 @@ class GameWorld extends flame.World with Disposer {
     game.ecsWorld.cells.add(activeCell);
 
     var healthHud = HealthBar();
-    EventBus().on<Health>(player).forEach((e) {
+    EventBus().on<Health>(player.id).forEach((e) {
       healthHud.onHealthChange(e.id);
     });
     game.camera.viewport.add(healthHud);
@@ -83,7 +83,7 @@ class GameWorld extends flame.World with Disposer {
       if (entity.has<PlayerControlled>()) {
         add(PlayerControlledAgent(
           cell: activeCell,
-          entity: activeCell.getEntity(player),
+          entity: activeCell.getEntity(player.id),
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
@@ -93,7 +93,7 @@ class GameWorld extends flame.World with Disposer {
         add(Opponent(
           game.ecsWorld,
           cell: activeCell,
-          entity: activeCell.getEntity(entity.entityId),
+          entity: activeCell.getEntity(entity.id),
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
@@ -102,7 +102,7 @@ class GameWorld extends flame.World with Disposer {
 
       add(Agent(
         cell: activeCell,
-        entity: activeCell.getEntity(entity.entityId),
+        entity: activeCell.getEntity(entity.id),
         svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
         position: flame.Vector2(pos.x * 32, pos.y * 32),
       ));

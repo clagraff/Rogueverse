@@ -179,7 +179,7 @@ class Query {
 
 
   /// Returns true if the given [entity] matches the query.
-  bool isMatchEntity(Entity entity) => isMatching(entity.parentCell, entity.entityId);
+  bool isMatchEntity(Entity entity) => isMatching(entity.parentCell, entity.id);
 
   /// Returns a copy of this query.
   Query copy() {
@@ -218,8 +218,7 @@ class Archetype {
   ///
   /// Returns the newly created [Entity].
   Entity build(Cell cell) {
-    final id = cell.add([]);
-    final e = Entity(parentCell: cell, entityId: id);
+    final e = cell.add([]);
 
     for (var builder in _builders) {
       builder(e);

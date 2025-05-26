@@ -32,7 +32,7 @@ class AgentHealthBar extends PositionComponent with Disposer {
   /// Creates the background bar, foreground health bar, and health text display.
   @override
   FutureOr<void> onLoad() {
-    EventBus().on<Health>(entity.entityId).forEach((e) {
+    EventBus().on<Health>(entity.id).forEach((e) {
       updateBar();
     });
 

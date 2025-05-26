@@ -18,32 +18,32 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
   @override
   Future<void> onLoad() {
-    EventBus().on<Dead>(entity.entityId).forEach((e) {
+    EventBus().on<Dead>(entity.id).forEach((e) {
       print("shouldnt be visible222!!");
       isVisible = false;
     });
 
-    EventBus().on<DidMove>(entity.entityId).forEach((e) {
+    EventBus().on<DidMove>(entity.id).forEach((e) {
       var didMove = e.value;
 
       add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
           EffectController(duration: 0.1)));
     });
 
-    EventBus().on<LocalPosition>(entity.entityId, [EventType.removed]).forEach((e) {
+    EventBus().on<LocalPosition>(entity.id, [EventType.removed]).forEach((e) {
       removeFromParent();
     });
 
-    EventBus().on<Renderable>(entity.entityId, [EventType.removed]).forEach((e) {
+    EventBus().on<Renderable>(entity.id, [EventType.removed]).forEach((e) {
       removeFromParent();
     });
 
-    EventBus().on<int>(entity.entityId, [EventType.removed]).forEach((e) {
+    EventBus().on<int>(entity.id, [EventType.removed]).forEach((e) {
       removeFromParent();
     });
 
-    EventBus().on<Dead>(entity.entityId).first.then((e) {
-      cell.remove(entity.entityId);
+    EventBus().on<Dead>(entity.id).first.then((e) {
+      cell.remove(entity.id);
     });
 
 

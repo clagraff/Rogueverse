@@ -154,7 +154,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
     } else {
       var hasHealth = target2.get<Health>() != null;
       if (hasHealth) {
-        entity.upsert<AttackIntent>(AttackIntent(target2.entityId));
+        entity.upsert<AttackIntent>(AttackIntent(target2.id));
       }
     }
 
@@ -177,7 +177,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
             .first(cell);
 
         if (firstItemAtFeet != null) {
-          entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.entityId));
+          entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.id));
 
           game.tickEcs();
           return true; // handled

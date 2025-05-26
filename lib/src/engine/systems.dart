@@ -148,7 +148,7 @@ class InventorySystem extends System {
       if (invMax != null &&
           source.get<Inventory>()!.items.length + 1 > invMax.maxAmount) {
         // Inventory is maxed out, set a failure state and return.
-        source.upsert<InventoryFullFailure>(InventoryFullFailure(target.entityId));
+        source.upsert<InventoryFullFailure>(InventoryFullFailure(target.id));
         return;
       }
 
@@ -190,11 +190,11 @@ class CombatSystem extends System {
         target.upsert(Dead());
       }
       target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
-      EventBus().publish(Event<Health>(eventType: EventType.updated, id: target.entityId, value: health));
+      EventBus().publish(Event<Health>(eventType: EventType.updated, id: target.id, value: health));
 
 
       source.remove<AttackIntent>();
-      source.upsert<DidAttack>(DidAttack(targetId: target.entityId, damage: 1));
+      source.upsert<DidAttack>(DidAttack(targetId: target.id, damage: 1));
     });
   }
 }
