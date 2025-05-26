@@ -110,7 +110,7 @@ class Query {
   }
 
   /// Returns all matching entities in the [chunk].
-  Iterable<Entity2> find2(Cell cell) sync* {
+  Iterable<Entity> find(Cell cell) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
@@ -119,14 +119,14 @@ class Query {
     final store = cell.components.putIfAbsent(firstRequiredType.toString(), () => {});
 
     for (final id in store.keys) {
-      if (isMatching2(cell, id)) {
+      if (isMatching(cell, id)) {
         yield cell.getEntity(id);
       }
     }
   }
 
   /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
-  Iterable<Entity2> findFromIds2(Cell cell, List<int> possibleIds) sync* {
+  Iterable<Entity> findFromIds(Cell cell, List<int> possibleIds) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
@@ -139,19 +139,19 @@ class Query {
         continue;
       }
 
-      if (isMatching2(cell, id)) {
+      if (isMatching(cell, id)) {
         yield cell.getEntity(id);
       }
     }
   }
 
   /// Returns the first matching entity or null.
-  Entity2? first2(Cell cell) => find2(cell).firstOrNull;
+  Entity? first(Cell cell) => find(cell).firstOrNull;
 
-  bool any2(Cell cell) => find2(cell).firstOrNull != null;
+  bool any(Cell cell) => find(cell).firstOrNull != null;
 
 
-  bool isMatching2(Cell cell, int entityId) {
+  bool isMatching(Cell cell, int entityId) {
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;
@@ -179,7 +179,7 @@ class Query {
 
 
   /// Returns true if the given [entity] matches the query.
-  bool isMatchEntity2(Entity2 entity) => isMatching2(entity.parentCell, entity.entityId);
+  bool isMatchEntity(Entity entity) => isMatching(entity.parentCell, entity.entityId);
 
   /// Returns a copy of this query.
   Query copy() {
@@ -205,21 +205,21 @@ class Query {
 /// final player = playerArchetype.build(chunk);
 /// ```
 class Archetype {
-  final List<Function(Entity2 e)> _builders = [];
+  final List<Function(Entity e)> _builders = [];
 
   /// Adds a component to this archetype.
   ///
   /// This component will be included when [build] is called.
   void set<T>(T comp) {
-    _builders.add((Entity2 e) => e.upsert<T>(comp));
+    _builders.add((Entity e) => e.upsert<T>(comp));
   }
 
   /// Instantiates a new entity in the given [chunk] using this archetype's components.
   ///
   /// Returns the newly created [Entity].
-  Entity2 build(Cell cell) {
+  Entity build(Cell cell) {
     final id = cell.add([]);
-    final e = Entity2(parentCell: cell, entityId: id);
+    final e = Entity(parentCell: cell, entityId: id);
 
     for (var builder in _builders) {
       builder(e);

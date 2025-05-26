@@ -130,8 +130,8 @@ class InventorySystem extends System {
       var source = cell.getEntity(sourceId);
       var target = cell.getEntity(pickupIntent.targetEntityId);
 
-      if (!canPickup.isMatchEntity2(source) ||
-          !canBePickedUp.isMatchEntity2(target)) {
+      if (!canPickup.isMatchEntity(source) ||
+          !canBePickedUp.isMatchEntity(target)) {
         return; // Skip. TODO: Add some kind of error feedback or message?
       }
 

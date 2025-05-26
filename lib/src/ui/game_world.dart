@@ -26,13 +26,13 @@ class GameWorld extends flame.World with Disposer {
       InventoryMaxCount(5),
       Health(4, 5),
     ]);
-    var snake = activeCell.add([
+    activeCell.add([
       Renderable('images/snake.svg'),
       LocalPosition(x: 1, y: 2),
       AiControlled(),
       BlocksMovement(),
     ]);
-    var wall = activeCell.add([
+    activeCell.add([
       Renderable('images/wall.svg'),
       LocalPosition(x: 1, y: 0),
       BlocksMovement(),

@@ -146,7 +146,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
         .require<BlocksMovement>()
         .require<LocalPosition>((c) {
       return c.x == curr.x + dv.x && c.y == curr.y + dv.y;
-    }).first2(cell);
+    }).first(cell);
 
     if (target2 == null) {
       // Nothing obstructing movement, so move
@@ -174,7 +174,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
               return c.x == pos.x && c.y == pos.y;
             })
             .require<Pickupable>()
-            .first2(cell);
+            .first(cell);
 
         if (firstItemAtFeet != null) {
           entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.entityId));

@@ -42,11 +42,11 @@ abstract class AfterTick extends Lifetime {
 }
 
 
-class Entity2 {
+class Entity {
   final Cell parentCell;
   final int entityId;
 
-  Entity2({required this.parentCell, required this.entityId});
+  Entity({required this.parentCell, required this.entityId});
 
   bool has<C>() {
     var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
@@ -100,11 +100,11 @@ class Cell with CellMappable {
   int lastId = 0;
   final Map<String, Map<int, dynamic>> components = {};
 
-  Entity2 getEntity(int entityId) {
-    return Entity2(parentCell: this, entityId: entityId);
+  Entity getEntity(int entityId) {
+    return Entity(parentCell: this, entityId: entityId);
   }
   
-  List<Entity2> entities() {
+  List<Entity> entities() {
     var entityIds = <int>{};
     for (var componentMap in components.values) {
       entityIds.addAll(componentMap.keys);

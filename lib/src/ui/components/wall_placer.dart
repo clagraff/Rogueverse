@@ -27,7 +27,7 @@ class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
         .require<LocalPosition>(
             (lp) => lp.x == escPosition.x && lp.y == escPosition.y)
         .require<BlocksMovement>()
-        .find2(cell)
+        .find(cell)
         .toList();
 
     if (matches.isNotEmpty) {

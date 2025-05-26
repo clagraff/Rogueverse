@@ -6,7 +6,7 @@ import '../../ui/components/components.gen.dart';
 
 class Agent extends SvgTileComponent with HasVisibility, Disposer {
   final Cell cell;
-  final Entity2 entity;
+  final Entity entity;
 
   Agent({
     required this.cell,
@@ -47,7 +47,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     });
 
 
-    add(AgentHealthBar(entity2: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
+    add(AgentHealthBar(entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
 
     return super.onLoad();
   }

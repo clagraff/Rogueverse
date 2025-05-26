@@ -121,7 +121,7 @@ class EntityPlacer extends PositionComponent
       final matches = Query()
           .require<LocalPosition>((lp) => lp.x == pos.x && lp.y == pos.y)
           .require<BlocksMovement>()
-          .find2(cell)
+          .find(cell)
           .toList();
 
       if (matches.isNotEmpty) {
