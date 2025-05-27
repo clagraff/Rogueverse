@@ -2,8 +2,8 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import '../../../src/engine/engine.gen.dart';
-import '../../../src/ui/ui.gen.dart';
+import '../../../src/engine/engine.barrel.dart';
+import '../../../src/ui/ui.barrel.dart';
 
 class HealthBar extends Component {
   final Paint paint;

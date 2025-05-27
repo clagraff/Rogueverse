@@ -1,9 +1,9 @@
 import 'dart:math';
 
 import 'package:flame/effects.dart';
-import 'package:rogueverse/src/ai/ai.gen.dart';
-import 'package:rogueverse/src/engine/engine.gen.dart';
-import 'package:rogueverse/src/ui/components/components.gen.dart';
+import '../../ai/ai.barrel.dart';
+import '../../engine/engine.barrel.dart';
+import '../../ui/components/components.barrel.dart';
 
 var random = Random();
 

@@ -1,7 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
-import 'package:rogueverse/src/engine/engine.gen.dart';
+import '../../engine/engine.barrel.dart';
 
 class EntityPlacer extends PositionComponent
     with DragCallbacks, TapCallbacks, Disposer {

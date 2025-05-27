@@ -1,8 +1,7 @@
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
-import '../../ui/components/agent_health_bar.dart';
-import '../../engine/engine.gen.dart';
-import '../../ui/components/components.gen.dart';
+import '../../engine/engine.barrel.dart';
+import '../../ui/components/components.barrel.dart';
 
 class Agent extends SvgTileComponent with HasVisibility, Disposer {
   final Registry registry;

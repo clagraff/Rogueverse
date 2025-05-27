@@ -6,8 +6,8 @@ import 'package:flutter/services.dart';
 import '../../../main.dart';
 import '../../application_ui/overlays/overlay_helper.dart';
 import '../../application_ui/overlays/player_inventory_widget.dart';
-import '../../ui/components/components.gen.dart';
-import '../../engine/engine.gen.dart';
+import '../../ui/components/components.barrel.dart';
+import '../../engine/engine.barrel.dart';
 
 class KeyBindingMap<T> {
   final Map<Set<LogicalKeyboardKey>, T> _bindings = {};

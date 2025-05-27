@@ -2,10 +2,10 @@ import 'dart:math';
 
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
-import 'package:rogueverse/main.dart';
-import 'package:rogueverse/src/engine/engine.gen.dart';
-import 'package:rogueverse/src/ui/components/components.gen.dart';
-import 'package:rogueverse/src/ui/hud/health_bar.dart';
+import '../../main.dart';
+import '../engine/engine.barrel.dart';
+import '../ui/components/components.barrel.dart';
+import '../ui/hud/health_bar.dart';
 
 class GameWorld extends flame.World with Disposer {
   @override

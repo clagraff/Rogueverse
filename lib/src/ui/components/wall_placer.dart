@@ -1,6 +1,6 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import 'package:rogueverse/src/engine/engine.gen.dart';
+import '../../engine/engine.barrel.dart';
 
 class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
   final Registry registry;

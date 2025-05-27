@@ -9,7 +9,7 @@ import 'package:logging/logging.dart';
 
 import 'src/ui/mixins/scroll_callback.dart';
 import 'src/ui/hud/camera_controls.dart';
-import 'src/engine/engine.gen.dart';
+import 'src/engine/engine.barrel.dart';
 import 'src/ui/game_world.dart';
 
 class MyGame extends FlameGame

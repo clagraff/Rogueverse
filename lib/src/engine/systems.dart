@@ -1,7 +1,7 @@
 import 'components.dart';
-import 'ecs.dart';
 import 'events.dart';
 import 'entity.dart';
+import 'query.dart';
 
 // TODO: Example of a potentially better way to do Systems
 // abstract class ProcessingSystem extends System {
