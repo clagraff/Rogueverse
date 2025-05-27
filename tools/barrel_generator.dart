@@ -15,6 +15,7 @@ void generateBarrels(String directory) {
       .whereType<File>()
       .where((file) => file.path.endsWith('.dart'))
       .where((file) => !path.basename(file.path).contains('.gen.'))
+      .where((file) => !path.basename(file.path).contains('.barrel.'))
       .toList();
 
   // Get all subdirectories
@@ -36,7 +37,7 @@ void generateBarrels(String directory) {
   final dirExports = subdirs
       .map((subdir) {
     final subdirName = path.basename(subdir.path);
-    return "export '$subdirName/$subdirName.gen.dart';";
+    return "export '$subdirName/$subdirName.barrel.dart';";
   })
       .join('\n');
 
@@ -46,7 +47,7 @@ void generateBarrels(String directory) {
   if (allExports.isNotEmpty) {
     // Skip generating a barrel file for the root 'lib' directory
     if (dirName != 'lib') {
-      final barrelFile = File(path.join(directory, '$dirName.gen.dart'));
+      final barrelFile = File(path.join(directory, '$dirName.barrel.dart'));
       barrelFile.writeAsStringSync(allExports);
       print('Generated barrel file: ${barrelFile.path}');
     }

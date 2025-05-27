@@ -128,4 +128,32 @@ extension EventBusCombinationExtension on EventBus {
           .map((event3) => (event1, event2, event3));
     });
   }
+
+  Future<Event<T>> once<T>({int? id, List<EventType>? type}) {
+    late StreamSubscription<Event<T>> sub;
+
+    final controller = Completer<Event<T>>();
+
+    sub = on<T>(id, type).listen((event) {
+      controller.complete(event);
+      sub.cancel();
+    });
+
+    return controller.future;
+  }
+
+  Future<Event<T>> waitFor<T>(bool Function(Event<T>) test) {
+    late StreamSubscription<Event<T>> sub;
+    final completer = Completer<Event<T>>();
+
+    sub = on<T>().listen((event) {
+      if (test(event)) {
+        completer.complete(event);
+        sub.cancel(); // Now works because `sub` is declared
+      }
+    });
+
+    return completer.future;
+  }
+
 }
