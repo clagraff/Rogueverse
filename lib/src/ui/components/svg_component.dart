@@ -3,15 +3,13 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame_svg/flame_svg.dart';
 
-class SvgTileComponent extends PositionComponent {
+class SvgTileComponent extends PositionComponent with HasPaint {
   late final SvgComponent _svg;
 
   final String svgAssetPath;
 
-  Paint? paint;
-
   SvgTileComponent(
-      {required this.svgAssetPath, Vector2? position, Vector2? size, this.paint}) {
+      {required this.svgAssetPath, Vector2? position, Vector2? size}) {
     this.position = position ?? Vector2.zero();
     this.size = size ?? Vector2.all(32);
   }

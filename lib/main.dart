@@ -66,15 +66,6 @@ void main() {
   // Set up hierarchical logging
   Logger.root.level = Level.INFO;
   Logger.root.onRecord.listen((record) {
-    // Convert to structured format (e.g., JSON)
-    // final structuredLog = {
-    //   'time': record.time.toIso8601String(),
-    //   'level': record.level.name,
-    //   'logger': record.loggerName,
-    //   'content': record.message,
-    //   if (record.error != null) 'error': record.error?.toString(),
-    // };
-
     var message =
         "[ ${record.level} : ${record.loggerName} ] ${record.message}";
     if (record.error != null) {
@@ -84,20 +75,7 @@ void main() {
       print(message);
     }
   });
-  final parentLogger = Logger('app');
-  final childLogger = Logger('app.database');
 
-  parentLogger.info('Application started');
-  parentLogger.info({'notice': 'Hello world!'});
-  childLogger.warning('Database connection slow', {'latency': '200ms'});
-
-  // runApp(
-  //   GameWidget(game: MyGame(), overlayBuilderMap: {
-  //     'Example': (BuildContext context, MyGame game) {
-  //       return Example();
-  //     }
-  //   }),
-  // );
   runApp(
     MyApp(),
   );

@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import '../../engine/engine.barrel.dart';
@@ -18,7 +20,11 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
   @override
   Future<void> onLoad() {
     registry.eventBus.on<Dead>(entity.id).forEach((e) {
-      isVisible = false;
+      // isVisible = false;
+      // TODO figure out a better way to handle corpses.
+      add(ColorEffect(const Color(0xFF00FF00),   EffectController(duration: 1.5),
+        opacityFrom: 0.2,
+        opacityTo: 0.8,));
     });
 
     registry.eventBus.on<DidMove>(entity.id).forEach((e) {

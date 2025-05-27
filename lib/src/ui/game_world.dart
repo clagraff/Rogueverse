@@ -43,6 +43,13 @@ class GameWorld extends flame.World with Disposer {
       Name(name: 'Iron'),
       BlocksMovement(),
       Health(2, 2),
+      LootTable([
+        Loot(components: [
+          Renderable('images/item_small.svg'),
+          Pickupable(),
+          Name(name: 'Loot'),
+        ])
+      ]),
     ]);
 
     var r = Random();

@@ -13,7 +13,7 @@ class HealthBar extends Component {
       : paint = paint ??
             (Paint()
               ..colorFilter = const ColorFilter.mode(
-                Color(0xFFFF0000), // Red color
+                Color(0xFFFF9C2B), // Red color
                 BlendMode.srcIn,
               ));
 
@@ -23,11 +23,12 @@ class HealthBar extends Component {
     children.clear();
 
     for(var i = 0.0; i < health; i++) {
-      add(SvgTileComponent(
+      var comp = SvgTileComponent(
           svgAssetPath: "images/heart.svg",
           position: Vector2(5 + (35 * i), 5),
-          size: Vector2(32, 32),
-          paint: paint));
+          size: Vector2(32, 32));
+      comp.paint = paint;
+      add(comp);
     }
   }
 }

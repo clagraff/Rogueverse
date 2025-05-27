@@ -28,6 +28,17 @@ class Entity {
     return null;
   }
 
+  List<dynamic> getAll() {
+    var comps = [];
+    parentCell.components.forEach((k, v) {
+      if (v.keys.contains(id)) {
+        comps.add(v[id]!);
+      }
+    });
+
+    return comps;
+  }
+
   void upsert<C>(C c) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
     var alreadyExisted = entitiesWithComponent.containsKey(id);

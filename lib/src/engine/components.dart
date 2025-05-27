@@ -35,8 +35,6 @@ abstract class AfterTick extends Lifetime {
 }
 
 
-
-
 class Cell {
   List<int> entityIds = [];
 }
@@ -168,6 +166,25 @@ class InventoryMaxCount {
   final int maxAmount;
 
   InventoryMaxCount(this.maxAmount);
+}
+
+
+class Loot {
+  final List<dynamic> components;
+  final double probability; // 0.0 - 1.0
+  final int quantity;
+
+  Loot({
+    required this.components,
+    this.probability = 1.0,
+    this.quantity = 1,
+  });
+}
+
+class LootTable {
+  final List<Loot> lootables;
+
+  LootTable(this.lootables);
 }
 
 class InventoryFullFailure extends BeforeTick {

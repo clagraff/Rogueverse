@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'components.dart';
 import 'events.dart';
 import 'registry.dart';
@@ -190,6 +192,29 @@ class CombatSystem extends System {
         // TODO: this doesnt actually prevent other systems from processing
         // this now-dead entity.
         target.upsert(Dead());
+        target.remove<BlocksMovement>();
+
+        var r = Random();
+        var lootTable = target.get<LootTable>();
+        if (lootTable != null) {
+          for(var lootable in lootTable.lootables) {
+            var prob = r.nextDouble() * (1 + double.minPositive);
+            if (prob <= lootable.probability) {
+              var inv = target.get<Inventory>(Inventory([]))!; // Create inventory comp if it doesnt exist. Otherwise we cannot do anything from the LootTable
+              for (var i = 0; i < lootable.quantity; i++) {
+                var item = registry.add([]);
+
+                for (var c in lootable.components) {
+                  // Have to do things the hard way to avoid `dynamic` component types in the components map.
+                  var comp = registry.components.putIfAbsent(c.runtimeType.toString(), () => {});
+                  comp[item.id] = c;
+                }
+
+                inv.items.add(item.id);
+              }
+            }
+          }
+        }
       }
       target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
       registry.eventBus.publish(Event<Health>(

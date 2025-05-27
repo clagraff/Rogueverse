@@ -16,24 +16,33 @@ import 'registry.dart';
 /// final player = playerArchetype.build(chunk);
 /// ```
 class Archetype {
-  final List<Function(Entity e)> _builders = [];
+  Archetype();
 
-  /// Adds a component to this archetype.
-  ///
-  /// This component will be included when [build] is called.
+  final List<void Function(Entity)> _builders = [];
+
   void set<T>(T comp) {
     _builders.add((Entity e) => e.upsert<T>(comp));
   }
 
-  /// Instantiates a new entity in the given [chunk] using this archetype's components.
-  ///
-  /// Returns the newly created [Entity].
-  Entity build(Registry registry) {
-    final e = registry.add([]);
+  void merge(Archetype other) {
+    _builders.addAll(other._builders);
+  }
 
-    for (var builder in _builders) {
+  Entity build(Registry registry, {List<dynamic> baseComponents = const []}) {
+    final e = registry.add([...baseComponents]);
+    for (final builder in _builders) {
       builder(e);
     }
     return e;
+  }
+
+  List<Entity> buildMany(Registry registry, int count) {
+    return List.generate(count, (_) => build(registry));
+  }
+
+  Archetype clone() {
+    final copy = Archetype();
+    copy._builders.addAll(_builders);
+    return copy;
   }
 }
