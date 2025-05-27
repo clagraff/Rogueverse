@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/widgets.dart';
 import 'components.dart';
 import 'systems.dart';
+import 'entity.dart';
 
 /// A lightweight wrapper around a teardown function, providing a consistent
 /// interface for managing and invoking resource cleanup logic.
@@ -110,52 +111,52 @@ class Query {
   }
 
   /// Returns all matching entities in the [chunk].
-  Iterable<Entity> find(Cell cell) sync* {
+  Iterable<Entity> find(Registry registry) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
     final firstRequiredType = _required.keys.first;
-    final store = cell.components.putIfAbsent(firstRequiredType.toString(), () => {});
+    final store = registry.components.putIfAbsent(firstRequiredType.toString(), () => {});
 
     for (final id in store.keys) {
-      if (isMatching(cell, id)) {
-        yield cell.getEntity(id);
+      if (isMatching(registry, id)) {
+        yield registry.getEntity(id);
       }
     }
   }
 
   /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
-  Iterable<Entity> findFromIds(Cell cell, List<int> possibleIds) sync* {
+  Iterable<Entity> findFromIds(Registry registry, List<int> possibleIds) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
     final firstRequiredType = _required.keys.first;
-    final store = cell.components.putIfAbsent(firstRequiredType.toString(), () => {});
+    final store = registry.components.putIfAbsent(firstRequiredType.toString(), () => {});
 
     for (final id in store.keys) {
       if (!possibleIds.contains(id)) {
         continue;
       }
 
-      if (isMatching(cell, id)) {
-        yield cell.getEntity(id);
+      if (isMatching(registry, id)) {
+        yield registry.getEntity(id);
       }
     }
   }
 
   /// Returns the first matching entity or null.
-  Entity? first(Cell cell) => find(cell).firstOrNull;
+  Entity? first(Registry registry) => find(registry).firstOrNull;
 
-  bool any(Cell cell) => find(cell).firstOrNull != null;
+  bool any(Registry registry) => find(registry).firstOrNull != null;
 
 
-  bool isMatching(Cell cell, int entityId) {
+  bool isMatching(Registry registry, int entityId) {
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = cell.components.putIfAbsent(type.toString(), () => {});
+      final store = registry.components.putIfAbsent(type.toString(), () => {});
       if (!store.containsKey(entityId)) return false;
 
       if (predicate != null && !predicate(store[entityId])) {
@@ -166,7 +167,7 @@ class Query {
     for (final entry in _excluded.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = cell.components.putIfAbsent(type.toString(), () => {});
+      final store = registry.components.putIfAbsent(type.toString(), () => {});
       if (!store.containsKey(entityId)) continue;
 
       if (predicate == null || predicate(store[entityId])) {
@@ -217,8 +218,8 @@ class Archetype {
   /// Instantiates a new entity in the given [chunk] using this archetype's components.
   ///
   /// Returns the newly created [Entity].
-  Entity build(Cell cell) {
-    final e = cell.add([]);
+  Entity build(Registry registry) {
+    final e = registry.add([]);
 
     for (var builder in _builders) {
       builder(e);

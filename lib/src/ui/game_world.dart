@@ -15,9 +15,9 @@ class GameWorld extends flame.World with Disposer {
     add(FpsComponent());
     add(TimeTrackComponent());
 
-    var activeCell = Cell();
+    var reg = game.registry;
 
-    var player = activeCell.add([
+    var player = reg.add([
       Renderable('images/player.svg'),
       LocalPosition(x: 0, y: 0),
       PlayerControlled(),
@@ -26,28 +26,24 @@ class GameWorld extends flame.World with Disposer {
       InventoryMaxCount(5),
       Health(4, 5),
     ]);
-    activeCell.add([
+    reg.add([
       Renderable('images/snake.svg'),
       LocalPosition(x: 1, y: 2),
       AiControlled(),
       BlocksMovement(),
     ]);
-    activeCell.add([
+    reg.add([
       Renderable('images/wall.svg'),
       LocalPosition(x: 1, y: 0),
       BlocksMovement(),
     ]);
-    activeCell.add([
+    reg.add([
       Renderable('images/mineral.svg'),
       LocalPosition(x: 3, y: 2),
       Name(name: 'Iron'),
       BlocksMovement(),
       Health(2, 2),
     ]);
-
-    print(activeCell.toJson());
-    print(activeCell.get<LocalPosition>().values.first.toJson());
-
 
     var r = Random();
     var next = r.nextInt(5) + 3;
@@ -60,15 +56,13 @@ class GameWorld extends flame.World with Disposer {
         y = r.nextInt(10) * (r.nextBool() ? 1 : -1);
       }
 
-      activeCell.add([
+      reg.add([
         Renderable('images/item_small.svg'),
         LocalPosition(x: x, y: y),
         Pickupable(),
         Name(name: 'Loot'),
       ]);
     }
-
-    game.registry.cells.add(activeCell);
 
     var healthHud = HealthBar();
     EventBus().on<Health>(player.id).forEach((e) {
@@ -77,15 +71,15 @@ class GameWorld extends flame.World with Disposer {
     game.camera.viewport.add(healthHud);
 
     // TODO: handle EventBus() for new Renderables.
-    activeCell
+    reg
         .entities()
         .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
         .forEach((entity) {
       var pos = entity.get<LocalPosition>()!;
       if (entity.has<PlayerControlled>()) {
         add(PlayerControlledAgent(
-          cell: activeCell,
-          entity: activeCell.getEntity(player.id),
+          registry: reg,
+          entity: reg.getEntity(player.id),
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
@@ -94,8 +88,8 @@ class GameWorld extends flame.World with Disposer {
       if (entity.has<AiControlled>()) {
         add(Opponent(
           game.registry,
-          cell: activeCell,
-          entity: activeCell.getEntity(entity.id),
+          registry: reg,
+          entity: reg.getEntity(entity.id),
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
@@ -103,8 +97,8 @@ class GameWorld extends flame.World with Disposer {
       }
 
       add(Agent(
-        cell: activeCell,
-        entity: activeCell.getEntity(entity.id),
+        registry: reg,
+        entity: reg.getEntity(entity.id),
         svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
         position: flame.Vector2(pos.x * 32, pos.y * 32),
       ));

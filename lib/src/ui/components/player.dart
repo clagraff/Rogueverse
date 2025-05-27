@@ -55,7 +55,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   Function()? toggleInventoryOverlay;
 
   PlayerControlledAgent(
-      {required super.cell,
+      {required super.registry,
       required super.entity,
       required super.svgAssetPath,
       super.position,
@@ -73,9 +73,9 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
 
   void showTable(FlameGame game) {
     var sourceContext = game.buildContext!;
-    var player = cell.getEntity(cell.get<PlayerControlled>().keys.first);
+    var player = registry.getEntity(registry.get<PlayerControlled>().keys.first);
     var itemIds = player.get<Inventory>()?.items ?? [];
-    var items = itemIds.map((id) => cell.getEntity(id)).toList();
+    var items = itemIds.map((id) => registry.getEntity(id)).toList();
 
     toggleInventoryOverlay = addOverlay(
         game: game,
@@ -146,7 +146,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
         .require<BlocksMovement>()
         .require<LocalPosition>((c) {
       return c.x == curr.x + dv.x && c.y == curr.y + dv.y;
-    }).first(cell);
+    }).first(registry);
 
     if (target2 == null) {
       // Nothing obstructing movement, so move
@@ -174,7 +174,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
               return c.x == pos.x && c.y == pos.y;
             })
             .require<Pickupable>()
-            .first(cell);
+            .first(registry);
 
         if (firstItemAtFeet != null) {
           entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.id));

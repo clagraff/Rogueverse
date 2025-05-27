@@ -1,14 +1,10 @@
 import 'package:dart_mappable/dart_mappable.dart';
+import 'systems.dart';
 import 'events.dart';
-
-part 'components.mapper.dart'; // This file will be generated
-
-typedef ComponentType = String;
 
 /// Base class for components with a limited lifespan that can expire
 /// after a certain number of ticks. When lifetime reaches 0, the component
 /// is removed when processed.
-// TODO check if this needs to have @MappableClass on it
 abstract class Lifetime {
   int _lifetime;
 
@@ -43,112 +39,16 @@ abstract class AfterTick extends Lifetime {
 }
 
 
-class Entity {
-  final Cell parentCell;
-  final int id;
 
-  Entity({required this.parentCell, required this.id});
 
-  bool has<C>() {
-    var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
-    return entitiesWithComponent.containsKey(id);
-  }
-
-  C? get<C>([C? orDefault]) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
-    if (entitiesWithComponent.containsKey(id)) {
-      return entitiesWithComponent[id] as C;
-    }
-
-    if (orDefault != null) {
-      entitiesWithComponent[id] = orDefault;
-      EventBus().publish(Event<C>(eventType:EventType.added, id: id, value: orDefault));
-
-      return orDefault;
-    }
-
-    return null;
-  }
-
-  void upsert<C>(C c) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
-    var alreadyExisted = entitiesWithComponent.containsKey(id);
-
-    entitiesWithComponent[id] = c;
-
-    EventBus().publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c));
-  }
-
-  void remove<C>() {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
-    var componentExists = entitiesWithComponent.containsKey(id);
-
-    if (componentExists) {
-      var oldComponent = entitiesWithComponent[id] as C;
-      entitiesWithComponent.remove(id);
-
-      EventBus().publish(Event<C>(eventType: EventType.removed, id: id, value: oldComponent));
-    }
-  }
-
-  void destroy() {
-    parentCell.remove(id);
-  }
+class Cell {
+  List<int> entityIds = [];
 }
-
-
-@MappableClass(discriminatorValue: 'cell')
-class Cell with CellMappable {
-  int lastId = 0;
-  Map<String, Map<int, dynamic>> components = {};
-
-  Cell({Map<String, Map<int, dynamic>>? components, int? lastId})
-      : components = components ?? {},
-        lastId = lastId ?? 0;
-
-
-  Entity getEntity(int entityId) {
-    return Entity(parentCell: this, id: entityId);
-  }
-  
-  List<Entity> entities() {
-    var entityIds = <int>{};
-    for (var componentMap in components.values) {
-      entityIds.addAll(componentMap.keys);
-    }
-    return entityIds.map((id) => getEntity(id)).toList();
-  }
-
-  Map<int, dynamic> get<C>() {
-    return components.putIfAbsent(C.toString(), () => {});
-  }
-
-  Entity add(List<dynamic> comps) {
-    var entityId = lastId++;
-    for(var c in comps) {
-      var entitiesWithComponent = components.putIfAbsent(c.runtimeType.toString(), () => {});
-      entitiesWithComponent[entityId] = c;
-    }
-
-    EventBus().publish(Event<int>(eventType: EventType.added, id: null, value: entityId, ));
-    return getEntity(entityId);
-  }
-
-  void remove(int entityId) {
-    for(var entityComponentMap in components.entries) {
-      entityComponentMap.value.removeWhere((id, c) => id == entityId);
-    }
-
-    EventBus().publish(Event<int>(eventType: EventType.removed, id: null, value: entityId, ));
-  }
-}
-
 
 /// A user-friendly, non-unique label for an entity.
 ///
 /// Useful for debugging, UI display, or tagging entities.
-@MappableClass(discriminatorValue: 'name')
-class Name with NameMappable {
+class Name {
   final String name;
 
   Name({required this.name});
@@ -157,8 +57,7 @@ class Name with NameMappable {
 /// The grid-based position of an entity within the game world.
 ///
 /// Currently represents a global position until region support is added.
-@MappableClass(discriminatorValue: 'localPosition')
-class LocalPosition with LocalPositionMappable {
+class LocalPosition {
   int x, y;
 
   LocalPosition({required this.x, required this.y});
@@ -172,8 +71,7 @@ extension LocalPositionExtension on LocalPosition {
 }
 
 /// Component that signals an intent to move the entity by a relative offset.
-@MappableClass(discriminatorValue: 'moveByIntent')
-class MoveByIntent extends AfterTick with MoveByIntentMappable {
+class MoveByIntent extends AfterTick {
   final int dx, dy;
 
   MoveByIntent({required this.dx, required this.dy});
@@ -182,42 +80,35 @@ class MoveByIntent extends AfterTick with MoveByIntentMappable {
 /// Component added when an entity has successfully moved in a tick.
 ///
 /// Stores the previous and new positions for downstream logic.
-@MappableClass(discriminatorValue: 'didMove')
-class DidMove extends BeforeTick with DidMoveMappable {
+class DidMove extends BeforeTick {
   final LocalPosition from, to;
 
   DidMove({required this.from, required this.to}) : super(1);
 }
 
 /// Marker component indicating this entity blocks movement.
-@MappableClass(discriminatorValue: 'blocksMovement')
-class BlocksMovement with BlocksMovementMappable {}
+class BlocksMovement {}
 
 /// Component added when an entity's movement was blocked by another entity.
-@MappableClass(discriminatorValue: 'blockedMove')
-class BlockedMove extends BeforeTick with BlockedMoveMappable {
+class BlockedMove extends BeforeTick {
   final LocalPosition attempted;
 
   BlockedMove(this.attempted);
 }
 
 /// Marker component indicating the entity is controlled by the player.
-@MappableClass(discriminatorValue: 'playerControlled')
-class PlayerControlled with PlayerControlledMappable {}
+class PlayerControlled {}
 
-@MappableClass(discriminatorValue: 'aiControlled')
-class AiControlled with AiControlledMappable {}
+class AiControlled {}
 
 /// Component that provides a visual asset path for rendering the entity.
-@MappableClass(discriminatorValue: 'renderable')
-class Renderable with RenderableMappable {
+class Renderable {
   final String svgAssetPath;
 
   Renderable(this.svgAssetPath);
 }
 
-@MappableClass(discriminatorValue: 'health')
-class Health with HealthMappable {
+class Health {
   int current;
   int max;
 
@@ -244,15 +135,13 @@ extension HealthExtension on Health {
   }
 }
 
-@MappableClass(discriminatorValue: 'attackIntent')
-class AttackIntent with AttackIntentMappable {
+class AttackIntent {
   final int targetId;
 
   AttackIntent(this.targetId);
 }
 
-@MappableClass(discriminatorValue: 'didAttack')
-class DidAttack extends BeforeTick with DidAttackMappable{
+class DidAttack extends BeforeTick {
   final int targetId;
   final int damage;
 
@@ -260,8 +149,7 @@ class DidAttack extends BeforeTick with DidAttackMappable{
 }
 
 
-@MappableClass(discriminatorValue: 'wasAttacked')
-class WasAttacked extends BeforeTick with WasAttackedMappable {
+class WasAttacked extends BeforeTick {
   final int sourceId;
   final int damage;
 
@@ -271,43 +159,36 @@ class WasAttacked extends BeforeTick with WasAttackedMappable {
 // TODO change this back to a class?
 typedef Attacked = List<WasAttacked>;
 
-@MappableClass(discriminatorValue: 'dead')
-class Dead with DeadMappable {}
+class Dead {}
 
 
-@MappableClass(discriminatorValue: 'inventory')
-class Inventory with InventoryMappable {
+class Inventory {
   final List<int> items;
 
   Inventory(this.items);
 }
 
-@MappableClass(discriminatorValue: 'inventoryMaxCount')
-class InventoryMaxCount with InventoryMaxCountMappable {
+class InventoryMaxCount {
   final int maxAmount;
 
   InventoryMaxCount(this.maxAmount);
 }
 
-@MappableClass(discriminatorValue: 'inventoryFullFailure')
-class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable {
+class InventoryFullFailure extends BeforeTick {
   final int targetEntityId;
 
   InventoryFullFailure(this.targetEntityId);
 }
 
-@MappableClass(discriminatorValue: 'pickupable')
-class Pickupable with PickupableMappable {}
+class Pickupable {}
 
-@MappableClass(discriminatorValue: 'pickupIntent')
-class PickupIntent extends AfterTick with PickupIntentMappable{
+class PickupIntent extends AfterTick{
   final int targetEntityId;
 
   PickupIntent(this.targetEntityId);
 }
 
-@MappableClass(discriminatorValue: 'pickedUp')
-class PickedUp extends BeforeTick with PickedUpMappable {
+class PickedUp extends BeforeTick {
   final int targetEntityId;
 
   PickedUp(this.targetEntityId);

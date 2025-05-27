@@ -3,6 +3,7 @@ import 'dart:math';
 import 'components.dart';
 import 'ecs.dart';
 import 'events.dart';
+import 'entity.dart';
 
 // TODO: Example of a potentially better way to do Systems
 // abstract class ProcessingSystem extends System {
@@ -21,8 +22,6 @@ import 'events.dart';
 //   }
 // }
 
-
-
 /// A base class for all systems that operate over a [Chunk] of ECS data.
 abstract class System {
   static const int defaultPriority = 1;
@@ -31,7 +30,7 @@ abstract class System {
   // TODO: Change to just using the order of systems as provided to a world isntance?
   int get priority => System.defaultPriority;
 
-  void update(Registry world, Cell cell);
+  void update(Registry world);
 }
 
 /// A system that handles collision detection by checking for blocked movement.
@@ -42,17 +41,17 @@ class CollisionSystem extends System {
   int get priority => 1;
 
   @override
-  void update(Registry world, Cell cell) {
-    final positions = cell.get<LocalPosition>();
-    final blocks = cell.get<BlocksMovement>();
-    final moveIntents = cell.get<MoveByIntent>();
+  void update(Registry world) {
+    final positions = world.get<LocalPosition>();
+    final blocks = world.get<BlocksMovement>();
+    final moveIntents = world.get<MoveByIntent>();
 
     final movingEntityIds = moveIntents.keys.toList();
 
     if (blocks.isEmpty) return;
 
     for (final id in movingEntityIds) {
-      final e = cell.getEntity(id);
+      final e = world.getEntity(id);
       final pos = e.get<LocalPosition>();
       final intent = e.get<MoveByIntent>();
 
@@ -64,7 +63,7 @@ class CollisionSystem extends System {
       positions.forEach((key, value) {
         if (value.x == dest.x &&
             value.y == dest.y &&
-            cell.getEntity(key).has<BlocksMovement>()) {
+            world.getEntity(key).has<BlocksMovement>()) {
           blocked = true;
         }
       });
@@ -85,12 +84,12 @@ class MovementSystem extends System {
   int get priority => CollisionSystem().priority + 1;
 
   @override
-  void update(Registry world, Cell cell) {
-    final moveIntents = cell.get<MoveByIntent>();
+  void update(Registry world) {
+    final moveIntents = world.get<MoveByIntent>();
     final ids = moveIntents.keys.toList();
 
     for (final id in ids) {
-      final e = cell.getEntity(id);
+      final e = world.getEntity(id);
       final pos = e.get<LocalPosition>();
       final intent = e.get<MoveByIntent>();
       if (pos == null || intent == null) continue;
@@ -99,7 +98,8 @@ class MovementSystem extends System {
       final to = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
       //e.set(to);
 
-      e.upsert<LocalPosition>(LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy));
+      e.upsert<LocalPosition>(
+          LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy));
 
       e.upsert(DidMove(from: from, to: to));
       e.remove<MoveByIntent>();
@@ -117,8 +117,8 @@ class InventorySystem extends System {
   int get priority => 1;
 
   @override
-  void update(Registry world, Cell cell) {
-    final pickupIntents = cell.get<PickupIntent>();
+  void update(Registry world) {
+    final pickupIntents = world.get<PickupIntent>();
     if (pickupIntents.isEmpty) {
       return;
     }
@@ -128,8 +128,8 @@ class InventorySystem extends System {
 
     components.forEach((sourceId, intent) {
       var pickupIntent = intent as PickupIntent;
-      var source = cell.getEntity(sourceId);
-      var target = cell.getEntity(pickupIntent.targetEntityId);
+      var source = world.getEntity(sourceId);
+      var target = world.getEntity(pickupIntent.targetEntityId);
 
       if (!canPickup.isMatchEntity(source) ||
           !canBePickedUp.isMatchEntity(target)) {
@@ -158,27 +158,30 @@ class InventorySystem extends System {
       target.remove<Renderable>();
       target.remove<LocalPosition>();
 
-      source.upsert<Inventory>(Inventory([...source.get<Inventory>()!.items, pickupIntent.targetEntityId])); // Update inventory to include latest object
+      source.upsert<Inventory>(Inventory([
+        ...source.get<Inventory>()!.items,
+        pickupIntent.targetEntityId
+      ])); // Update inventory to include latest object
       source.upsert<PickedUp>(PickedUp(
           pickupIntent.targetEntityId)); // Allow for notifying of new item
     });
   }
 }
 
-
 class CombatSystem extends System {
   @override
-  int get priority => CollisionSystem().priority + 2; // TODO: Go after movement I guess?
+  int get priority =>
+      CollisionSystem().priority + 2; // TODO: Go after movement I guess?
 
   @override
-  void update(Registry world, Cell cell) {
-    final attackIntents = cell.get<AttackIntent>();
+  void update(Registry world) {
+    final attackIntents = world.get<AttackIntent>();
 
     var components = Map.from(attackIntents);
     components.forEach((sourceId, intent) {
       var attackIntent = intent as AttackIntent;
-      var source = cell.getEntity(sourceId);
-      var target = cell.getEntity(attackIntent.targetId);
+      var source = world.getEntity(sourceId);
+      var target = world.getEntity(attackIntent.targetId);
 
       var health = target.get<Health>(Health(0, 0))!;
       // TODO change how damage is calculated
@@ -191,15 +194,14 @@ class CombatSystem extends System {
         target.upsert(Dead());
       }
       target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
-      EventBus().publish(Event<Health>(eventType: EventType.updated, id: target.id, value: health));
-
+      EventBus().publish(Event<Health>(
+          eventType: EventType.updated, id: target.id, value: health));
 
       source.remove<AttackIntent>();
       source.upsert<DidAttack>(DidAttack(targetId: target.id, damage: 1));
     });
   }
 }
-
 
 /// A simple Event marker to be used to hook into pre-tick processing.
 class PreTickEvent {
@@ -210,7 +212,7 @@ class PreTickEvent {
 }
 
 /// A simple Event marker to be used to hook into pre-tick processing.
-class PostTickEvent{
+class PostTickEvent {
   /// ID of the current tick being process.
   final int tickId;
 
@@ -219,41 +221,89 @@ class PostTickEvent{
 
 class Registry {
   int tickId = 0;
-  final List<Cell> cells;
+  int lastId = 0;
+  Map<String, Map<int, dynamic>> components = {};
   final List<System> systems;
 
-  Registry(this.systems, this.cells);
+  Registry(this.systems, this.components);
+
+  Entity getEntity(int entityId) {
+    return Entity(parentCell: this, id: entityId);
+  }
+
+  List<Entity> entities() {
+    var entityIds = <int>{};
+    for (var componentMap in components.values) {
+      entityIds.addAll(componentMap.keys);
+    }
+    return entityIds.map((id) => getEntity(id)).toList();
+  }
+
+  Map<int, dynamic> get<C>() {
+    return components.putIfAbsent(C.toString(), () => {});
+  }
+
+  Entity add(List<dynamic> comps) {
+    var entityId = lastId++;
+    for (var c in comps) {
+      var entitiesWithComponent =
+          components.putIfAbsent(c.runtimeType.toString(), () => {});
+      entitiesWithComponent[entityId] = c;
+    }
+
+    EventBus().publish(Event<int>(
+      eventType: EventType.added,
+      id: null,
+      value: entityId,
+    ));
+    return getEntity(entityId);
+  }
+
+  void remove(int entityId) {
+    for (var entityComponentMap in components.entries) {
+      entityComponentMap.value.removeWhere((id, c) => id == entityId);
+    }
+
+    EventBus().publish(Event<int>(
+      eventType: EventType.removed,
+      id: null,
+      value: entityId,
+    ));
+  }
 
   /// Executes a single ECS update tick.
   void tick() {
-    EventBus().publish(Event<PreTickEvent>(eventType: EventType.updated, value: PreTickEvent(tickId), id: tickId));
+    EventBus().publish(Event<PreTickEvent>(
+        eventType: EventType.updated, value: PreTickEvent(tickId), id: tickId));
     clearLifetimeComponents<BeforeTick>();
 
     var sortedSystems = systems
       ..sort((a, b) => a.priority.compareTo(b
           .priority)); // TODO: move this elsewhere? Just sort once? Or when new systems are added?
 
-    for(var s in sortedSystems) {
-      for(var c in cells) {
-        s.update(this, c);
-      }
+    for (var s in sortedSystems) {
+      s.update(this);
     }
 
     clearLifetimeComponents<AfterTick>();
-    EventBus().publish(Event<PostTickEvent>(eventType: EventType.updated, value: PostTickEvent(tickId), id: tickId));
+    EventBus().publish(Event<PostTickEvent>(
+        eventType: EventType.updated,
+        value: PostTickEvent(tickId),
+        id: tickId));
 
     tickId++; // TODO: wrap around to avoid out of bounds type error?
   }
 
   void clearLifetimeComponents<T extends Lifetime>() {
-    for(var cell in cells) {
-      for (var componentMap in cell.components.values) {
-        var entries = Map.of(componentMap).entries; // Create copy since we'll be modifying the actual map.
+    for (var componentMap in components.values) {
+      var entries = Map.of(componentMap)
+          .entries; // Create copy since we'll be modifying the actual map.
 
-        for (var entityToComponent in entries) {
-          if (entityToComponent.value is BeforeTick && entityToComponent.value.tick()) { // if is BeforeTick and is dead, remove.
-            componentMap.remove(entityToComponent.key);
-          }
+      for (var entityToComponent in entries) {
+        if (entityToComponent.value is BeforeTick &&
+            entityToComponent.value.tick()) {
+          // if is BeforeTick and is dead, remove.
+          componentMap.remove(entityToComponent.key);
         }
       }
     }

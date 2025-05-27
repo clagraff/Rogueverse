@@ -31,32 +31,8 @@ class MyGame extends FlameGame
       CombatSystem(),
     ];
 
-    registry = Registry(systems, []);
-    // Register all your component mappers
-    MapperContainer.globals.useAll({
-      CellMapper.ensureInitialized(),
-      NameMapper.ensureInitialized(),
-      LocalPositionMapper.ensureInitialized(),
-      MoveByIntentMapper.ensureInitialized(),
-      DidMoveMapper.ensureInitialized(),
-      BlocksMovementMapper.ensureInitialized(),
-      BlockedMoveMapper.ensureInitialized(),
-      PlayerControlledMapper.ensureInitialized(),
-      AiControlledMapper.ensureInitialized(),
-      RenderableMapper.ensureInitialized(),
-      HealthMapper.ensureInitialized(),
-      AttackIntentMapper.ensureInitialized(),
-      DidAttackMapper.ensureInitialized(),
-      WasAttackedMapper.ensureInitialized(),
-      DeadMapper.ensureInitialized(),
-      InventoryMapper.ensureInitialized(),
-      InventoryMaxCountMapper.ensureInitialized(),
-      InventoryFullFailureMapper.ensureInitialized(),
-      PickupableMapper.ensureInitialized(),
-      PickupIntentMapper.ensureInitialized(),
-      PickedUpMapper.ensureInitialized(),
-      // Register all other component mappers
-    });
+    registry = Registry(systems, {});
+
   }
 
   @override

@@ -5,11 +5,11 @@ import '../../engine/engine.gen.dart';
 import '../../ui/components/components.gen.dart';
 
 class Agent extends SvgTileComponent with HasVisibility, Disposer {
-  final Cell cell;
+  final Registry registry;
   final Entity entity;
 
   Agent({
-    required this.cell,
+    required this.registry,
     required this.entity,
     required super.svgAssetPath,
     super.position,
@@ -43,7 +43,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     });
 
     EventBus().on<Dead>(entity.id).first.then((e) {
-      cell.remove(entity.id);
+      registry.remove(entity.id);
     });
 
 

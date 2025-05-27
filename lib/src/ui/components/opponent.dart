@@ -13,7 +13,7 @@ class Opponent extends Agent {
   late BehaviorTree tree;
 
   Opponent(this.world,
-      {required super.cell,
+      {required super.registry,
       required super.entity,
       required super.svgAssetPath,
       super.position,
