@@ -1,6 +1,4 @@
 import 'package:flutter/widgets.dart';
-import 'systems.dart';
-import 'entity.dart';
 
 /// A lightweight wrapper around a teardown function, providing a consistent
 /// interface for managing and invoking resource cleanup logic.
@@ -71,42 +69,3 @@ extension DisposableFunction on void Function() {
 
 T? cast<T>(x) => x is T ? x : null;
 void mustBe<T>(x) => x is T == false ? throw Exception("Invalid types") : '';
-
-
-
-/// A template for spawning entities with a predefined set of components.
-///
-/// This allows you to define reusable "blueprints" for game objects
-/// (e.g., a player, wall, item) that can be instantiated multiple times.
-///
-/// Example:
-/// ```dart
-/// final playerArchetype = Archetype()
-///   ..set(Name(name: 'Player'))
-///   ..set(PlayerControlled())
-///   ..set(Renderable('images/player.svg'));
-///
-/// final player = playerArchetype.build(chunk);
-/// ```
-class Archetype {
-  final List<Function(Entity e)> _builders = [];
-
-  /// Adds a component to this archetype.
-  ///
-  /// This component will be included when [build] is called.
-  void set<T>(T comp) {
-    _builders.add((Entity e) => e.upsert<T>(comp));
-  }
-
-  /// Instantiates a new entity in the given [chunk] using this archetype's components.
-  ///
-  /// Returns the newly created [Entity].
-  Entity build(Registry registry) {
-    final e = registry.add([]);
-
-    for (var builder in _builders) {
-      builder(e);
-    }
-    return e;
-  }
-}
