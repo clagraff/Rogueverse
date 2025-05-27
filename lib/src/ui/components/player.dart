@@ -2,9 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/widgets.dart';
 import '../../../main.dart';
 import '../../application_ui/overlays/overlay_helper.dart';
 import '../../application_ui/overlays/player_inventory_widget.dart';
@@ -62,14 +60,6 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
       super.size});
 
   static const movementDistance = 1; // ECS units, not pixels!
-
-  final _inputToDelta = {
-    LogicalKeyboardKey.keyA: Vector2(-1, 0),
-    LogicalKeyboardKey.keyD: Vector2(1, 0),
-    LogicalKeyboardKey.keyW: Vector2(0, -1),
-    LogicalKeyboardKey.keyS: Vector2(0, 1),
-  };
-
 
   void showTable(FlameGame game) {
     var sourceContext = game.buildContext!;

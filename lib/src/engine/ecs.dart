@@ -1,7 +1,6 @@
 import 'dart:collection';
 
 import 'package:flutter/widgets.dart';
-import 'components.dart';
 import 'systems.dart';
 import 'entity.dart';
 

@@ -6,7 +6,7 @@ class ScrollDispatcher extends Component {
   static final _key = ComponentKey.named("ScrollDispatcher");
 
   @override
-  final key = _key;
+  get key => _key;
 
   final List<ScrollCallback> _listeners = [];
 

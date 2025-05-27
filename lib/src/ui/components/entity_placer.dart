@@ -41,6 +41,8 @@ class EntityPlacer extends PositionComponent
             .contains(LogicalKeyboardKey.controlLeft) ||
         HardwareKeyboard.instance.logicalKeysPressed
             .contains(LogicalKeyboardKey.controlRight);
+
+    super.onDragStart(event);
   }
 
   @override
@@ -51,6 +53,8 @@ class EntityPlacer extends PositionComponent
   @override
   void onDragEnd(DragEndEvent event) {
     process(_dragStartGrid, _dragUpdateGrid!);
+
+    super.onDragEnd(event);
   }
 
   @override

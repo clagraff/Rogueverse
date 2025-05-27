@@ -1,12 +1,11 @@
 import 'dart:async';
 
-import 'package:dart_mappable/dart_mappable.dart';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:rogueverse/src/application_ui/overlays/example.dart';
 
 import 'src/ui/mixins/scroll_callback.dart';
 import 'src/ui/hud/camera_controls.dart';
@@ -16,7 +15,7 @@ import 'src/ui/game_world.dart';
 class MyGame extends FlameGame
     with HasKeyboardHandlerComponents, ScrollDetector {
   @override
-  var debugMode = false;
+  get debugMode => false;
 
   late final Cell liveCell;
   late final Registry registry;
@@ -81,7 +80,9 @@ void main() {
     if (record.error != null) {
       message += " ${record.error!.toString()}";
     }
-    print(message);
+    if (kDebugMode) {
+      print(message);
+    }
   });
   final parentLogger = Logger('app');
   final childLogger = Logger('app.database');

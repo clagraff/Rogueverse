@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../engine/components.dart';
-import '../../engine/ecs.dart';
 import '../../engine/entity.dart';
 
 // Extension for select-like mapping on map entries
@@ -86,7 +85,7 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
         width: 300,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).dialogBackgroundColor,
+          color: DialogTheme.of(context).backgroundColor,
           border: Border.all(color: Colors.white, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),

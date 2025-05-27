@@ -19,7 +19,6 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
   @override
   Future<void> onLoad() {
     EventBus().on<Dead>(entity.id).forEach((e) {
-      print("shouldnt be visible222!!");
       isVisible = false;
     });
 

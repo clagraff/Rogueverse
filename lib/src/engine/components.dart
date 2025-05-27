@@ -1,7 +1,3 @@
-import 'package:dart_mappable/dart_mappable.dart';
-import 'systems.dart';
-import 'events.dart';
-
 /// Base class for components with a limited lifespan that can expire
 /// after a certain number of ticks. When lifetime reaches 0, the component
 /// is removed when processed.

@@ -1,4 +1,6 @@
 // generator.dart
+// ignore_for_file: avoid_print
+
 import 'dart:io';
 import 'package:yaml/yaml.dart';
 import 'package:args/args.dart';
@@ -126,9 +128,6 @@ String generateModels(dynamic schema, String discriminatorField) {
         final fieldType = fieldData['type'].toString();
         final defaultValue = fieldData['default'];
 
-        // Field is final if no default value is specified
-        final isFinal = defaultValue == null;
-
         // Handle collections and non-constant defaults
         if (fieldType.startsWith('List<') || fieldType.startsWith('Map<')) {
           if (defaultValue != null && defaultValue != '{}' && defaultValue != '[]') {
@@ -136,7 +135,7 @@ String generateModels(dynamic schema, String discriminatorField) {
             buffer.writeln('    this.$fieldName = $defaultValue,');
           } else {
             // For collections, use nullable parameter and initialize in body
-            buffer.writeln('    ${fieldType}? $fieldName,');
+            buffer.writeln('    $fieldType? $fieldName,');
 
             // Default empty collection based on type
             final emptyValue = fieldType.startsWith('List') ? '[]' : '{}';

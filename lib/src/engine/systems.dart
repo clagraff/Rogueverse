@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'components.dart';
 import 'ecs.dart';
 import 'events.dart';
@@ -27,7 +25,7 @@ abstract class System {
   static const int defaultPriority = 1;
 
   /// Systems are executed in ascending order of priority.
-  // TODO: Change to just using the order of systems as provided to a world isntance?
+  // TODO: Change to just using the order of systems as provided to a world instance?
   int get priority => System.defaultPriority;
 
   void update(Registry world);

@@ -2,9 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import 'package:flame/input.dart';
-import 'package:rogueverse/src/engine/ecs.dart';
-import 'package:rogueverse/src/engine/engine.gen.dart';
+import '../../../src/engine/engine.gen.dart';
 import '../../../src/ui/ui.gen.dart';
 
 class HealthBar extends Component {
