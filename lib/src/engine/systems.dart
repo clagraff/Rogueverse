@@ -28,7 +28,7 @@ abstract class System {
   // TODO: Change to just using the order of systems as provided to a world instance?
   int get priority => System.defaultPriority;
 
-  void update(Registry world);
+  void update(Registry registry);
 }
 
 /// A system that handles collision detection by checking for blocked movement.
@@ -39,17 +39,17 @@ class CollisionSystem extends System {
   int get priority => 1;
 
   @override
-  void update(Registry world) {
-    final positions = world.get<LocalPosition>();
-    final blocks = world.get<BlocksMovement>();
-    final moveIntents = world.get<MoveByIntent>();
+  void update(Registry registry) {
+    final positions = registry.get<LocalPosition>();
+    final blocks = registry.get<BlocksMovement>();
+    final moveIntents = registry.get<MoveByIntent>();
 
     final movingEntityIds = moveIntents.keys.toList();
 
     if (blocks.isEmpty) return;
 
     for (final id in movingEntityIds) {
-      final e = world.getEntity(id);
+      final e = registry.getEntity(id);
       final pos = e.get<LocalPosition>();
       final intent = e.get<MoveByIntent>();
 
@@ -61,7 +61,7 @@ class CollisionSystem extends System {
       positions.forEach((key, value) {
         if (value.x == dest.x &&
             value.y == dest.y &&
-            world.getEntity(key).has<BlocksMovement>()) {
+            registry.getEntity(key).has<BlocksMovement>()) {
           blocked = true;
         }
       });
@@ -82,12 +82,12 @@ class MovementSystem extends System {
   int get priority => CollisionSystem().priority + 1;
 
   @override
-  void update(Registry world) {
-    final moveIntents = world.get<MoveByIntent>();
+  void update(Registry registry) {
+    final moveIntents = registry.get<MoveByIntent>();
     final ids = moveIntents.keys.toList();
 
     for (final id in ids) {
-      final e = world.getEntity(id);
+      final e = registry.getEntity(id);
       final pos = e.get<LocalPosition>();
       final intent = e.get<MoveByIntent>();
       if (pos == null || intent == null) continue;
@@ -115,8 +115,8 @@ class InventorySystem extends System {
   int get priority => 1;
 
   @override
-  void update(Registry world) {
-    final pickupIntents = world.get<PickupIntent>();
+  void update(Registry registry) {
+    final pickupIntents = registry.get<PickupIntent>();
     if (pickupIntents.isEmpty) {
       return;
     }
@@ -126,8 +126,8 @@ class InventorySystem extends System {
 
     components.forEach((sourceId, intent) {
       var pickupIntent = intent as PickupIntent;
-      var source = world.getEntity(sourceId);
-      var target = world.getEntity(pickupIntent.targetEntityId);
+      var source = registry.getEntity(sourceId);
+      var target = registry.getEntity(pickupIntent.targetEntityId);
 
       if (!canPickup.isMatchEntity(source) ||
           !canBePickedUp.isMatchEntity(target)) {
@@ -172,14 +172,14 @@ class CombatSystem extends System {
       CollisionSystem().priority + 2; // TODO: Go after movement I guess?
 
   @override
-  void update(Registry world) {
-    final attackIntents = world.get<AttackIntent>();
+  void update(Registry registry) {
+    final attackIntents = registry.get<AttackIntent>();
 
     var components = Map.from(attackIntents);
     components.forEach((sourceId, intent) {
       var attackIntent = intent as AttackIntent;
-      var source = world.getEntity(sourceId);
-      var target = world.getEntity(attackIntent.targetId);
+      var source = registry.getEntity(sourceId);
+      var target = registry.getEntity(attackIntent.targetId);
 
       var health = target.get<Health>(Health(0, 0))!;
       // TODO change how damage is calculated
@@ -192,7 +192,7 @@ class CombatSystem extends System {
         target.upsert(Dead());
       }
       target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
-      EventBus().publish(Event<Health>(
+      registry.eventBus.publish(Event<Health>(
           eventType: EventType.updated, id: target.id, value: health));
 
       source.remove<AttackIntent>();

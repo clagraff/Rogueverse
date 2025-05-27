@@ -35,7 +35,7 @@ class Opponent extends Agent {
 
   @override
   Future<void> onLoad() {
-    EventBus().on<PreTickEvent>().forEach((e) {
+    registry.eventBus.on<PreTickEvent>().forEach((e) {
       tree.tick();
     });
 

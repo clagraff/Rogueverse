@@ -24,8 +24,9 @@ class Registry {
   int lastId = 0;
   Map<String, Map<int, dynamic>> components = {};
   final List<System> systems;
+  final EventBus eventBus;
 
-  Registry(this.systems, this.components);
+  Registry(this.systems, this.components, this.eventBus);
 
   Entity getEntity(int entityId) {
     return Entity(parentCell: this, id: entityId);
@@ -51,7 +52,7 @@ class Registry {
       entitiesWithComponent[entityId] = c;
     }
 
-    EventBus().publish(Event<int>(
+    eventBus.publish(Event<int>(
       eventType: EventType.added,
       id: null,
       value: entityId,
@@ -64,7 +65,7 @@ class Registry {
       entityComponentMap.value.removeWhere((id, c) => id == entityId);
     }
 
-    EventBus().publish(Event<int>(
+    eventBus.publish(Event<int>(
       eventType: EventType.removed,
       id: null,
       value: entityId,
@@ -73,7 +74,7 @@ class Registry {
 
   /// Executes a single ECS update tick.
   void tick() {
-    EventBus().publish(Event<PreTickEvent>(
+    eventBus.publish(Event<PreTickEvent>(
         eventType: EventType.updated, value: PreTickEvent(tickId), id: tickId));
     clearLifetimeComponents<BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
@@ -86,7 +87,7 @@ class Registry {
     }
 
     clearLifetimeComponents<AfterTick>();  // TODO would be cool to find a better way of pulling this out from the class.
-    EventBus().publish(Event<PostTickEvent>(
+    eventBus.publish(Event<PostTickEvent>(
         eventType: EventType.updated,
         value: PostTickEvent(tickId),
         id: tickId));

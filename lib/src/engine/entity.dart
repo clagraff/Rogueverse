@@ -20,7 +20,7 @@ class Entity {
 
     if (orDefault != null) {
       entitiesWithComponent[id] = orDefault;
-      EventBus().publish(Event<C>(eventType:EventType.added, id: id, value: orDefault));
+      parentCell.eventBus.publish(Event<C>(eventType:EventType.added, id: id, value: orDefault));
 
       return orDefault;
     }
@@ -34,7 +34,7 @@ class Entity {
 
     entitiesWithComponent[id] = c;
 
-    EventBus().publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c));
+    parentCell.eventBus.publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c));
   }
 
   void remove<C>() {
@@ -45,7 +45,7 @@ class Entity {
       var oldComponent = entitiesWithComponent[id] as C;
       entitiesWithComponent.remove(id);
 
-      EventBus().publish(Event<C>(eventType: EventType.removed, id: id, value: oldComponent));
+      parentCell.eventBus.publish(Event<C>(eventType: EventType.removed, id: id, value: oldComponent));
     }
   }
 

@@ -21,14 +21,14 @@ class Event<T> {
 
 /// Generic event bus implemented as a singleton
 class EventBus {
-  // Singleton instance
-  static final EventBus _instance = EventBus._internal();
-
-  // Factory constructor to return the singleton instance
-  factory EventBus() => _instance;
-
-  // Private constructor for singleton
-  EventBus._internal();
+  // // Singleton instance
+  // static final EventBus _instance = EventBus._internal();
+  //
+  // // Factory constructor to return the singleton instance
+  // factory EventBus() => _instance;
+  //
+  // // Private constructor for singleton
+  // EventBus._internal();
 
   // Type-based stream controllers
   final Map<Type, StreamController<dynamic>> _controllers = {};

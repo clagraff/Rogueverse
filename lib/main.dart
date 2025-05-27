@@ -30,7 +30,7 @@ class MyGame extends FlameGame
       CombatSystem(),
     ];
 
-    registry = Registry(systems, {});
+    registry = Registry(systems, {}, EventBus());
 
   }
 
@@ -108,8 +108,17 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var darkColorScheme = ColorScheme.dark();
     return MaterialApp(
-      theme: ThemeData.dark(),
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: darkColorScheme,
+        dialogTheme: DialogThemeData(
+          backgroundColor: darkColorScheme.surface,
+          elevation: 6.0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
       // Root widget
       home: Scaffold(
         appBar: AppBar(

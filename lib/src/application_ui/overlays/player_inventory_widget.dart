@@ -85,7 +85,8 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
         width: 300,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: DialogTheme.of(context).backgroundColor,
+          color: Theme.of(context).dialogTheme.backgroundColor,
+          //color: Theme.of(context).dialogBackgroundColor,
           border: Border.all(color: Colors.white, width: 2),
           borderRadius: BorderRadius.circular(8),
         ),

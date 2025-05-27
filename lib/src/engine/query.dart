@@ -1,11 +1,6 @@
 import 'entity.dart';
 import 'registry.dart';
 
-
-// TODO: create a CachedQuery which hooks into the event bus to watch Entity IDs
-// which have all the necessary components, instead of needing to iterate through
-// all comps/entities?
-
 /// A reusable filter that can be built ahead of time to select
 /// entities with specific component requirements.
 ///
@@ -121,3 +116,52 @@ class Query {
     return q;
   }
 }
+
+// class CachedQuery {
+//   final Query _query;
+//   final Registry _registry;
+//   final Set<int> _matching = {};
+//   final List<Disposable> _subscriptions = [];
+//
+//   CachedQuery(this._query, this._registry) {
+//     _initialize();
+//   }
+//
+//   void _initialize() {
+//     // Listen for all relevant component types (added/updated/removed)
+//     for (final type in _query._required.keys.followedBy(_query._excluded.keys)) {
+//       _subscriptions.add(
+//           _registry.eventBus.on(type).listen((event) {
+//             final id = event.id as int;
+//
+//             final matches = _query.isMatching(_registry, id);
+//             final exists = _matching.contains(id);
+//
+//             if (matches && !exists) {
+//               _matching.add(id);
+//             } else if (!matches && exists) {
+//               _matching.remove(id);
+//             }
+//           }).asDisposable()
+//       );
+//     }
+//
+//     // Initial fill
+//     for (final entity in _query.find(_registry)) {
+//       _matching.add(entity.id);
+//     }
+//   }
+//
+//   Iterable<Entity> get entities sync* {
+//     for (final id in _matching) {
+//       yield _registry.getEntity(id);
+//     }
+//   }
+//
+//   void dispose() {
+//     for (final d in _subscriptions) {
+//       d.dispose();
+//     }
+//     _subscriptions.clear();
+//   }
+// }
