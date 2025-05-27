@@ -2,6 +2,10 @@ import 'entity.dart';
 import 'registry.dart';
 
 
+// TODO: create a CachedQuery which hooks into the event bus to watch Entity IDs
+// which have all the necessary components, instead of needing to iterate through
+// all comps/entities?
+
 /// A reusable filter that can be built ahead of time to select
 /// entities with specific component requirements.
 ///
