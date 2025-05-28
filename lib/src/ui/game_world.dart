@@ -52,22 +52,35 @@ class GameWorld extends flame.World with Disposer {
       ]),
     ]);
 
+
+    var names = [
+      'Iron short sword',
+      'Recurve bow',
+      'Copper helm',
+      'Gold',
+      'Gold',
+      'Gold',
+      'Leather gloves',
+      'Health potion',
+      'Stamina potion',
+    ];
+
     var r = Random();
-    var next = r.nextInt(5) + 3;
+    var next = r.nextInt(5) + 5;
     for (var i = 0; i < next; i++) {
       var x = 0;
       var y = 0;
 
       while (x == 0 && y == 0) {
-        x = r.nextInt(18) * (r.nextBool() ? 1 : -1);
-        y = r.nextInt(10) * (r.nextBool() ? 1 : -1);
+        x = r.nextInt(8) * (r.nextBool() ? 1 : -1);
+        y = r.nextInt(8) * (r.nextBool() ? 1 : -1);
       }
 
       reg.add([
         Renderable('images/item_small.svg'),
         LocalPosition(x: x, y: y),
         Pickupable(),
-        Name(name: 'Loot'),
+        Name(name: names[r.nextInt(names.length)]),
       ]);
     }
 

@@ -35,6 +35,7 @@ class PlayerInventoryWidget extends StatefulWidget {
 
 class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
   final FocusNode _focusNode = FocusNode();
+  int selected = -1;
 
   @override
   void initState() {
@@ -62,14 +63,19 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
   @override
   Widget build(BuildContext context) {
     // Group items by name and build rows
+    var i = 0;
     var lines = widget.inventory
         .groupListsBy((entity) => entity.get<Name>()?.name)
         .select((entry) => (name: entry.key, count: entry.value.length))
-        .map((entry) => DataRow(cells: [
+        .map((entry) => DataRow(
+        selected: i++ == selected, // TODO add ability to select items I guess
+        cells: [
       DataCell(Text(entry.name ?? 'Unknown')),
       DataCell(Text(entry.count.toString())),
     ]))
         .toList();
+
+    var dataTable = buildDataTable(lines);
 
     return Focus(
       focusNode: _focusNode,
@@ -77,6 +83,35 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.tab) {
           closeOverlay();
+          return KeyEventResult.handled;
+        }
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.escape) {
+          if (selected > -1) {
+            setState(() { selected = -1; }); // Unselected currently selected row.
+          } else {
+            closeOverlay(); // If no row was selected, I guess close the popup.
+          }
+
+          return KeyEventResult.handled;
+        }
+
+        if (event is KeyDownEvent &&
+            [LogicalKeyboardKey.keyW, LogicalKeyboardKey.keyS,].contains(event.logicalKey)) {
+
+          var direction = event.logicalKey == LogicalKeyboardKey.keyW ? -1 : 1;
+          var current = dataTable.rows.indexWhere((row) => row.selected);
+
+          // on no match, current is `-1`, which results in next == 0. Perfect.
+          var next = current + direction;
+          if (next < 0) {
+            setState(() {selected = 0;});
+          } else if (next >= dataTable.rows.length) {
+            setState(() {selected = dataTable.rows.length;});
+          } else {
+            setState(() {selected = next;});
+          }
+
           return KeyEventResult.handled;
         }
         return KeyEventResult.ignored;
@@ -98,7 +133,7 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
               style: TextStyle(fontSize: 18),
             ),
             const SizedBox(height: 12),
-            buildDataTable(lines),
+            dataTable,
             const SizedBox(height: 12),
             ElevatedButton(
               onPressed: closeOverlay,
