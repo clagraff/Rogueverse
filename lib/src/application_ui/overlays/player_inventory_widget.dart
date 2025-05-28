@@ -2,6 +2,7 @@ import 'package:collection/collection.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 
 import '../../engine/components.dart';
 import '../../engine/entity.dart';
@@ -22,6 +23,11 @@ class PlayerInventoryWidget extends StatefulWidget {
   final List<Entity> inventory;
   final Function()? onClose;
 
+  // TODO finish these
+  // final bool allowMultiSelect;
+  // final Function(List<Entity>, Entity)? onSelect;
+  // final Function(List<Entity>, Entity)? onDeselect;
+
   const PlayerInventoryWidget({
     super.key,
     required this.game,
@@ -36,6 +42,7 @@ class PlayerInventoryWidget extends StatefulWidget {
 class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
   final FocusNode _focusNode = FocusNode();
   int selected = -1;
+  List<DataRow> selectedRows = [];
 
   @override
   void initState() {
@@ -62,18 +69,35 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // Group items by name and build rows
-    var i = 0;
     var lines = widget.inventory
         .groupListsBy((entity) => entity.get<Name>()?.name)
         .select((entry) => (name: entry.key, count: entry.value.length))
-        .map((entry) => DataRow(
-        selected: i++ == selected, // TODO add ability to select items I guess
-        cells: [
-      DataCell(Text(entry.name ?? 'Unknown')),
-      DataCell(Text(entry.count.toString())),
-    ]))
-        .toList();
+        .asMap()  // Convert to a map with indices
+        .entries  // Get entries with both index and value
+        .map((indexedEntry) {
+      final index = indexedEntry.key;  // This is the stable index for this row
+      final entry = indexedEntry.value;
+
+      return DataRow(
+          selected: index == selected,
+          cells: [
+            DataCell(Text(entry.name ?? 'Unknown')),
+            DataCell(Text(entry.count.toString())),
+          ],
+          onSelectChanged: (s) {
+            Logger("player_inventory_widget").info("Tapped: $s");
+            if (s == true) {
+              setState(() {
+                Logger("player_inventory_widget").info("selected = $index");
+                selected = index;
+              });
+            } else {
+              setState(() { selected = -1; });
+            }
+          }
+      );
+    }).toList();
+
 
     var dataTable = buildDataTable(lines);
 
@@ -88,7 +112,9 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
         if (event is KeyDownEvent &&
             event.logicalKey == LogicalKeyboardKey.escape) {
           if (selected > -1) {
-            setState(() { selected = -1; }); // Unselected currently selected row.
+            setState(() {
+              selected = -1;
+            }); // Unselected currently selected row.
           } else {
             closeOverlay(); // If no row was selected, I guess close the popup.
           }
@@ -97,19 +123,27 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
         }
 
         if (event is KeyDownEvent &&
-            [LogicalKeyboardKey.keyW, LogicalKeyboardKey.keyS,].contains(event.logicalKey)) {
-
+            [
+              LogicalKeyboardKey.keyW,
+              LogicalKeyboardKey.keyS,
+            ].contains(event.logicalKey)) {
           var direction = event.logicalKey == LogicalKeyboardKey.keyW ? -1 : 1;
           var current = dataTable.rows.indexWhere((row) => row.selected);
 
           // on no match, current is `-1`, which results in next == 0. Perfect.
           var next = current + direction;
           if (next < 0) {
-            setState(() {selected = 0;});
+            setState(() {
+              selected = 0;
+            });
           } else if (next >= dataTable.rows.length) {
-            setState(() {selected = dataTable.rows.length;});
+            setState(() {
+              selected = dataTable.rows.length;
+            });
           } else {
-            setState(() {selected = next;});
+            setState(() {
+              selected = next;
+            });
           }
 
           return KeyEventResult.handled;
@@ -151,6 +185,7 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
       horizontalMargin: 12,
       sortColumnIndex: 0,
       sortAscending: true,
+      showCheckboxColumn: false, // TODO make this toggleable based on whether or not multiselect is enabled.
       columns: const [
         DataColumn(label: Text("Item")),
         DataColumn(label: Text("Qty"), numeric: true),
