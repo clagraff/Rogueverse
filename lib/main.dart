@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
-import 'package:flutter/foundation.dart' show kDebugMode;
+import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:window_manager/window_manager.dart';
@@ -77,10 +77,20 @@ void main() async {
     }
   });
 
+  if (!kIsWeb) {
+    await setupWindow();
+  }
+
+  runApp(
+    MyApp(),
+  );
+}
+
+Future<void> setupWindow() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Must add this line.
   await windowManager.ensureInitialized();
-
+  
   WindowOptions windowOptions = WindowOptions(
     size: Size(800, 600),
     center: true,
@@ -92,11 +102,6 @@ void main() async {
     await windowManager.show();
     await windowManager.focus();
   });
-
-
-  runApp(
-    MyApp(),
-  );
 }
 
 class MyApp extends StatelessWidget {
