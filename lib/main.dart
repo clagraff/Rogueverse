@@ -6,6 +6,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:window_manager/window_manager.dart';
 
 import 'src/ui/mixins/scroll_callback.dart';
 import 'src/ui/hud/camera_controls.dart';
@@ -62,7 +63,7 @@ class MyGame extends FlameGame
   }
 }
 
-void main() {
+void main() async {
   // Set up hierarchical logging
   Logger.root.level = Level.INFO;
   Logger.root.onRecord.listen((record) {
@@ -75,6 +76,23 @@ void main() {
       print(message);
     }
   });
+
+  WidgetsFlutterBinding.ensureInitialized();
+  // Must add this line.
+  await windowManager.ensureInitialized();
+
+  WindowOptions windowOptions = WindowOptions(
+    size: Size(800, 600),
+    center: true,
+    backgroundColor: Colors.transparent,
+    skipTaskbar: false,
+    titleBarStyle: TitleBarStyle.hidden,
+  );
+  windowManager.waitUntilReadyToShow(windowOptions, () async {
+    await windowManager.show();
+    await windowManager.focus();
+  });
+
 
   runApp(
     MyApp(),
@@ -99,9 +117,9 @@ class MyApp extends StatelessWidget {
       ),
       // Root widget
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('My Home Page'),
-        ),
+        // appBar: AppBar(
+        //   title: const Text('My Home Page'),
+        // ),
         body: Stack(children: [
           GameWidget(game: MyGame()),
         ]),
