@@ -1,5 +1,5 @@
 ---
-title: "First Week Progress"
+title: "First Post Check-in"
 ---
 
-Got started adding a blog to the repo, using Github Pages to host it.
+![first-post.gif]({{ site.baseurl }}/assets/first-post.gif)
