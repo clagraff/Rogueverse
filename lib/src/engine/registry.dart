@@ -101,7 +101,7 @@ class Registry {
           .entries; // Create copy since we'll be modifying the actual map.
 
       for (var entityToComponent in entries) {
-        if (entityToComponent.value is BeforeTick &&
+        if (entityToComponent.value is T &&
             entityToComponent.value.tick()) {
           // if is BeforeTick and is dead, remove.
           componentMap.remove(entityToComponent.key);

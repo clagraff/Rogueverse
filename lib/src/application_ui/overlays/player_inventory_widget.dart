@@ -78,23 +78,25 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
       final index = indexedEntry.key;  // This is the stable index for this row
       final entry = indexedEntry.value;
 
+      onSelectChangedFn(s) {
+        Logger("player_inventory_widget").info("Tapped: $s");
+        if (s == true) {
+          setState(() {
+            Logger("player_inventory_widget").info("selected = $index");
+            selected = index;
+          });
+        } else {
+          setState(() { selected = -1; });
+        }
+      }
+
       return DataRow(
           selected: index == selected,
           cells: [
             DataCell(Text(entry.name ?? 'Unknown')),
             DataCell(Text(entry.count.toString())),
           ],
-          onSelectChanged: (s) {
-            Logger("player_inventory_widget").info("Tapped: $s");
-            if (s == true) {
-              setState(() {
-                Logger("player_inventory_widget").info("selected = $index");
-                selected = index;
-              });
-            } else {
-              setState(() { selected = -1; });
-            }
-          }
+          onSelectChanged: index == selected ? onSelectChangedFn : null,
       );
     }).toList();
 
