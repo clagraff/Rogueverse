@@ -2,13 +2,13 @@ import 'dart:math';
 
 import 'package:flame/effects.dart';
 import '../../ai/ai.barrel.dart';
-import '../../engine/engine.barrel.dart';
+import '../../engine/engine.barrel.dart' as engine;
 import '../../ui/components/components.barrel.dart';
 
 var random = Random();
 
 class Opponent extends Agent {
-  final Registry world;
+  final engine.World world;
   Effect? effect;
   late BehaviorTree tree;
 
@@ -19,8 +19,8 @@ class Opponent extends Agent {
       super.position,
       super.size}) {
     tree = BehaviorTree(ActionNode((b) {
-      entity.upsert<MoveByIntent>(
-          MoveByIntent(dx: random.nextInt(3) - 1, dy: random.nextInt(3) - 1));
+      entity.upsert<engine.MoveByIntent>(
+          engine.MoveByIntent(dx: random.nextInt(3) - 1, dy: random.nextInt(3) - 1));
       return BehaviorStatus.success;
     }), blackboard: Blackboard());
   }
@@ -35,7 +35,7 @@ class Opponent extends Agent {
 
   @override
   Future<void> onLoad() {
-    registry.eventBus.on<PreTickEvent>().forEach((e) {
+    registry.eventBus.on<engine.PreTickEvent>().forEach((e) {
       tree.tick();
     });
 

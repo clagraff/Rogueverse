@@ -28,7 +28,7 @@ part 'systems.mapper.dart';
 /// A base class for all systems that operate over a [Chunk] of ECS data.
 @MappableClass(discriminatorKey: "__type")
 abstract class System with SystemMappable {
-  void update(Registry registry);
+  void update(World registry);
 }
 
 /// A system that handles collision detection by checking for blocked movement.
@@ -37,7 +37,7 @@ abstract class System with SystemMappable {
 @MappableClass()
 class CollisionSystem extends System with CollisionSystemMappable {
   @override
-  void update(Registry registry) {
+  void update(World registry) {
     final positions = registry.get<LocalPosition>();
     final blocks = registry.get<BlocksMovement>();
     final moveIntents = registry.get<MoveByIntent>();
@@ -78,7 +78,7 @@ class CollisionSystem extends System with CollisionSystemMappable {
 @MappableClass()
 class MovementSystem extends System with MovementSystemMappable {
   @override
-  void update(Registry registry) {
+  void update(World registry) {
     final moveIntents = registry.get<MoveByIntent>();
     final ids = moveIntents.keys.toList();
 
@@ -109,7 +109,7 @@ class InventorySystem extends System with InventorySystemMappable {
       Query().require<Pickupable>().require<LocalPosition>();
 
   @override
-  void update(Registry registry) {
+  void update(World registry) {
     final pickupIntents = registry.get<PickupIntent>();
     if (pickupIntents.isEmpty) {
       return;
@@ -163,7 +163,7 @@ class InventorySystem extends System with InventorySystemMappable {
 @MappableClass()
 class CombatSystem extends System with CombatSystemMappable {
   @override
-  void update(Registry registry) {
+  void update(World registry) {
     final attackIntents = registry.get<AttackIntent>();
 
     var components = Map.from(attackIntents);

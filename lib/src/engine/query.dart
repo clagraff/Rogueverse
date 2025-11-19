@@ -38,7 +38,7 @@ class Query {
   }
 
   /// Returns all matching entities in the [chunk].
-  Iterable<Entity> find(Registry registry) sync* {
+  Iterable<Entity> find(World registry) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
@@ -54,7 +54,7 @@ class Query {
   }
 
   /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
-  Iterable<Entity> findFromIds(Registry registry, List<int> possibleIds) sync* {
+  Iterable<Entity> findFromIds(World registry, List<int> possibleIds) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
@@ -74,12 +74,12 @@ class Query {
   }
 
   /// Returns the first matching entity or null.
-  Entity? first(Registry registry) => find(registry).firstOrNull;
+  Entity? first(World registry) => find(registry).firstOrNull;
 
-  bool any(Registry registry) => find(registry).firstOrNull != null;
+  bool any(World registry) => find(registry).firstOrNull != null;
 
 
-  bool isMatching(Registry registry, int entityId) {
+  bool isMatching(World registry, int entityId) {
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;

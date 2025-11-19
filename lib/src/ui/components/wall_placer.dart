@@ -1,9 +1,9 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
-import '../../engine/engine.barrel.dart';
+import '../../engine/engine.barrel.dart' as engine;
 
-class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
-  final Registry registry;
+class WallPlacer extends PositionComponent with TapCallbacks, engine.Disposer {
+  final engine.World registry;
 
   WallPlacer({required this.registry});
 
@@ -19,14 +19,14 @@ class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
   @override
   void onTapUp(TapUpEvent event) {
     var screenPosition = event.localPosition;
-    var escPosition = LocalPosition(
+    var escPosition = engine.LocalPosition(
         x: (screenPosition.x / 32.0).floor(),
         y: (screenPosition.y / 32.0).floor());
 
-    var matches = Query()
-        .require<LocalPosition>(
+    var matches = engine.Query()
+        .require<engine.LocalPosition>(
             (lp) => lp.x == escPosition.x && lp.y == escPosition.y)
-        .require<BlocksMovement>()
+        .require<engine.BlocksMovement>()
         .find(registry)
         .toList();
 
@@ -38,9 +38,9 @@ class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
     }
 
     registry.add([
-      Renderable('images/wall.svg'),
+      engine.Renderable('images/wall.svg'),
       escPosition,
-      BlocksMovement(),
+      engine.BlocksMovement(),
     ]);
   }
 }

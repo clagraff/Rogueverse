@@ -19,14 +19,14 @@ class PostTickEvent {
   PostTickEvent(this.tickId);
 }
 
-class Registry {
+class World {
   int tickId = 0;
   int lastId = 0;
   Map<Type, Map<int, Component>> components = {};
   final List<System> systems;
   final EventBus eventBus;
 
-  Registry(this.systems, this.components, this.eventBus);
+  World(this.systems, this.components, this.eventBus);
 
   Entity getEntity(int entityId) {
     return Entity(parentCell: this, id: entityId);

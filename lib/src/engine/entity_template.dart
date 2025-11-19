@@ -30,7 +30,7 @@ class EntityTemplate {
     _builders.addAll(other._builders);
   }
 
-  Entity build(Registry registry, {List<dynamic> baseComponents = const []}) {
+  Entity build(World registry, {List<dynamic> baseComponents = const []}) {
     final e = registry.add([...baseComponents]);
     for (final builder in _builders) {
       builder(e);
@@ -38,7 +38,7 @@ class EntityTemplate {
     return e;
   }
 
-  List<Entity> buildMany(Registry registry, int count) {
+  List<Entity> buildMany(World registry, int count) {
     return List.generate(count, (_) => build(registry));
   }
 

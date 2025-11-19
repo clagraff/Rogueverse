@@ -6,33 +6,33 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:rogueverse/src/engine/engine.barrel.dart' as engine;
 import 'package:window_manager/window_manager.dart';
 
 import 'src/ui/mixins/scroll_callback.dart';
 import 'src/ui/hud/camera_controls.dart';
-import 'src/engine/engine.barrel.dart';
 import 'src/ui/game_world.dart';
+import 'src/engine/engine.barrel.dart' as engine;
+
 
 class MyGame extends FlameGame
     with HasKeyboardHandlerComponents, ScrollDetector {
   @override
   get debugMode => false;
 
-  late final Cell liveCell;
-  late final Registry registry;
+  late final engine.Cell liveCell;
+  late final engine.World registry;
   late final ScrollDispatcher scrollDispatcher;
 
   MyGame() {
     world = GameWorld();
     var systems = [
-      CollisionSystem(),
-      MovementSystem(),
-      InventorySystem(),
-      CombatSystem(),
+      engine.CollisionSystem(),
+      engine.MovementSystem(),
+      engine.InventorySystem(),
+      engine.CombatSystem(),
     ];
 
-    registry = Registry(systems, {}, EventBus());
+    registry = engine.World(systems, {}, engine.EventBus());
 
   }
 

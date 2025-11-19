@@ -3,7 +3,7 @@ import 'registry.dart';
 import 'events.dart';
 
 class Entity {
-  final Registry parentCell;
+  final World parentCell;
   final int id;
 
   Entity({required this.parentCell, required this.id});
