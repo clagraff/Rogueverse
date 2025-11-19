@@ -206,7 +206,7 @@ class CombatSystem extends System {
 
                 for (var c in lootable.components) {
                   // Have to do things the hard way to avoid `dynamic` component types in the components map.
-                  var comp = registry.components.putIfAbsent(c.runtimeType.toString(), () => {});
+                  var comp = registry.components.putIfAbsent(c.runtimeType, () => {});
                   comp[item.id] = c;
                 }
 

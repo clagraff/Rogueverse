@@ -1,3 +1,5 @@
+import 'components.dart';
+
 import 'entity.dart';
 import 'registry.dart';
 
@@ -20,8 +22,8 @@ class Archetype {
 
   final List<void Function(Entity)> _builders = [];
 
-  void set<T>(T comp) {
-    _builders.add((Entity e) => e.upsert<T>(comp));
+  void set<C extends Comp>(C comp) {
+    _builders.add((Entity e) => e.upsert<C>(comp));
   }
 
   void merge(Archetype other) {

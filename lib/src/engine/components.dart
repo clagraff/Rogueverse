@@ -1,60 +1,91 @@
+import 'package:dart_mappable/dart_mappable.dart';
+
+part 'components.mapper.dart';
+
+abstract class Comp {
+  Type get componentType;
+}
+
 /// Base class for components with a limited lifespan that can expire
 /// after a certain number of ticks. When lifetime reaches 0, the component
 /// is removed when processed.
-abstract class Lifetime {
-  int _lifetime;
-
-  Lifetime(this._lifetime);
-
+@MappableClass()
+class Lifetime with LifetimeMappable implements Comp {
   /// Remaining lifetime of the current component.
-  int get lifetime => _lifetime;
+  int lifetime;
+
+  Lifetime(this.lifetime);
+
 
   /// Check if the lifetime of the current component has expired.
   /// Otherwise, decrement it by one.
   bool tick() {
-    if (_lifetime <= 0) return true;
-    _lifetime--;
+    if (lifetime <= 0) return true;
+    lifetime--;
     return false;
   }
+
+  @override
+  Type get componentType => Lifetime;
 }
 
 /// Component that is removed before a tick update if its [lifetime]
 /// has expired.
 ///
 /// Used for temporary effects that should be cleared at start of tick.
-abstract class BeforeTick extends Lifetime {
+@MappableClass()
+class BeforeTick extends Lifetime implements Comp{
   BeforeTick([super.lifetime = 0]);
+
+  @override
+  Type get componentType => BeforeTick;
 }
 
 /// Component that is removed after a tick update if its [lifetime]
 /// has expired.
 ///
 /// Used for temporary effects that should be cleared at end of tick.
-abstract class AfterTick extends Lifetime {
+@MappableClass()
+class AfterTick extends Lifetime implements Comp {
   AfterTick([super.lifetime = 0]);
+
+  @override
+  Type get componentType => AfterTick;
 }
 
 
-class Cell {
+@MappableClass()
+class Cell implements Comp {
   List<int> entityIds = [];
+
+  @override
+  Type get componentType => Cell;
 }
 
 /// A user-friendly, non-unique label for an entity.
 ///
 /// Useful for debugging, UI display, or tagging entities.
-class Name {
+@MappableClass()
+class Name implements Comp {
   final String name;
 
   Name({required this.name});
+
+  @override
+  Type get componentType => Name;
 }
 
 /// The grid-based position of an entity within the game world.
 ///
 /// Currently represents a global position until region support is added.
-class LocalPosition {
+@MappableClass()
+class LocalPosition with LocalPositionMappable implements Comp {
   int x, y;
 
   LocalPosition({required this.x, required this.y});
+
+  @override
+  Type get componentType => LocalPosition;
 }
 
 extension LocalPositionExtension on LocalPosition {
@@ -65,44 +96,73 @@ extension LocalPositionExtension on LocalPosition {
 }
 
 /// Component that signals an intent to move the entity by a relative offset.
-class MoveByIntent extends AfterTick {
+@MappableClass()
+class MoveByIntent extends AfterTick implements Comp{
   final int dx, dy;
 
   MoveByIntent({required this.dx, required this.dy});
+
+  @override
+  Type get componentType => MoveByIntent;
 }
 
 /// Component added when an entity has successfully moved in a tick.
 ///
 /// Stores the previous and new positions for downstream logic.
-class DidMove extends BeforeTick {
+@MappableClass()
+class DidMove extends BeforeTick implements Comp {
   final LocalPosition from, to;
 
   DidMove({required this.from, required this.to}) : super(1);
+
+  @override
+  Type get componentType => LocalPosition;
 }
 
 /// Marker component indicating this entity blocks movement.
-class BlocksMovement {}
+@MappableClass()
+class BlocksMovement implements Comp {
+  @override
+  Type get componentType => BlocksMovement;
+}
 
 /// Component added when an entity's movement was blocked by another entity.
-class BlockedMove extends BeforeTick {
+@MappableClass()
+class BlockedMove extends BeforeTick implements Comp {
   final LocalPosition attempted;
 
   BlockedMove(this.attempted);
+
+  @override
+  Type get componentType => LocalPosition;
 }
 
 /// Marker component indicating the entity is controlled by the player.
-class PlayerControlled {}
+@MappableClass()
+class PlayerControlled implements Comp {
+  @override
+  Type get componentType => PlayerControlled;
+}
 
-class AiControlled {}
+@MappableClass()
+class AiControlled implements Comp {
+  @override
+  Type get componentType => AiControlled;
+}
 
 /// Component that provides a visual asset path for rendering the entity.
-class Renderable {
+@MappableClass()
+class Renderable with RenderableMappable implements Comp {
   final String svgAssetPath;
 
   Renderable(this.svgAssetPath);
+
+  @override
+  Type get componentType => Renderable;
 }
 
-class Health {
+@MappableClass()
+class Health implements Comp {
   int current;
   int max;
 
@@ -113,6 +173,9 @@ class Health {
     }
     // TODO check for under zero?
   }
+
+  @override
+  Type get componentType => Health;
 }
 
 extension HealthExtension on Health {
@@ -129,48 +192,72 @@ extension HealthExtension on Health {
   }
 }
 
-class AttackIntent {
+@MappableClass()
+class AttackIntent implements Comp {
   final int targetId;
 
   AttackIntent(this.targetId);
+
+  @override
+  Type get componentType => AttackIntent;
 }
 
-class DidAttack extends BeforeTick {
+@MappableClass()
+class DidAttack extends BeforeTick implements Comp{
   final int targetId;
   final int damage;
 
   DidAttack({required this.targetId, required this.damage});
+
+  @override
+  Type get componentType => DidAttack;
 }
 
 
-class WasAttacked extends BeforeTick {
+@MappableClass()
+class WasAttacked extends BeforeTick implements Comp {
   final int sourceId;
   final int damage;
 
   WasAttacked({required this.sourceId, required this.damage});
+
+  @override
+  Type get componentType => WasAttacked;
 }
 
-// TODO change this back to a class?
-typedef Attacked = List<WasAttacked>;
+// // TODO change this back to a class?
+// typedef Attacked = List<WasAttacked>;
 
-class Dead {}
+@MappableClass()
+class Dead implements Comp {
+  @override
+  Type get componentType => Dead;
+}
 
-
-class Inventory {
+@MappableClass()
+class Inventory implements Comp {
   final List<int> items;
 
   Inventory(this.items);
+
+  @override
+  Type get componentType => Inventory;
 }
 
-class InventoryMaxCount {
+@MappableClass()
+class InventoryMaxCount implements Comp {
   final int maxAmount;
 
   InventoryMaxCount(this.maxAmount);
+
+  @override
+  Type get componentType => InventoryMaxCount;
 }
 
 
-class Loot {
-  final List<dynamic> components;
+@MappableClass()
+class Loot with LootMappable implements Comp {
+  final List<Comp> components;
   final double probability; // 0.0 - 1.0
   final int quantity;
 
@@ -179,52 +266,53 @@ class Loot {
     this.probability = 1.0,
     this.quantity = 1,
   });
+
+  @override
+  Type get componentType => Loot;
 }
 
-class LootTable {
+@MappableClass()
+class LootTable implements Comp {
   final List<Loot> lootables;
 
   LootTable(this.lootables);
+
+  @override
+  Type get componentType => LootTable;
 }
 
-class InventoryFullFailure extends BeforeTick {
+@MappableClass()
+class InventoryFullFailure extends BeforeTick implements Comp {
   final int targetEntityId;
 
   InventoryFullFailure(this.targetEntityId);
+
+  @override
+  Type get componentType => InventoryFullFailure;
 }
 
-class Pickupable {}
+@MappableClass()
+class Pickupable implements Comp {
+  @override
+  Type get componentType => Pickupable;
+}
 
-class PickupIntent extends AfterTick{
+@MappableClass()
+class PickupIntent extends AfterTick implements Comp{
   final int targetEntityId;
 
   PickupIntent(this.targetEntityId);
+
+  @override
+  Type get componentType => PickupIntent;
 }
 
-class PickedUp extends BeforeTick {
+@MappableClass()
+class PickedUp extends BeforeTick implements Comp{
   final int targetEntityId;
 
   PickedUp(this.targetEntityId);
-}
 
-// class ComponentRegistry {
-//   static final Map<String, dynamic Function(String)> _mappers = {};
-//
-//   static void initialize() {
-//     _mappers['LocalPosition'] = LocalPositionMapper.fromJson;
-//     _mappers['Health'] = HealthMapper.fromJson;
-//     _mappers['Name'] = NameMapper.fromJson;
-//     _mappers['Inventory'] = (String array) => []; // TODO fix this
-//     _mappers['PlayerControlled'] = PlayerControlledMapper.fromJson;
-//     _mappers['BlocksMovement'] = BlocksMovementMapper.fromJson;
-//     // Register all component mappers
-//   }
-//
-//   static dynamic fromJson(String typeName, dynamic json) {
-//     final mapper = _mappers[typeName];
-//     if (mapper == null) {
-//       throw Exception('No mapper registered for component type: $typeName');
-//     }
-//     return mapper(json);
-//   }
-// }
+  @override
+  Type get componentType => PickedUp;
+}

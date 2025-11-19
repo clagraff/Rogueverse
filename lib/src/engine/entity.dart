@@ -1,3 +1,4 @@
+import 'components.dart';
 import 'registry.dart';
 import 'events.dart';
 
@@ -7,13 +8,13 @@ class Entity {
 
   Entity({required this.parentCell, required this.id});
 
-  bool has<C>() {
-    var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
+  bool has<C extends Comp>() {
+    var entitiesWithComponent = parentCell.components[C] ?? {};
     return entitiesWithComponent.containsKey(id);
   }
 
-  C? get<C>([C? orDefault]) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
+  C? get<C extends Comp>([C? orDefault]) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => <int, Comp>{});
     if (entitiesWithComponent.containsKey(id)) {
       return entitiesWithComponent[id] as C;
     }
@@ -28,19 +29,20 @@ class Entity {
     return null;
   }
 
-  List<dynamic> getAll() {
-    var comps = [];
+  List<Comp> getAll() {
+    List<Comp> comps = [];
     parentCell.components.forEach((k, v) {
       if (v.keys.contains(id)) {
-        comps.add(v[id]!);
+        var thing = v[id]!;
+        comps.add(thing);
       }
     });
 
     return comps;
   }
 
-  void upsert<C>(C c) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
+  void upsert<C extends Comp>(C c) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => {});
     var alreadyExisted = entitiesWithComponent.containsKey(id);
 
     entitiesWithComponent[id] = c;
@@ -49,7 +51,7 @@ class Entity {
   }
 
   void remove<C>() {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => {});
     var componentExists = entitiesWithComponent.containsKey(id);
 
     if (componentExists) {
@@ -64,3 +66,13 @@ class Entity {
     parentCell.remove(id);
   }
 }
+
+
+// class EntityTemplate {
+//   final List<Component> components;
+//   EntityTemplate(this.components);
+//
+//   Entity spawn(Registry registry) {
+//     return registry.add(components.map((c) => _clone(c)).toList());
+//   }
+// }

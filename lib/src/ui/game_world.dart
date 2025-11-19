@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
+import '../engine/xml_serializer.dart';
 import '../../main.dart';
 import '../engine/engine.barrel.dart';
 import '../ui/components/components.barrel.dart';
@@ -53,6 +54,20 @@ class GameWorld extends flame.World with Disposer {
     ]);
 
 
+    var playerHealth = player.get<Health>();
+    var healthXml = toXml<Health>(playerHealth!);
+    print(healthXml);
+
+    var first = player.getAll().first;
+    var firstXml = toXml(first!);
+    print(firstXml);
+
+
+    var back = fromXml(healthXml) as Comp; // type not explicitly declared
+    player.remove<Health>();
+    player.upsert(back);
+    print(player.get<Health>()); // returns null, because `back` was `dynamic` and not a `Renderable`.
+
     var names = [
       'Iron short sword',
       'Recurve bow',
@@ -64,6 +79,7 @@ class GameWorld extends flame.World with Disposer {
       'Health potion',
       'Stamina potion',
     ];
+
 
     var r = Random();
     var next = r.nextInt(5) + 5;

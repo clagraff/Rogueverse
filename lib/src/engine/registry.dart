@@ -22,7 +22,7 @@ class PostTickEvent {
 class Registry {
   int tickId = 0;
   int lastId = 0;
-  Map<String, Map<int, dynamic>> components = {};
+  Map<Type, Map<int, Comp>> components = {};
   final List<System> systems;
   final EventBus eventBus;
 
@@ -40,15 +40,15 @@ class Registry {
     return entityIds.map((id) => getEntity(id)).toList();
   }
 
-  Map<int, dynamic> get<C>() {
-    return components.putIfAbsent(C.toString(), () => {});
+  Map<int, C> get<C extends Comp>() {
+    return components.putIfAbsent(C, () => {}).cast<int, C>();
   }
 
-  Entity add(List<dynamic> comps) {
+  Entity add(List<Comp> comps) {
     var entityId = lastId++;
     for (var c in comps) {
       var entitiesWithComponent =
-      components.putIfAbsent(c.runtimeType.toString(), () => {});
+      components.putIfAbsent(c.componentType, () => {});
       entitiesWithComponent[entityId] = c;
     }
 
@@ -102,7 +102,7 @@ class Registry {
 
       for (var entityToComponent in entries) {
         if (entityToComponent.value is T &&
-            entityToComponent.value.tick()) {
+            (entityToComponent.value as T).tick()) {
           // if is BeforeTick and is dead, remove.
           componentMap.remove(entityToComponent.key);
         }
