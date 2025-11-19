@@ -22,7 +22,7 @@ class PostTickEvent {
 class Registry {
   int tickId = 0;
   int lastId = 0;
-  Map<Type, Map<int, Comp>> components = {};
+  Map<Type, Map<int, Component>> components = {};
   final List<System> systems;
   final EventBus eventBus;
 
@@ -40,11 +40,11 @@ class Registry {
     return entityIds.map((id) => getEntity(id)).toList();
   }
 
-  Map<int, C> get<C extends Comp>() {
+  Map<int, C> get<C extends Component>() {
     return components.putIfAbsent(C, () => {}).cast<int, C>();
   }
 
-  Entity add(List<Comp> comps) {
+  Entity add(List<Component> comps) {
     var entityId = lastId++;
     for (var c in comps) {
       var entitiesWithComponent =

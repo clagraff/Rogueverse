@@ -1,5 +1,4 @@
 import 'package:dart_mappable/dart_mappable.dart';
-import 'components.dart';
 import 'package:xml/xml.dart';
 
 class XmlSerializer {
@@ -12,7 +11,7 @@ class XmlSerializer {
     };
   }
 
-  static XmlElement serialize<T extends Comp>(T value) {
+  static XmlElement serialize(dynamic value) {
     final map = MapperContainer.globals.toMap(value);
 
     // If mapper encoded a __type discriminator, prefer that as the tag.
@@ -47,7 +46,7 @@ class XmlSerializer {
 class JsonSerializer {
   const JsonSerializer._();
 
-  static String serialize<T extends Comp>(T value) {
+  static String serialize(dynamic value) {
     return MapperContainer.globals.toJson(value);
   }
 

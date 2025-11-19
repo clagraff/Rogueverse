@@ -3,7 +3,7 @@ import 'package:dart_mappable/dart_mappable.dart';
 part 'components.mapper.dart';
 
 @MappableClass(discriminatorKey: "__type")
-abstract class Comp with CompMappable {
+abstract class Component with CompMappable {
   Type get componentType;
 }
 
@@ -11,7 +11,7 @@ abstract class Comp with CompMappable {
 /// after a certain number of ticks. When lifetime reaches 0, the component
 /// is removed when processed.
 @MappableClass()
-class Lifetime with LifetimeMappable implements Comp {
+class Lifetime with LifetimeMappable implements Component {
   /// Remaining lifetime of the current component.
   int lifetime;
 
@@ -35,7 +35,7 @@ class Lifetime with LifetimeMappable implements Comp {
 ///
 /// Used for temporary effects that should be cleared at start of tick.
 @MappableClass()
-class BeforeTick extends Lifetime with BeforeTickMappable implements Comp{
+class BeforeTick extends Lifetime with BeforeTickMappable implements Component{
   BeforeTick([super.lifetime = 0]);
 
   @override
@@ -47,7 +47,7 @@ class BeforeTick extends Lifetime with BeforeTickMappable implements Comp{
 ///
 /// Used for temporary effects that should be cleared at end of tick.
 @MappableClass()
-class AfterTick extends Lifetime with AfterTickMappable implements Comp {
+class AfterTick extends Lifetime with AfterTickMappable implements Component {
   AfterTick([super.lifetime = 0]);
 
   @override
@@ -56,7 +56,7 @@ class AfterTick extends Lifetime with AfterTickMappable implements Comp {
 
 
 @MappableClass()
-class Cell with CellMappable implements Comp  {
+class Cell with CellMappable implements Component  {
   List<int> entityIds = [];
 
   @override
@@ -67,7 +67,7 @@ class Cell with CellMappable implements Comp  {
 ///
 /// Useful for debugging, UI display, or tagging entities.
 @MappableClass()
-class Name with NameMappable implements Comp {
+class Name with NameMappable implements Component {
   final String name;
 
   Name({required this.name});
@@ -80,7 +80,7 @@ class Name with NameMappable implements Comp {
 ///
 /// Currently represents a global position until region support is added.
 @MappableClass()
-class LocalPosition with LocalPositionMappable implements Comp {
+class LocalPosition with LocalPositionMappable implements Component {
   int x, y;
 
   LocalPosition({required this.x, required this.y});
@@ -98,7 +98,7 @@ extension LocalPositionExtension on LocalPosition {
 
 /// Component that signals an intent to move the entity by a relative offset.
 @MappableClass()
-class MoveByIntent extends AfterTick with MoveByIntentMappable implements Comp{
+class MoveByIntent extends AfterTick with MoveByIntentMappable implements Component{
   final int dx, dy;
 
   MoveByIntent({required this.dx, required this.dy});
@@ -111,7 +111,7 @@ class MoveByIntent extends AfterTick with MoveByIntentMappable implements Comp{
 ///
 /// Stores the previous and new positions for downstream logic.
 @MappableClass()
-class DidMove extends BeforeTick with DidMoveMappable implements Comp {
+class DidMove extends BeforeTick with DidMoveMappable implements Component {
   final LocalPosition from, to;
 
   DidMove({required this.from, required this.to}) : super(1);
@@ -122,14 +122,14 @@ class DidMove extends BeforeTick with DidMoveMappable implements Comp {
 
 /// Marker component indicating this entity blocks movement.
 @MappableClass()
-class BlocksMovement with BlocksMovementMappable implements Comp {
+class BlocksMovement with BlocksMovementMappable implements Component {
   @override
   Type get componentType => BlocksMovement;
 }
 
 /// Component added when an entity's movement was blocked by another entity.
 @MappableClass()
-class BlockedMove extends BeforeTick with BlockedMoveMappable implements Comp {
+class BlockedMove extends BeforeTick with BlockedMoveMappable implements Component {
   final LocalPosition attempted;
 
   BlockedMove(this.attempted);
@@ -140,20 +140,20 @@ class BlockedMove extends BeforeTick with BlockedMoveMappable implements Comp {
 
 /// Marker component indicating the entity is controlled by the player.
 @MappableClass()
-class PlayerControlled with PlayerControlledMappable implements Comp {
+class PlayerControlled with PlayerControlledMappable implements Component {
   @override
   Type get componentType => PlayerControlled;
 }
 
 @MappableClass()
-class AiControlled with AiControlledMappable implements Comp {
+class AiControlled with AiControlledMappable implements Component {
   @override
   Type get componentType => AiControlled;
 }
 
 /// Component that provides a visual asset path for rendering the entity.
 @MappableClass()
-class Renderable with RenderableMappable implements Comp {
+class Renderable with RenderableMappable implements Component {
   final String svgAssetPath;
 
   Renderable(this.svgAssetPath);
@@ -163,7 +163,7 @@ class Renderable with RenderableMappable implements Comp {
 }
 
 @MappableClass()
-class Health with HealthMappable implements Comp {
+class Health with HealthMappable implements Component {
   int current;
   int max;
 
@@ -194,7 +194,7 @@ extension HealthExtension on Health {
 }
 
 @MappableClass()
-class AttackIntent with AttackIntentMappable implements Comp {
+class AttackIntent with AttackIntentMappable implements Component {
   final int targetId;
 
   AttackIntent(this.targetId);
@@ -204,7 +204,7 @@ class AttackIntent with AttackIntentMappable implements Comp {
 }
 
 @MappableClass()
-class DidAttack extends BeforeTick with DidAttackMappable implements Comp{
+class DidAttack extends BeforeTick with DidAttackMappable implements Component{
   final int targetId;
   final int damage;
 
@@ -216,7 +216,7 @@ class DidAttack extends BeforeTick with DidAttackMappable implements Comp{
 
 
 @MappableClass()
-class WasAttacked extends BeforeTick with WasAttackedMappable implements Comp {
+class WasAttacked extends BeforeTick with WasAttackedMappable implements Component {
   final int sourceId;
   final int damage;
 
@@ -230,13 +230,13 @@ class WasAttacked extends BeforeTick with WasAttackedMappable implements Comp {
 // typedef Attacked = List<WasAttacked>;
 
 @MappableClass()
-class Dead with DeadMappable implements Comp {
+class Dead with DeadMappable implements Component {
   @override
   Type get componentType => Dead;
 }
 
 @MappableClass()
-class Inventory with InventoryMappable implements Comp {
+class Inventory with InventoryMappable implements Component {
   final List<int> items;
 
   Inventory(this.items);
@@ -246,7 +246,7 @@ class Inventory with InventoryMappable implements Comp {
 }
 
 @MappableClass()
-class InventoryMaxCount with InventoryMaxCountMappable implements Comp {
+class InventoryMaxCount with InventoryMaxCountMappable implements Component {
   final int maxAmount;
 
   InventoryMaxCount(this.maxAmount);
@@ -257,8 +257,8 @@ class InventoryMaxCount with InventoryMaxCountMappable implements Comp {
 
 
 @MappableClass()
-class Loot with LootMappable implements Comp {
-  final List<Comp> components;
+class Loot with LootMappable implements Component {
+  final List<Component> components;
   final double probability; // 0.0 - 1.0
   final int quantity;
 
@@ -273,7 +273,7 @@ class Loot with LootMappable implements Comp {
 }
 
 @MappableClass()
-class LootTable with LootTableMappable implements Comp {
+class LootTable with LootTableMappable implements Component {
   final List<Loot> lootables;
 
   LootTable(this.lootables);
@@ -283,7 +283,7 @@ class LootTable with LootTableMappable implements Comp {
 }
 
 @MappableClass()
-class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable implements Comp {
+class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable implements Component {
   final int targetEntityId;
 
   InventoryFullFailure(this.targetEntityId);
@@ -293,13 +293,13 @@ class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable 
 }
 
 @MappableClass()
-class Pickupable with PickupableMappable implements Comp {
+class Pickupable with PickupableMappable implements Component {
   @override
   Type get componentType => Pickupable;
 }
 
 @MappableClass()
-class PickupIntent extends AfterTick with PickupIntentMappable implements Comp{
+class PickupIntent extends AfterTick with PickupIntentMappable implements Component{
   final int targetEntityId;
 
   PickupIntent(this.targetEntityId);
@@ -309,7 +309,7 @@ class PickupIntent extends AfterTick with PickupIntentMappable implements Comp{
 }
 
 @MappableClass()
-class PickedUp extends BeforeTick with PickedUpMappable implements Comp{
+class PickedUp extends BeforeTick with PickedUpMappable implements Component{
   final int targetEntityId;
 
   PickedUp(this.targetEntityId);

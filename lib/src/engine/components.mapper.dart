@@ -7,7 +7,7 @@
 
 part of 'components.dart';
 
-class CompMapper extends ClassMapperBase<Comp> {
+class CompMapper extends ClassMapperBase<Component> {
   CompMapper._();
 
   static CompMapper? _instance;
@@ -48,9 +48,9 @@ class CompMapper extends ClassMapperBase<Comp> {
   final String id = 'Comp';
 
   @override
-  final MappableFields<Comp> fields = const {};
+  final MappableFields<Component> fields = const {};
 
-  static Comp _instantiate(DecodingData data) {
+  static Component _instantiate(DecodingData data) {
     throw MapperException.missingSubclass(
       'Comp',
       '__type',
@@ -61,22 +61,22 @@ class CompMapper extends ClassMapperBase<Comp> {
   @override
   final Function instantiate = _instantiate;
 
-  static Comp fromMap(Map<String, dynamic> map) {
-    return ensureInitialized().decodeMap<Comp>(map);
+  static Component fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Component>(map);
   }
 
-  static Comp fromJson(String json) {
-    return ensureInitialized().decodeJson<Comp>(json);
+  static Component fromJson(String json) {
+    return ensureInitialized().decodeJson<Component>(json);
   }
 }
 
 mixin CompMappable {
   String toJson();
   Map<String, dynamic> toMap();
-  CompCopyWith<Comp, Comp, Comp> get copyWith;
+  CompCopyWith<Component, Component, Component> get copyWith;
 }
 
-abstract class CompCopyWith<$R, $In extends Comp, $Out>
+abstract class CompCopyWith<$R, $In extends Component, $Out>
     implements ClassCopyWith<$R, $In, $Out> {
   $R call();
   CompCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -2547,8 +2547,8 @@ class LootMapper extends SubClassMapperBase<Loot> {
   @override
   final String id = 'Loot';
 
-  static List<Comp> _$components(Loot v) => v.components;
-  static const Field<Loot, List<Comp>> _f$components = Field(
+  static List<Component> _$components(Loot v) => v.components;
+  static const Field<Loot, List<Component>> _f$components = Field(
     'components',
     _$components,
   );
@@ -2635,9 +2635,9 @@ extension LootValueCopy<$R, $Out> on ObjectCopyWith<$R, Loot, $Out> {
 
 abstract class LootCopyWith<$R, $In extends Loot, $Out>
     implements CompCopyWith<$R, $In, $Out> {
-  ListCopyWith<$R, Comp, CompCopyWith<$R, Comp, Comp>> get components;
+  ListCopyWith<$R, Component, CompCopyWith<$R, Component, Component>> get components;
   @override
-  $R call({List<Comp>? components, double? probability, int? quantity});
+  $R call({List<Component>? components, double? probability, int? quantity});
   LootCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -2648,14 +2648,14 @@ class _LootCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Loot, $Out>
   @override
   late final ClassMapperBase<Loot> $mapper = LootMapper.ensureInitialized();
   @override
-  ListCopyWith<$R, Comp, CompCopyWith<$R, Comp, Comp>> get components =>
+  ListCopyWith<$R, Component, CompCopyWith<$R, Component, Component>> get components =>
       ListCopyWith(
         $value.components,
         (v, t) => v.copyWith.$chain(t),
         (v) => call(components: v),
       );
   @override
-  $R call({List<Comp>? components, double? probability, int? quantity}) =>
+  $R call({List<Component>? components, double? probability, int? quantity}) =>
       $apply(
         FieldCopyWithData({
           if (components != null) #components: components,

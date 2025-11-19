@@ -22,7 +22,7 @@ class EntityTemplate {
 
   final List<void Function(Entity)> _builders = [];
 
-  void set<C extends Comp>(C comp) {
+  void set<C extends Component>(C comp) {
     _builders.add((Entity e) => e.upsert<C>(comp));
   }
 

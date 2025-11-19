@@ -8,13 +8,13 @@ class Entity {
 
   Entity({required this.parentCell, required this.id});
 
-  bool has<C extends Comp>() {
+  bool has<C extends Component>() {
     var entitiesWithComponent = parentCell.components[C] ?? {};
     return entitiesWithComponent.containsKey(id);
   }
 
-  C? get<C extends Comp>([C? orDefault]) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => <int, Comp>{});
+  C? get<C extends Component>([C? orDefault]) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => <int, Component>{});
     if (entitiesWithComponent.containsKey(id)) {
       return entitiesWithComponent[id] as C;
     }
@@ -29,8 +29,8 @@ class Entity {
     return null;
   }
 
-  List<Comp> getAll() {
-    List<Comp> comps = [];
+  List<Component> getAll() {
+    List<Component> comps = [];
     parentCell.components.forEach((k, v) {
       if (v.keys.contains(id)) {
         var thing = v[id]!;
@@ -41,7 +41,7 @@ class Entity {
     return comps;
   }
 
-  void upsert<C extends Comp>(C c) {
+  void upsert<C extends Component>(C c) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => {});
     var alreadyExisted = entitiesWithComponent.containsKey(id);
 

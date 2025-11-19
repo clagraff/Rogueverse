@@ -63,7 +63,7 @@ class GameWorld extends flame.World with Disposer {
     print(firstXml);
 
 
-    var back = XmlSerializer.deserialize(healthXml) as Comp; // type not explicitly declared
+    var back = XmlSerializer.deserialize(healthXml) as Component; // type not explicitly declared
     player.remove<Health>();
     player.upsert(back);
     print(player.get<Health>()); // returns null, because `back` was `dynamic` and not a `Renderable`.
@@ -77,10 +77,17 @@ class GameWorld extends flame.World with Disposer {
     print(firstXml2);
 
 
-    var back2 = JsonSerializer.deserialize(firstXml2) as Comp; // type not explicitly declared
+    var back2 = JsonSerializer.deserialize(firstXml2) as Component; // type not explicitly declared
     player.remove<Health>();
     player.upsert(back2);
     print(player.get<Health>()); // returns null, because `back` was `dynamic` and not a `Renderable`.
+
+    var bTick = BeforeTick(5);
+    print(XmlSerializer.serialize(bTick));
+    print(JsonSerializer.serialize(bTick));
+
+    var d = XmlSerializer.deserialize(XmlSerializer.serialize(bTick));
+    print(d);
 
     var names = [
       'Iron short sword',
