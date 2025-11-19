@@ -78,11 +78,7 @@ class Registry {
         eventType: EventType.updated, value: PreTickEvent(tickId), id: tickId));
     clearLifetimeComponents<BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
-    var sortedSystems = systems
-      ..sort((a, b) => a.priority.compareTo(b
-          .priority)); // TODO: move this elsewhere? Just sort once? Or when new systems are added?
-
-    for (var s in sortedSystems) {
+    for (var s in systems) {
       s.update(this);
     }
 

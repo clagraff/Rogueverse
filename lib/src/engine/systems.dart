@@ -1,9 +1,12 @@
 import 'dart:math';
-
+import 'package:dart_mappable/dart_mappable.dart';
 import 'components.dart';
 import 'events.dart';
 import 'registry.dart';
 import 'query.dart';
+
+part 'systems.mapper.dart';
+
 
 // TODO: Example of a potentially better way to do Systems
 // abstract class ProcessingSystem extends System {
@@ -23,23 +26,16 @@ import 'query.dart';
 // }
 
 /// A base class for all systems that operate over a [Chunk] of ECS data.
-abstract class System {
-  static const int defaultPriority = 1;
-
-  /// Systems are executed in ascending order of priority.
-  // TODO: Change to just using the order of systems as provided to a world instance?
-  int get priority => System.defaultPriority;
-
+@MappableClass(discriminatorKey: "__type")
+abstract class System with SystemMappable {
   void update(Registry registry);
 }
 
 /// A system that handles collision detection by checking for blocked movement.
 ///
 /// If an entity attempts to move into an occupied tile, its move is cancelled.
-class CollisionSystem extends System {
-  @override
-  int get priority => 1;
-
+@MappableClass()
+class CollisionSystem extends System with CollisionSystemMappable {
   @override
   void update(Registry registry) {
     final positions = registry.get<LocalPosition>();
@@ -79,10 +75,8 @@ class CollisionSystem extends System {
 /// A system that processes unblocked movement requests.
 ///
 /// Updates positions and adds [DidMove] to track movement history.
-class MovementSystem extends System {
-  @override
-  int get priority => CollisionSystem().priority + 1;
-
+@MappableClass()
+class MovementSystem extends System with MovementSystemMappable {
   @override
   void update(Registry registry) {
     final moveIntents = registry.get<MoveByIntent>();
@@ -107,14 +101,12 @@ class MovementSystem extends System {
   }
 }
 
-class InventorySystem extends System {
+@MappableClass()
+class InventorySystem extends System with InventorySystemMappable {
   final Query canPickup = Query().require<Inventory>().require<LocalPosition>();
 
   final Query canBePickedUp =
       Query().require<Pickupable>().require<LocalPosition>();
-
-  @override
-  int get priority => 1;
 
   @override
   void update(Registry registry) {
@@ -168,11 +160,8 @@ class InventorySystem extends System {
   }
 }
 
-class CombatSystem extends System {
-  @override
-  int get priority =>
-      CollisionSystem().priority + 2; // TODO: Go after movement I guess?
-
+@MappableClass()
+class CombatSystem extends System with CombatSystemMappable {
   @override
   void update(Registry registry) {
     final attackIntents = registry.get<AttackIntent>();

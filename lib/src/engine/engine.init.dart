@@ -5,9 +5,10 @@
 // ignore_for_file: unused_element
 
 import 'components.dart' as p0;
+import 'systems.dart' as p1;
 
 void initializeMappers() {
-  p0.CompMapper.ensureInitialized();
+  p0.ComponentMapper.ensureInitialized();
   p0.LifetimeMapper.ensureInitialized();
   p0.BeforeTickMapper.ensureInitialized();
   p0.AfterTickMapper.ensureInitialized();
@@ -34,5 +35,10 @@ void initializeMappers() {
   p0.PickupableMapper.ensureInitialized();
   p0.PickupIntentMapper.ensureInitialized();
   p0.PickedUpMapper.ensureInitialized();
+  p1.SystemMapper.ensureInitialized();
+  p1.CollisionSystemMapper.ensureInitialized();
+  p1.MovementSystemMapper.ensureInitialized();
+  p1.InventorySystemMapper.ensureInitialized();
+  p1.CombatSystemMapper.ensureInitialized();
 }
 

@@ -53,41 +53,11 @@ class GameWorld extends flame.World with Disposer {
       ]),
     ]);
 
-
-    var playerHealth = player.get<Health>();
-    var healthXml = XmlSerializer.serialize(playerHealth!);
-    print(healthXml);
-
-    var first = player.getAll().first;
-    var firstXml = XmlSerializer.serialize(first!);
-    print(firstXml);
-
-
-    var back = XmlSerializer.deserialize(healthXml) as Component; // type not explicitly declared
-    player.remove<Health>();
-    player.upsert(back);
-    print(player.get<Health>()); // returns null, because `back` was `dynamic` and not a `Renderable`.
-
-    // -----------------------------
-
-    var healthXml2 = JsonSerializer.serialize(playerHealth!);
-    print(healthXml2);
-
-    var firstXml2 = JsonSerializer.serialize(first!);
-    print(firstXml2);
-
-
-    var back2 = JsonSerializer.deserialize(firstXml2) as Component; // type not explicitly declared
-    player.remove<Health>();
-    player.upsert(back2);
-    print(player.get<Health>()); // returns null, because `back` was `dynamic` and not a `Renderable`.
-
-    var bTick = BeforeTick(5);
-    print(XmlSerializer.serialize(bTick));
-    print(JsonSerializer.serialize(bTick));
-
-    var d = XmlSerializer.deserialize(XmlSerializer.serialize(bTick));
-    print(d);
+    var i = InventorySystem();
+    var xmlString = XmlSerializer.serialize(i);
+    print(xmlString);
+    var s = XmlSerializer.deserialize(xmlString) as InventorySystem;
+    print(i);
 
     var names = [
       'Iron short sword',

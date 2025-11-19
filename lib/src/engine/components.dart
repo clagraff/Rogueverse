@@ -3,7 +3,7 @@ import 'package:dart_mappable/dart_mappable.dart';
 part 'components.mapper.dart';
 
 @MappableClass(discriminatorKey: "__type")
-abstract class Component with CompMappable {
+abstract class Component with ComponentMappable {
   Type get componentType;
 }
 
