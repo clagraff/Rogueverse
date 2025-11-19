@@ -1,16 +1,16 @@
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flutter/services.dart';
-import '../../engine/engine.barrel.dart' as engine;
+import '../../ecs/ecs.barrel.dart' as ecs;
 
 class EntityPlacer extends PositionComponent
-    with DragCallbacks, TapCallbacks, engine.Disposer {
-  final engine.World registry;
-  final engine.EntityTemplate archetype;
+    with DragCallbacks, TapCallbacks, ecs.Disposer {
+  final ecs.World registry;
+  final ecs.EntityTemplate archetype;
 
   Vector2? _dragStartScreen;
-  engine.LocalPosition? _dragStartGrid;
-  engine.LocalPosition? _dragUpdateGrid;
+  ecs.LocalPosition? _dragStartGrid;
+  ecs.LocalPosition? _dragUpdateGrid;
   bool _isShiftDown = false;
   bool _isCtrlDown = false;
 
@@ -75,10 +75,10 @@ class EntityPlacer extends PositionComponent
     process(start, endGrid);
   }
 
-  void process(engine.LocalPosition? start, engine.LocalPosition endGrid) {
+  void process(ecs.LocalPosition? start, ecs.LocalPosition endGrid) {
     if (start == null) return;
 
-    final positions = <engine.LocalPosition>[];
+    final positions = <ecs.LocalPosition>[];
 
     if (_isShiftDown) {
       final minX = start.x < endGrid.x ? start.x : endGrid.x;
@@ -90,18 +90,18 @@ class EntityPlacer extends PositionComponent
         // Filled rectangle
         for (var x = minX; x <= maxX; x++) {
           for (var y = minY; y <= maxY; y++) {
-            positions.add(engine.LocalPosition(x: x, y: y));
+            positions.add(ecs.LocalPosition(x: x, y: y));
           }
         }
       } else {
         // Border-only rectangle
         for (var x = minX; x <= maxX; x++) {
-          positions.add(engine.LocalPosition(x: x, y: minY)); // Top edge
-          positions.add(engine.LocalPosition(x: x, y: maxY)); // Bottom edge
+          positions.add(ecs.LocalPosition(x: x, y: minY)); // Top edge
+          positions.add(ecs.LocalPosition(x: x, y: maxY)); // Bottom edge
         }
         for (var y = minY + 1; y < maxY; y++) {
-          positions.add(engine.LocalPosition(x: minX, y: y)); // Left edge
-          positions.add(engine.LocalPosition(x: maxX, y: y)); // Right edge
+          positions.add(ecs.LocalPosition(x: minX, y: y)); // Left edge
+          positions.add(ecs.LocalPosition(x: maxX, y: y)); // Right edge
         }
       }
     } else {
@@ -110,21 +110,21 @@ class EntityPlacer extends PositionComponent
         for (var x = start.x;
             x != endGrid.x + (start.x < endGrid.x ? 1 : -1);
             x += (start.x < endGrid.x ? 1 : -1)) {
-          positions.add(engine.LocalPosition(x: x, y: start.y));
+          positions.add(ecs.LocalPosition(x: x, y: start.y));
         }
       } else {
         for (var y = start.y;
             y != endGrid.y + (start.y < endGrid.y ? 1 : -1);
             y += (start.y < endGrid.y ? 1 : -1)) {
-          positions.add(engine.LocalPosition(x: start.x, y: y));
+          positions.add(ecs.LocalPosition(x: start.x, y: y));
         }
       }
     }
 
     for (final pos in positions) {
-      final matches = engine.Query()
-          .require<engine.LocalPosition>((lp) => lp.x == pos.x && lp.y == pos.y)
-          .require<engine.BlocksMovement>()
+      final matches = ecs.Query()
+          .require<ecs.LocalPosition>((lp) => lp.x == pos.x && lp.y == pos.y)
+          .require<ecs.BlocksMovement>()
           .find(registry)
           .toList();
 
@@ -134,7 +134,7 @@ class EntityPlacer extends PositionComponent
         }
       } else {
         var entity = archetype.build(registry);
-        entity.upsert<engine.LocalPosition>(pos);
+        entity.upsert<ecs.LocalPosition>(pos);
       }
     }
 
@@ -143,8 +143,8 @@ class EntityPlacer extends PositionComponent
     _isShiftDown = false;
   }
 
-  engine.LocalPosition _toGridPosition(Vector2 screenPosition) {
-    return engine.LocalPosition(
+  ecs.LocalPosition _toGridPosition(Vector2 screenPosition) {
+    return ecs.LocalPosition(
       x: (screenPosition.x / 32.0).floor(),
       y: (screenPosition.y / 32.0).floor(),
     );

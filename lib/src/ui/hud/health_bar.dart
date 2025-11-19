@@ -2,7 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
-import '../../../src/engine/engine.barrel.dart' as engine;
+import '../../../src/ecs/ecs.barrel.dart' as ecs;
 import '../../../src/ui/ui.barrel.dart';
 
 class HealthBar extends Component {
@@ -18,8 +18,8 @@ class HealthBar extends Component {
               ));
 
 
-  void onHealthChange(engine.Entity e) {
-    health = max(e.get<engine.Health>()!.current, 0); // Dont allow anything below zero.
+  void onHealthChange(ecs.Entity e) {
+    health = max(e.get<ecs.Health>()!.current, 0); // Dont allow anything below zero.
     children.clear();
 
     for(var i = 0.0; i < health; i++) {

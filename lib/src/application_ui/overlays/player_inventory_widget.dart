@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
-import '../../engine/components.dart';
-import '../../engine/entity.dart';
+import '../../ecs/components.dart';
+import '../../ecs/entity.dart';
 
 // Extension for select-like mapping on map entries
 extension MapSelect<K, V> on Map<K, V> {

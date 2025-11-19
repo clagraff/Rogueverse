@@ -11,7 +11,7 @@ import 'package:window_manager/window_manager.dart';
 import 'src/ui/mixins/scroll_callback.dart';
 import 'src/ui/hud/camera_controls.dart';
 import 'src/ui/game_world.dart';
-import 'src/engine/engine.barrel.dart' as engine;
+import 'src/ecs/ecs.barrel.dart' as ecs;
 
 
 class MyGame extends FlameGame
@@ -19,20 +19,20 @@ class MyGame extends FlameGame
   @override
   get debugMode => false;
 
-  late final engine.Cell liveCell;
-  late final engine.World registry;
+  late final ecs.Cell liveCell;
+  late final ecs.World registry;
   late final ScrollDispatcher scrollDispatcher;
 
   MyGame() {
     world = GameWorld();
     var systems = [
-      engine.CollisionSystem(),
-      engine.MovementSystem(),
-      engine.InventorySystem(),
-      engine.CombatSystem(),
+      ecs.CollisionSystem(),
+      ecs.MovementSystem(),
+      ecs.InventorySystem(),
+      ecs.CombatSystem(),
     ];
 
-    registry = engine.World(systems, {}, engine.EventBus());
+    registry = ecs.World(systems, {}, ecs.EventBus());
 
   }
 
@@ -65,7 +65,7 @@ class MyGame extends FlameGame
 }
 
 void main() async {
-  engine.initializeMappers();
+  ecs.initializeMappers();
 
   // Set up hierarchical logging
   Logger.root.level = Level.INFO;

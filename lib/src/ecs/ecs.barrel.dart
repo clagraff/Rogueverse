@@ -1,6 +1,6 @@
 export 'components.dart';
+export 'disposable.dart';
 export 'ecs.dart';
-export 'engine.dart';
 export 'engine.init.dart';
 export 'entity.dart';
 export 'entity_template.dart';

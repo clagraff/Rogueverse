@@ -4,7 +4,7 @@ import 'package:flame/components.dart';
 import 'package:flame/effects.dart';
 import 'package:flame/text.dart';
 import 'dart:ui';
-import '../../engine/engine.barrel.dart';
+import '../../ecs/ecs.barrel.dart';
 
 /// A component that displays and updates a health bar for game entities.
 /// The health bar consists of a background bar, foreground bar showing current health,

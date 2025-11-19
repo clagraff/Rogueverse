@@ -7,7 +7,7 @@ import '../../../main.dart';
 import '../../application_ui/overlays/overlay_helper.dart';
 import '../../application_ui/overlays/player_inventory_widget.dart';
 import '../../ui/components/components.barrel.dart';
-import '../../engine/engine.barrel.dart';
+import '../../ecs/ecs.barrel.dart';
 
 class KeyBindingMap<T> {
   final Map<Set<LogicalKeyboardKey>, T> _bindings = {};

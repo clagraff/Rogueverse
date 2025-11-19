@@ -2,13 +2,12 @@ import 'dart:math';
 
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
-import '../engine/serializers.dart';
 import '../../main.dart';
-import '../engine/engine.barrel.dart';
+import '../ecs/ecs.barrel.dart' as ecs;
 import '../ui/components/components.barrel.dart';
 import '../ui/hud/health_bar.dart';
 
-class GameWorld extends flame.World with Disposer {
+class GameWorld extends flame.World with ecs.Disposer {
   @override
   Future<void> onLoad() async {
     final game = parent!.findGame() as MyGame;
@@ -19,44 +18,44 @@ class GameWorld extends flame.World with Disposer {
     var reg = game.registry;
 
     var player = reg.add([
-      Renderable('images/player.svg'),
-      LocalPosition(x: 0, y: 0),
-      PlayerControlled(),
-      BlocksMovement(),
-      Inventory([]),
-      InventoryMaxCount(5),
-      Health(4, 5),
+      ecs.Renderable('images/player.svg'),
+      ecs.LocalPosition(x: 0, y: 0),
+      ecs.PlayerControlled(),
+      ecs.BlocksMovement(),
+      ecs.Inventory([]),
+      ecs.InventoryMaxCount(5),
+      ecs.Health(4, 5),
     ]);
     reg.add([
-      Renderable('images/snake.svg'),
-      LocalPosition(x: 1, y: 2),
-      AiControlled(),
-      BlocksMovement(),
+      ecs.Renderable('images/snake.svg'),
+      ecs.LocalPosition(x: 1, y: 2),
+      ecs.AiControlled(),
+      ecs.BlocksMovement(),
     ]);
     reg.add([
-      Renderable('images/wall.svg'),
-      LocalPosition(x: 1, y: 0),
-      BlocksMovement(),
+      ecs.Renderable('images/wall.svg'),
+      ecs.LocalPosition(x: 1, y: 0),
+      ecs.BlocksMovement(),
     ]);
     reg.add([
-      Renderable('images/mineral.svg'),
-      LocalPosition(x: 3, y: 2),
-      Name(name: 'Iron'),
-      BlocksMovement(),
-      Health(2, 2),
-      LootTable([
-        Loot(components: [
-          Renderable('images/item_small.svg'),
-          Pickupable(),
-          Name(name: 'Loot'),
+      ecs.Renderable('images/mineral.svg'),
+      ecs.LocalPosition(x: 3, y: 2),
+      ecs.Name(name: 'Iron'),
+      ecs.BlocksMovement(),
+      ecs.Health(2, 2),
+      ecs.LootTable([
+        ecs.Loot(components: [
+          ecs.Renderable('images/item_small.svg'),
+          ecs.Pickupable(),
+          ecs.Name(name: 'Loot'),
         ])
       ]),
     ]);
 
-    var i = InventorySystem();
-    var xmlString = XmlSerializer.serialize(i);
+    var i = ecs.InventorySystem();
+    var xmlString = ecs.XmlSerializer.serialize(i);
     print(xmlString);
-    var s = XmlSerializer.deserialize(xmlString) as InventorySystem;
+    var s = ecs.XmlSerializer.deserialize(xmlString) as ecs.InventorySystem;
     print(i);
 
     var names = [
@@ -84,15 +83,15 @@ class GameWorld extends flame.World with Disposer {
       }
 
       reg.add([
-        Renderable('images/item_small.svg'),
-        LocalPosition(x: x, y: y),
-        Pickupable(),
-        Name(name: names[r.nextInt(names.length)]),
+        ecs.Renderable('images/item_small.svg'),
+        ecs.LocalPosition(x: x, y: y),
+        ecs.Pickupable(),
+        ecs.Name(name: names[r.nextInt(names.length)]),
       ]);
     }
 
     var healthHud = HealthBar();
-    reg.eventBus.on<Health>(player.id).forEach((e) {
+    reg.eventBus.on<ecs.Health>(player.id).forEach((e) {
       healthHud.onHealthChange(e.id);
     });
     game.camera.viewport.add(healthHud);
@@ -100,24 +99,24 @@ class GameWorld extends flame.World with Disposer {
     // TODO: handle EventBus() for new Renderables.
     reg
         .entities()
-        .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
+        .where((e) => e.has<ecs.LocalPosition>() && e.has<ecs.Renderable>())
         .forEach((entity) {
-      var pos = entity.get<LocalPosition>()!;
-      if (entity.has<PlayerControlled>()) {
+      var pos = entity.get<ecs.LocalPosition>()!;
+      if (entity.has<ecs.PlayerControlled>()) {
         add(PlayerControlledAgent(
           registry: reg,
           entity: reg.getEntity(player.id),
-          svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
+          svgAssetPath: entity.get<ecs.Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
         return;
       }
-      if (entity.has<AiControlled>()) {
+      if (entity.has<ecs.AiControlled>()) {
         add(Opponent(
           game.registry,
           registry: reg,
           entity: reg.getEntity(entity.id),
-          svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
+          svgAssetPath: entity.get<ecs.Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
         return;
@@ -126,7 +125,7 @@ class GameWorld extends flame.World with Disposer {
       add(Agent(
         registry: reg,
         entity: reg.getEntity(entity.id),
-        svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
+        svgAssetPath: entity.get<ecs.Renderable>()!.svgAssetPath,
         position: flame.Vector2(pos.x * 32, pos.y * 32),
       ));
     });
