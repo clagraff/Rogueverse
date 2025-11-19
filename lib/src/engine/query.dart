@@ -1,5 +1,6 @@
 import 'entity.dart';
 import 'registry.dart';
+import 'components.dart';
 
 /// A reusable filter that can be built ahead of time to select
 /// entities with specific component requirements.
@@ -19,18 +20,18 @@ import 'registry.dart';
 /// }
 /// ```
 class Query {
-  final Map<Type, bool Function(dynamic comp)?> _required = {};
-  final Map<Type, bool Function(dynamic comp)?> _excluded = {};
+  final Map<Type, bool Function(Component comp)?> _required = {};
+  final Map<Type, bool Function(Component comp)?> _excluded = {};
 
   /// Require component [T] with optional [predicate].
-  Query require<T>([bool Function(T comp)? predicate]) {
+  Query require<T extends Component>([bool Function(T comp)? predicate]) {
     _required[T] =
     predicate != null ? (dynamic comp) => predicate(comp as T) : null;
     return this;
   }
 
   /// Exclude component [T] with optional [predicate].
-  Query exclude<T>([bool Function(T comp)? predicate]) {
+  Query exclude<T extends Component>([bool Function(T comp)? predicate]) {
     _excluded[T] =
     predicate != null ? (dynamic comp) => predicate(comp as T) : null;
     return this;
@@ -85,7 +86,7 @@ class Query {
       final store = registry.components.putIfAbsent(type, () => {});
       if (!store.containsKey(entityId)) return false;
 
-      if (predicate != null && !predicate(store[entityId])) {
+      if (predicate != null && !predicate(store[entityId]!)) { // TODO should we handle store[entityId]! better?
         return false;
       }
     }
@@ -96,7 +97,7 @@ class Query {
       final store = registry.components.putIfAbsent(type, () => {});
       if (!store.containsKey(entityId)) continue;
 
-      if (predicate == null || predicate(store[entityId])) {
+      if (predicate == null || predicate(store[entityId]!)) {  // TODO should we handle store[entityId]! better?
         return false;
       }
     }
