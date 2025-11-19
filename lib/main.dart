@@ -6,7 +6,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
-import 'package:rogueverse/src/engine/engine.init.dart' show initializeMappers;
+import 'package:rogueverse/src/engine/engine.barrel.dart' as engine;
 import 'package:window_manager/window_manager.dart';
 
 import 'src/ui/mixins/scroll_callback.dart';
@@ -65,7 +65,7 @@ class MyGame extends FlameGame
 }
 
 void main() async {
-  initializeMappers();
+  engine.initializeMappers();
 
   // Set up hierarchical logging
   Logger.root.level = Level.INFO;

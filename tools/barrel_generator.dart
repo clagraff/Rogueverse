@@ -18,6 +18,7 @@ void generateBarrels(String directory) {
       .where((file) => file.path.endsWith('.dart'))
       .where((file) => !path.basename(file.path).contains('.gen.'))
       .where((file) => !path.basename(file.path).contains('.barrel.'))
+      .where((file) => !path.basename(file.path).contains('.mapper.'))
       .toList();
 
   // Get all subdirectories
