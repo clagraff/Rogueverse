@@ -17,8 +17,8 @@ import 'registry.dart';
 ///
 /// final player = playerArchetype.build(chunk);
 /// ```
-class Archetype {
-  Archetype();
+class EntityTemplate {
+  EntityTemplate();
 
   final List<void Function(Entity)> _builders = [];
 
@@ -26,7 +26,7 @@ class Archetype {
     _builders.add((Entity e) => e.upsert<C>(comp));
   }
 
-  void merge(Archetype other) {
+  void merge(EntityTemplate other) {
     _builders.addAll(other._builders);
   }
 
@@ -42,8 +42,8 @@ class Archetype {
     return List.generate(count, (_) => build(registry));
   }
 
-  Archetype clone() {
-    final copy = Archetype();
+  EntityTemplate clone() {
+    final copy = EntityTemplate();
     copy._builders.addAll(_builders);
     return copy;
   }

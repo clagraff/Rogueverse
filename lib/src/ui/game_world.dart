@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
-import '../engine/xml_serializer.dart';
+import '../engine/serializers.dart';
 import '../../main.dart';
 import '../engine/engine.barrel.dart';
 import '../ui/components/components.barrel.dart';
@@ -55,17 +55,31 @@ class GameWorld extends flame.World with Disposer {
 
 
     var playerHealth = player.get<Health>();
-    var healthXml = toXml<Health>(playerHealth!);
+    var healthXml = XmlSerializer.serialize(playerHealth!);
     print(healthXml);
 
     var first = player.getAll().first;
-    var firstXml = toXml(first!);
+    var firstXml = XmlSerializer.serialize(first!);
     print(firstXml);
 
 
-    var back = fromXml(healthXml) as Comp; // type not explicitly declared
+    var back = XmlSerializer.deserialize(healthXml) as Comp; // type not explicitly declared
     player.remove<Health>();
     player.upsert(back);
+    print(player.get<Health>()); // returns null, because `back` was `dynamic` and not a `Renderable`.
+
+    // -----------------------------
+
+    var healthXml2 = JsonSerializer.serialize(playerHealth!);
+    print(healthXml2);
+
+    var firstXml2 = JsonSerializer.serialize(first!);
+    print(firstXml2);
+
+
+    var back2 = JsonSerializer.deserialize(firstXml2) as Comp; // type not explicitly declared
+    player.remove<Health>();
+    player.upsert(back2);
     print(player.get<Health>()); // returns null, because `back` was `dynamic` and not a `Renderable`.
 
     var names = [

@@ -1,4 +1,4 @@
-export 'archtype.dart';
+export 'entity_template.dart';
 export 'components.dart';
 export 'ecs.dart';
 export 'entity.dart';

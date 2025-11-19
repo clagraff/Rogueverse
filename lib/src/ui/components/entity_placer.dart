@@ -6,7 +6,7 @@ import '../../engine/engine.barrel.dart';
 class EntityPlacer extends PositionComponent
     with DragCallbacks, TapCallbacks, Disposer {
   final Registry registry;
-  final Archetype archetype;
+  final EntityTemplate archetype;
 
   Vector2? _dragStartScreen;
   LocalPosition? _dragStartGrid;

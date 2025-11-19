@@ -7,6 +7,7 @@
 import 'components.dart' as p0;
 
 void initializeMappers() {
+  p0.CompMapper.ensureInitialized();
   p0.LifetimeMapper.ensureInitialized();
   p0.BeforeTickMapper.ensureInitialized();
   p0.AfterTickMapper.ensureInitialized();

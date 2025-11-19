@@ -7,13 +7,89 @@
 
 part of 'components.dart';
 
-class LifetimeMapper extends ClassMapperBase<Lifetime> {
+class CompMapper extends ClassMapperBase<Comp> {
+  CompMapper._();
+
+  static CompMapper? _instance;
+  static CompMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CompMapper._());
+      LifetimeMapper.ensureInitialized();
+      BeforeTickMapper.ensureInitialized();
+      AfterTickMapper.ensureInitialized();
+      CellMapper.ensureInitialized();
+      NameMapper.ensureInitialized();
+      LocalPositionMapper.ensureInitialized();
+      MoveByIntentMapper.ensureInitialized();
+      DidMoveMapper.ensureInitialized();
+      BlocksMovementMapper.ensureInitialized();
+      BlockedMoveMapper.ensureInitialized();
+      PlayerControlledMapper.ensureInitialized();
+      AiControlledMapper.ensureInitialized();
+      RenderableMapper.ensureInitialized();
+      HealthMapper.ensureInitialized();
+      AttackIntentMapper.ensureInitialized();
+      DidAttackMapper.ensureInitialized();
+      WasAttackedMapper.ensureInitialized();
+      DeadMapper.ensureInitialized();
+      InventoryMapper.ensureInitialized();
+      InventoryMaxCountMapper.ensureInitialized();
+      LootMapper.ensureInitialized();
+      LootTableMapper.ensureInitialized();
+      InventoryFullFailureMapper.ensureInitialized();
+      PickupableMapper.ensureInitialized();
+      PickupIntentMapper.ensureInitialized();
+      PickedUpMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Comp';
+
+  @override
+  final MappableFields<Comp> fields = const {};
+
+  static Comp _instantiate(DecodingData data) {
+    throw MapperException.missingSubclass(
+      'Comp',
+      '__type',
+      '${data.value['__type']}',
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Comp fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Comp>(map);
+  }
+
+  static Comp fromJson(String json) {
+    return ensureInitialized().decodeJson<Comp>(json);
+  }
+}
+
+mixin CompMappable {
+  String toJson();
+  Map<String, dynamic> toMap();
+  CompCopyWith<Comp, Comp, Comp> get copyWith;
+}
+
+abstract class CompCopyWith<$R, $In extends Comp, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  $R call();
+  CompCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class LifetimeMapper extends SubClassMapperBase<Lifetime> {
   LifetimeMapper._();
 
   static LifetimeMapper? _instance;
   static LifetimeMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = LifetimeMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
       BeforeTickMapper.ensureInitialized();
       AfterTickMapper.ensureInitialized();
     }
@@ -28,6 +104,13 @@ class LifetimeMapper extends ClassMapperBase<Lifetime> {
 
   @override
   final MappableFields<Lifetime> fields = const {#lifetime: _f$lifetime};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Lifetime';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Lifetime _instantiate(DecodingData data) {
     return Lifetime(data.dec(_f$lifetime));
@@ -89,7 +172,8 @@ extension LifetimeValueCopy<$R, $Out> on ObjectCopyWith<$R, Lifetime, $Out> {
 }
 
 abstract class LifetimeCopyWith<$R, $In extends Lifetime, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call();
   LifetimeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -216,7 +300,7 @@ extension BeforeTickValueCopy<$R, $Out>
 }
 
 abstract class BeforeTickCopyWith<$R, $In extends BeforeTick, $Out>
-    implements LifetimeCopyWith<$R, $In, $Out> {
+    implements LifetimeCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call();
   BeforeTickCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -339,7 +423,7 @@ extension AfterTickValueCopy<$R, $Out> on ObjectCopyWith<$R, AfterTick, $Out> {
 }
 
 abstract class AfterTickCopyWith<$R, $In extends AfterTick, $Out>
-    implements LifetimeCopyWith<$R, $In, $Out> {
+    implements LifetimeCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call();
   AfterTickCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -365,13 +449,14 @@ class _AfterTickCopyWithImpl<$R, $Out>
   ) => _AfterTickCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class CellMapper extends ClassMapperBase<Cell> {
+class CellMapper extends SubClassMapperBase<Cell> {
   CellMapper._();
 
   static CellMapper? _instance;
   static CellMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = CellMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -388,6 +473,13 @@ class CellMapper extends ClassMapperBase<Cell> {
 
   @override
   final MappableFields<Cell> fields = const {#entityIds: _f$entityIds};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Cell';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Cell _instantiate(DecodingData data) {
     return Cell();
@@ -438,7 +530,8 @@ extension CellValueCopy<$R, $Out> on ObjectCopyWith<$R, Cell, $Out> {
 }
 
 abstract class CellCopyWith<$R, $In extends Cell, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call();
   CellCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -459,13 +552,14 @@ class _CellCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Cell, $Out>
       _CellCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class NameMapper extends ClassMapperBase<Name> {
+class NameMapper extends SubClassMapperBase<Name> {
   NameMapper._();
 
   static NameMapper? _instance;
   static NameMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = NameMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -478,6 +572,13 @@ class NameMapper extends ClassMapperBase<Name> {
 
   @override
   final MappableFields<Name> fields = const {#name: _f$name};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Name';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Name _instantiate(DecodingData data) {
     return Name(name: data.dec(_f$name));
@@ -528,7 +629,8 @@ extension NameValueCopy<$R, $Out> on ObjectCopyWith<$R, Name, $Out> {
 }
 
 abstract class NameCopyWith<$R, $In extends Name, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call({String? name});
   NameCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -550,13 +652,14 @@ class _NameCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Name, $Out>
       _NameCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class LocalPositionMapper extends ClassMapperBase<LocalPosition> {
+class LocalPositionMapper extends SubClassMapperBase<LocalPosition> {
   LocalPositionMapper._();
 
   static LocalPositionMapper? _instance;
   static LocalPositionMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = LocalPositionMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -571,6 +674,13 @@ class LocalPositionMapper extends ClassMapperBase<LocalPosition> {
 
   @override
   final MappableFields<LocalPosition> fields = const {#x: _f$x, #y: _f$y};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'LocalPosition';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static LocalPosition _instantiate(DecodingData data) {
     return LocalPosition(x: data.dec(_f$x), y: data.dec(_f$y));
@@ -637,7 +747,8 @@ extension LocalPositionValueCopy<$R, $Out>
 }
 
 abstract class LocalPositionCopyWith<$R, $In extends LocalPosition, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call({int? x, int? y});
   LocalPositionCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -770,7 +881,7 @@ extension MoveByIntentValueCopy<$R, $Out>
 }
 
 abstract class MoveByIntentCopyWith<$R, $In extends MoveByIntent, $Out>
-    implements AfterTickCopyWith<$R, $In, $Out> {
+    implements AfterTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call({int? dx, int? dy});
   MoveByIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -901,7 +1012,7 @@ extension DidMoveValueCopy<$R, $Out> on ObjectCopyWith<$R, DidMove, $Out> {
 }
 
 abstract class DidMoveCopyWith<$R, $In extends DidMove, $Out>
-    implements BeforeTickCopyWith<$R, $In, $Out> {
+    implements BeforeTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get from;
   LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get to;
   @override
@@ -938,13 +1049,14 @@ class _DidMoveCopyWithImpl<$R, $Out>
       _DidMoveCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class BlocksMovementMapper extends ClassMapperBase<BlocksMovement> {
+class BlocksMovementMapper extends SubClassMapperBase<BlocksMovement> {
   BlocksMovementMapper._();
 
   static BlocksMovementMapper? _instance;
   static BlocksMovementMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = BlocksMovementMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -954,6 +1066,13 @@ class BlocksMovementMapper extends ClassMapperBase<BlocksMovement> {
 
   @override
   final MappableFields<BlocksMovement> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'BlocksMovement';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static BlocksMovement _instantiate(DecodingData data) {
     return BlocksMovement();
@@ -1020,7 +1139,8 @@ extension BlocksMovementValueCopy<$R, $Out>
 }
 
 abstract class BlocksMovementCopyWith<$R, $In extends BlocksMovement, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call();
   BlocksMovementCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
@@ -1150,7 +1270,7 @@ extension BlockedMoveValueCopy<$R, $Out>
 }
 
 abstract class BlockedMoveCopyWith<$R, $In extends BlockedMove, $Out>
-    implements BeforeTickCopyWith<$R, $In, $Out> {
+    implements BeforeTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get attempted;
   @override
   $R call({LocalPosition? attempted});
@@ -1181,13 +1301,14 @@ class _BlockedMoveCopyWithImpl<$R, $Out>
   ) => _BlockedMoveCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class PlayerControlledMapper extends ClassMapperBase<PlayerControlled> {
+class PlayerControlledMapper extends SubClassMapperBase<PlayerControlled> {
   PlayerControlledMapper._();
 
   static PlayerControlledMapper? _instance;
   static PlayerControlledMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = PlayerControlledMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -1197,6 +1318,13 @@ class PlayerControlledMapper extends ClassMapperBase<PlayerControlled> {
 
   @override
   final MappableFields<PlayerControlled> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'PlayerControlled';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static PlayerControlled _instantiate(DecodingData data) {
     return PlayerControlled();
@@ -1263,7 +1391,8 @@ extension PlayerControlledValueCopy<$R, $Out>
 }
 
 abstract class PlayerControlledCopyWith<$R, $In extends PlayerControlled, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call();
   PlayerControlledCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
@@ -1289,13 +1418,14 @@ class _PlayerControlledCopyWithImpl<$R, $Out>
   ) => _PlayerControlledCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class AiControlledMapper extends ClassMapperBase<AiControlled> {
+class AiControlledMapper extends SubClassMapperBase<AiControlled> {
   AiControlledMapper._();
 
   static AiControlledMapper? _instance;
   static AiControlledMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = AiControlledMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -1305,6 +1435,13 @@ class AiControlledMapper extends ClassMapperBase<AiControlled> {
 
   @override
   final MappableFields<AiControlled> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'AiControlled';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static AiControlled _instantiate(DecodingData data) {
     return AiControlled();
@@ -1371,7 +1508,8 @@ extension AiControlledValueCopy<$R, $Out>
 }
 
 abstract class AiControlledCopyWith<$R, $In extends AiControlled, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call();
   AiControlledCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -1395,13 +1533,14 @@ class _AiControlledCopyWithImpl<$R, $Out>
   ) => _AiControlledCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class RenderableMapper extends ClassMapperBase<Renderable> {
+class RenderableMapper extends SubClassMapperBase<Renderable> {
   RenderableMapper._();
 
   static RenderableMapper? _instance;
   static RenderableMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = RenderableMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -1419,6 +1558,13 @@ class RenderableMapper extends ClassMapperBase<Renderable> {
   final MappableFields<Renderable> fields = const {
     #svgAssetPath: _f$svgAssetPath,
   };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Renderable';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Renderable _instantiate(DecodingData data) {
     return Renderable(data.dec(_f$svgAssetPath));
@@ -1483,7 +1629,8 @@ extension RenderableValueCopy<$R, $Out>
 }
 
 abstract class RenderableCopyWith<$R, $In extends Renderable, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call({String? svgAssetPath});
   RenderableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -1510,13 +1657,14 @@ class _RenderableCopyWithImpl<$R, $Out>
   ) => _RenderableCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class HealthMapper extends ClassMapperBase<Health> {
+class HealthMapper extends SubClassMapperBase<Health> {
   HealthMapper._();
 
   static HealthMapper? _instance;
   static HealthMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = HealthMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -1534,6 +1682,13 @@ class HealthMapper extends ClassMapperBase<Health> {
     #current: _f$current,
     #max: _f$max,
   };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Health';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Health _instantiate(DecodingData data) {
     return Health(data.dec(_f$current), data.dec(_f$max));
@@ -1584,7 +1739,8 @@ extension HealthValueCopy<$R, $Out> on ObjectCopyWith<$R, Health, $Out> {
 }
 
 abstract class HealthCopyWith<$R, $In extends Health, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call({int? current, int? max});
   HealthCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -1613,13 +1769,14 @@ class _HealthCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Health, $Out>
       _HealthCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class AttackIntentMapper extends ClassMapperBase<AttackIntent> {
+class AttackIntentMapper extends SubClassMapperBase<AttackIntent> {
   AttackIntentMapper._();
 
   static AttackIntentMapper? _instance;
   static AttackIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = AttackIntentMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -1635,6 +1792,13 @@ class AttackIntentMapper extends ClassMapperBase<AttackIntent> {
 
   @override
   final MappableFields<AttackIntent> fields = const {#targetId: _f$targetId};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'AttackIntent';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static AttackIntent _instantiate(DecodingData data) {
     return AttackIntent(data.dec(_f$targetId));
@@ -1701,7 +1865,8 @@ extension AttackIntentValueCopy<$R, $Out>
 }
 
 abstract class AttackIntentCopyWith<$R, $In extends AttackIntent, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call({int? targetId});
   AttackIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -1835,7 +2000,7 @@ extension DidAttackValueCopy<$R, $Out> on ObjectCopyWith<$R, DidAttack, $Out> {
 }
 
 abstract class DidAttackCopyWith<$R, $In extends DidAttack, $Out>
-    implements BeforeTickCopyWith<$R, $In, $Out> {
+    implements BeforeTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetId, int? damage});
   DidAttackCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -1977,7 +2142,7 @@ extension WasAttackedValueCopy<$R, $Out>
 }
 
 abstract class WasAttackedCopyWith<$R, $In extends WasAttacked, $Out>
-    implements BeforeTickCopyWith<$R, $In, $Out> {
+    implements BeforeTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call({int? sourceId, int? damage});
   WasAttackedCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -2010,13 +2175,14 @@ class _WasAttackedCopyWithImpl<$R, $Out>
   ) => _WasAttackedCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class DeadMapper extends ClassMapperBase<Dead> {
+class DeadMapper extends SubClassMapperBase<Dead> {
   DeadMapper._();
 
   static DeadMapper? _instance;
   static DeadMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = DeadMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -2026,6 +2192,13 @@ class DeadMapper extends ClassMapperBase<Dead> {
 
   @override
   final MappableFields<Dead> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Dead';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Dead _instantiate(DecodingData data) {
     return Dead();
@@ -2076,7 +2249,8 @@ extension DeadValueCopy<$R, $Out> on ObjectCopyWith<$R, Dead, $Out> {
 }
 
 abstract class DeadCopyWith<$R, $In extends Dead, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call();
   DeadCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -2097,13 +2271,14 @@ class _DeadCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Dead, $Out>
       _DeadCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class InventoryMapper extends ClassMapperBase<Inventory> {
+class InventoryMapper extends SubClassMapperBase<Inventory> {
   InventoryMapper._();
 
   static InventoryMapper? _instance;
   static InventoryMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = InventoryMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -2116,6 +2291,13 @@ class InventoryMapper extends ClassMapperBase<Inventory> {
 
   @override
   final MappableFields<Inventory> fields = const {#items: _f$items};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Inventory';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Inventory _instantiate(DecodingData data) {
     return Inventory(data.dec(_f$items));
@@ -2179,8 +2361,9 @@ extension InventoryValueCopy<$R, $Out> on ObjectCopyWith<$R, Inventory, $Out> {
 }
 
 abstract class InventoryCopyWith<$R, $In extends Inventory, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
   ListCopyWith<$R, int, ObjectCopyWith<$R, int, int>> get items;
+  @override
   $R call({List<int>? items});
   InventoryCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -2212,13 +2395,14 @@ class _InventoryCopyWithImpl<$R, $Out>
   ) => _InventoryCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class InventoryMaxCountMapper extends ClassMapperBase<InventoryMaxCount> {
+class InventoryMaxCountMapper extends SubClassMapperBase<InventoryMaxCount> {
   InventoryMaxCountMapper._();
 
   static InventoryMaxCountMapper? _instance;
   static InventoryMaxCountMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = InventoryMaxCountMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -2236,6 +2420,13 @@ class InventoryMaxCountMapper extends ClassMapperBase<InventoryMaxCount> {
   final MappableFields<InventoryMaxCount> fields = const {
     #maxAmount: _f$maxAmount,
   };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'InventoryMaxCount';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static InventoryMaxCount _instantiate(DecodingData data) {
     return InventoryMaxCount(data.dec(_f$maxAmount));
@@ -2311,7 +2502,8 @@ abstract class InventoryMaxCountCopyWith<
   $In extends InventoryMaxCount,
   $Out
 >
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call({int? maxAmount});
   InventoryMaxCountCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
@@ -2339,13 +2531,15 @@ class _InventoryMaxCountCopyWithImpl<$R, $Out>
   ) => _InventoryMaxCountCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class LootMapper extends ClassMapperBase<Loot> {
+class LootMapper extends SubClassMapperBase<Loot> {
   LootMapper._();
 
   static LootMapper? _instance;
   static LootMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = LootMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
+      CompMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -2379,6 +2573,13 @@ class LootMapper extends ClassMapperBase<Loot> {
     #probability: _f$probability,
     #quantity: _f$quantity,
   };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Loot';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Loot _instantiate(DecodingData data) {
     return Loot(
@@ -2433,8 +2634,9 @@ extension LootValueCopy<$R, $Out> on ObjectCopyWith<$R, Loot, $Out> {
 }
 
 abstract class LootCopyWith<$R, $In extends Loot, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
-  ListCopyWith<$R, Comp, ObjectCopyWith<$R, Comp, Comp>> get components;
+    implements CompCopyWith<$R, $In, $Out> {
+  ListCopyWith<$R, Comp, CompCopyWith<$R, Comp, Comp>> get components;
+  @override
   $R call({List<Comp>? components, double? probability, int? quantity});
   LootCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -2446,10 +2648,10 @@ class _LootCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Loot, $Out>
   @override
   late final ClassMapperBase<Loot> $mapper = LootMapper.ensureInitialized();
   @override
-  ListCopyWith<$R, Comp, ObjectCopyWith<$R, Comp, Comp>> get components =>
+  ListCopyWith<$R, Comp, CompCopyWith<$R, Comp, Comp>> get components =>
       ListCopyWith(
         $value.components,
-        (v, t) => ObjectCopyWith(v, $identity, t),
+        (v, t) => v.copyWith.$chain(t),
         (v) => call(components: v),
       );
   @override
@@ -2473,13 +2675,14 @@ class _LootCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Loot, $Out>
       _LootCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class LootTableMapper extends ClassMapperBase<LootTable> {
+class LootTableMapper extends SubClassMapperBase<LootTable> {
   LootTableMapper._();
 
   static LootTableMapper? _instance;
   static LootTableMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = LootTableMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
       LootMapper.ensureInitialized();
     }
     return _instance!;
@@ -2496,6 +2699,13 @@ class LootTableMapper extends ClassMapperBase<LootTable> {
 
   @override
   final MappableFields<LootTable> fields = const {#lootables: _f$lootables};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'LootTable';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static LootTable _instantiate(DecodingData data) {
     return LootTable(data.dec(_f$lootables));
@@ -2559,8 +2769,9 @@ extension LootTableValueCopy<$R, $Out> on ObjectCopyWith<$R, LootTable, $Out> {
 }
 
 abstract class LootTableCopyWith<$R, $In extends LootTable, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
   ListCopyWith<$R, Loot, LootCopyWith<$R, Loot, Loot>> get lootables;
+  @override
   $R call({List<Loot>? lootables});
   LootTableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -2707,7 +2918,7 @@ abstract class InventoryFullFailureCopyWith<
   $In extends InventoryFullFailure,
   $Out
 >
-    implements BeforeTickCopyWith<$R, $In, $Out> {
+    implements BeforeTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetEntityId});
   InventoryFullFailureCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
@@ -2740,13 +2951,14 @@ class _InventoryFullFailureCopyWithImpl<$R, $Out>
       _InventoryFullFailureCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class PickupableMapper extends ClassMapperBase<Pickupable> {
+class PickupableMapper extends SubClassMapperBase<Pickupable> {
   PickupableMapper._();
 
   static PickupableMapper? _instance;
   static PickupableMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = PickupableMapper._());
+      CompMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -2756,6 +2968,13 @@ class PickupableMapper extends ClassMapperBase<Pickupable> {
 
   @override
   final MappableFields<Pickupable> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Pickupable';
+  @override
+  late final ClassMapperBase superMapper = CompMapper.ensureInitialized();
 
   static Pickupable _instantiate(DecodingData data) {
     return Pickupable();
@@ -2820,7 +3039,8 @@ extension PickupableValueCopy<$R, $Out>
 }
 
 abstract class PickupableCopyWith<$R, $In extends Pickupable, $Out>
-    implements ClassCopyWith<$R, $In, $Out> {
+    implements CompCopyWith<$R, $In, $Out> {
+  @override
   $R call();
   PickupableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -2949,7 +3169,7 @@ extension PickupIntentValueCopy<$R, $Out>
 }
 
 abstract class PickupIntentCopyWith<$R, $In extends PickupIntent, $Out>
-    implements AfterTickCopyWith<$R, $In, $Out> {
+    implements AfterTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetEntityId});
   PickupIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -3079,7 +3299,7 @@ extension PickedUpValueCopy<$R, $Out> on ObjectCopyWith<$R, PickedUp, $Out> {
 }
 
 abstract class PickedUpCopyWith<$R, $In extends PickedUp, $Out>
-    implements BeforeTickCopyWith<$R, $In, $Out> {
+    implements BeforeTickCopyWith<$R, $In, $Out>, CompCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetEntityId});
   PickedUpCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);

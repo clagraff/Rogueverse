@@ -66,13 +66,3 @@ class Entity {
     parentCell.remove(id);
   }
 }
-
-
-// class EntityTemplate {
-//   final List<Component> components;
-//   EntityTemplate(this.components);
-//
-//   Entity spawn(Registry registry) {
-//     return registry.add(components.map((c) => _clone(c)).toList());
-//   }
-// }
