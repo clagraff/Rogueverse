@@ -7,6 +7,8 @@ enum EventType {
   removed
 }
 
+// TODO make mappable so it can be easily serialized?
+
 /// Generic event class
 class Event<T> {
   final EventType eventType;
@@ -89,7 +91,7 @@ extension EventBusCombinationExtension on EventBus {
       return stream2
           .where((event2) => true) // Accept any event2
           .take(1) // Take only the first matching event2
-          .timeout(
+          .timeout( // TODO maybe dont have this, or change to frame-count based?
         window,
         onTimeout: (sink) => sink.close(), // Close if no event2 arrives in time
       )
@@ -106,7 +108,7 @@ extension EventBusCombinationExtension on EventBus {
     return stream1.asyncExpand((event1) {
       return stream2
           .take(1)
-          .timeout(
+          .timeout( // TODO: maybe dont have this or have it based on frame count?
         window,
         onTimeout: (sink) => sink.close(),
       )
@@ -121,7 +123,7 @@ extension EventBusCombinationExtension on EventBus {
       final (event1, event2) = events;
       return on<T3>()
           .take(1)
-          .timeout(
+          .timeout( // TODO: maybe dont have this or have it be based on framecount?
         window,
         onTimeout: (sink) => sink.close(),
       )
