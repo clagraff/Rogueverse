@@ -52,11 +52,17 @@ class GameWorld extends flame.World with ecs.Disposer {
       ]),
     ]);
 
+    var c = ecs.CollisionSystem();
     var i = ecs.InventorySystem();
-    var xmlString = ecs.XmlSerializer.serialize(i);
-    print(xmlString);
-    var s = ecs.XmlSerializer.deserialize(xmlString) as ecs.InventorySystem;
-    print(i);
+    List<ecs.System> s = List.from([c, i]);
+    Map<String, ecs.System> m = {
+      "Inventory": ecs.InventorySystem(),
+      "Collision": ecs.CollisionSystem(),
+    };
+
+    print(ecs.JsonSerializer.serialize(m));
+    print(ecs.XmlSerializer.serialize(m));
+
 
     var names = [
       'Iron short sword',

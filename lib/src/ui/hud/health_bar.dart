@@ -20,7 +20,7 @@ class HealthBar extends Component {
 
   void onHealthChange(ecs.Entity e) {
     health = max(e.get<ecs.Health>()!.current, 0); // Dont allow anything below zero.
-    children.clear();
+    removeAll(children);
 
     for(var i = 0.0; i < health; i++) {
       var comp = SvgTileComponent(

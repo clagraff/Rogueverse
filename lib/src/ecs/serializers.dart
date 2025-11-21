@@ -1,4 +1,5 @@
 import 'package:dart_mappable/dart_mappable.dart';
+import 'package:rogueverse/src/src.barrel.dart';
 import 'package:xml/xml.dart';
 
 class XmlSerializer {
@@ -12,6 +13,33 @@ class XmlSerializer {
   }
 
   static XmlElement serialize(dynamic value) {
+    if (value is List<dynamic>) {
+
+      var elements = value.map((el) {
+        return XmlSerializer.serialize(el);
+      }).toList();
+      return XmlElement(
+        XmlName("List"),
+        [],
+        elements
+      );
+    } else if (value is Map<dynamic, dynamic>) {
+      var keyValueElements = value.select((e) {
+        var child = XmlSerializer.serialize(e.value);
+        return XmlElement(
+          XmlName("Entry"),
+          [
+            XmlAttribute(XmlName("key"), e.key.toString())
+          ],
+          [child]
+        );
+      });
+      return XmlElement(
+          XmlName("Map"),
+          [],
+          keyValueElements
+      );
+    }
     final map = MapperContainer.globals.toMap(value);
 
     // If mapper encoded a __type discriminator, prefer that as the tag.
@@ -35,6 +63,12 @@ class XmlSerializer {
   }
 
   static dynamic deserialize(XmlElement element) {
+    if (element.localName == "List") {
+
+    } else if (element.localName == "Map") {
+
+    }
+
     final stringMap = _xmlElementToStringMap(element);
     stringMap['__type'] = element.name.local;
     // Here we just hand the stringMap directly to the mapper and let

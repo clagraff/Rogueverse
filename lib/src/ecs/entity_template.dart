@@ -1,7 +1,7 @@
 import 'components.dart';
 
 import 'entity.dart';
-import 'registry.dart';
+import 'world.dart';
 
 /// A template for spawning entities with a predefined set of components.
 ///

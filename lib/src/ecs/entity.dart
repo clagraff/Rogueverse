@@ -1,5 +1,5 @@
 import 'components.dart';
-import 'registry.dart';
+import 'world.dart';
 import 'events.dart';
 
 class Entity {

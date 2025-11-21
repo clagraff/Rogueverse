@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'components.dart';
 import 'events.dart';
-import 'registry.dart';
+import 'world.dart';
 import 'query.dart';
 
 part 'systems.mapper.dart';

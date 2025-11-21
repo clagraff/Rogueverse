@@ -1,7 +1,11 @@
+import 'package:dart_mappable/dart_mappable.dart';
+
 import 'systems.dart';
 import 'events.dart';
 import 'components.dart';
 import 'entity.dart';
+
+part 'world.mapper.dart';
 
 /// A simple Event marker to be used to hook into pre-tick processing.
 class PreTickEvent {
@@ -19,7 +23,8 @@ class PostTickEvent {
   PostTickEvent(this.tickId);
 }
 
-class World {
+@MappableClass(discriminatorKey: "__type")
+class World with WorldMappable {
   int tickId = 0;
   int lastId = 0;
   Map<Type, Map<int, Component>> components = {};
@@ -27,7 +32,9 @@ class World {
   final EventBus eventBus;
 
   World(this.systems, this.components, this.eventBus);
+}
 
+extension WorldExtensions on World {
   Entity getEntity(int entityId) {
     return Entity(parentCell: this, id: entityId);
   }
@@ -48,7 +55,7 @@ class World {
     var entityId = lastId++;
     for (var c in comps) {
       var entitiesWithComponent =
-      components.putIfAbsent(c.componentType, () => {});
+          components.putIfAbsent(c.componentType, () => {});
       entitiesWithComponent[entityId] = c;
     }
 
@@ -76,13 +83,15 @@ class World {
   void tick() {
     eventBus.publish(Event<PreTickEvent>(
         eventType: EventType.updated, value: PreTickEvent(tickId), id: tickId));
-    clearLifetimeComponents<BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
+    clearLifetimeComponents<
+        BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
     for (var s in systems) {
       s.update(this);
     }
 
-    clearLifetimeComponents<AfterTick>();  // TODO would be cool to find a better way of pulling this out from the class.
+    clearLifetimeComponents<
+        AfterTick>(); // TODO would be cool to find a better way of pulling this out from the class.
     eventBus.publish(Event<PostTickEvent>(
         eventType: EventType.updated,
         value: PostTickEvent(tickId),

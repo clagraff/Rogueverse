@@ -1,5 +1,5 @@
 import 'entity.dart';
-import 'registry.dart';
+import 'world.dart';
 import 'components.dart';
 
 /// A reusable filter that can be built ahead of time to select
