@@ -44,7 +44,7 @@ class Query {
     }
 
     final firstRequiredType = _required.keys.first;
-    final store = registry.components.putIfAbsent(firstRequiredType, () => {});
+    final store = registry.components.putIfAbsent(firstRequiredType.toString(), () => {});
 
     for (final id in store.keys) {
       if (isMatching(registry, id)) {
@@ -60,7 +60,7 @@ class Query {
     }
 
     final firstRequiredType = _required.keys.first;
-    final store = registry.components.putIfAbsent(firstRequiredType, () => {});
+    final store = registry.components.putIfAbsent(firstRequiredType.toString(), () => {});
 
     for (final id in store.keys) {
       if (!possibleIds.contains(id)) {
@@ -83,7 +83,7 @@ class Query {
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = registry.components.putIfAbsent(type, () => {});
+      final store = registry.components.putIfAbsent(type.toString(), () => {});
       if (!store.containsKey(entityId)) return false;
 
       if (predicate != null && !predicate(store[entityId]!)) { // TODO should we handle store[entityId]! better?
@@ -94,7 +94,7 @@ class Query {
     for (final entry in _excluded.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = registry.components.putIfAbsent(type, () => {});
+      final store = registry.components.putIfAbsent(type.toString(), () => {});
       if (!store.containsKey(entityId)) continue;
 
       if (predicate == null || predicate(store[entityId]!)) {  // TODO should we handle store[entityId]! better?

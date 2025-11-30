@@ -7,14 +7,18 @@ class Entity {
   final int id;
 
   Entity({required this.parentCell, required this.id});
+}
 
+
+extension EntityExtensions on Entity {
   bool has<C extends Component>() {
-    var entitiesWithComponent = parentCell.components[C] ?? {};
+    var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
     return entitiesWithComponent.containsKey(id);
   }
 
+  // TODO maybe have a dedicated `getOrUpsert`?
   C? get<C extends Component>([C? orDefault]) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => <int, Component>{});
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => <int, Component>{});
     if (entitiesWithComponent.containsKey(id)) {
       return entitiesWithComponent[id] as C;
     }
@@ -42,7 +46,7 @@ class Entity {
   }
 
   void upsert<C extends Component>(C c) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => {});
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
     var alreadyExisted = entitiesWithComponent.containsKey(id);
 
     entitiesWithComponent[id] = c;
@@ -51,7 +55,7 @@ class Entity {
   }
 
   void remove<C>() {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C, () => {});
+    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
     var componentExists = entitiesWithComponent.containsKey(id);
 
     if (componentExists) {

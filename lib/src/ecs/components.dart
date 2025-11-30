@@ -4,7 +4,7 @@ part 'components.mapper.dart';
 
 @MappableClass(discriminatorKey: "__type")
 abstract class Component with ComponentMappable {
-  Type get componentType;
+  String get componentType;
 }
 
 /// Base class for components with a limited lifespan that can expire
@@ -27,7 +27,7 @@ class Lifetime with LifetimeMappable implements Component {
   }
 
   @override
-  Type get componentType => Lifetime;
+  String get componentType => "Lifetime";
 }
 
 /// Component that is removed before a tick update if its [lifetime]
@@ -39,7 +39,7 @@ class BeforeTick extends Lifetime with BeforeTickMappable implements Component{
   BeforeTick([super.lifetime = 0]);
 
   @override
-  Type get componentType => BeforeTick;
+  String get componentType => "BeforeTick";
 }
 
 /// Component that is removed after a tick update if its [lifetime]
@@ -51,7 +51,7 @@ class AfterTick extends Lifetime with AfterTickMappable implements Component {
   AfterTick([super.lifetime = 0]);
 
   @override
-  Type get componentType => AfterTick;
+  String get componentType => "AfterTick";
 }
 
 
@@ -60,7 +60,7 @@ class Cell with CellMappable implements Component  {
   List<int> entityIds = [];
 
   @override
-  Type get componentType => Cell;
+  String get componentType => "Cell";
 }
 
 /// A user-friendly, non-unique label for an entity.
@@ -73,7 +73,7 @@ class Name with NameMappable implements Component {
   Name({required this.name});
 
   @override
-  Type get componentType => Name;
+  String get componentType => "Name";
 }
 
 /// The grid-based position of an entity within the game world.
@@ -86,7 +86,7 @@ class LocalPosition with LocalPositionMappable implements Component {
   LocalPosition({required this.x, required this.y});
 
   @override
-  Type get componentType => LocalPosition;
+  String get componentType => "LocalPosition";
 }
 
 extension LocalPositionExtension on LocalPosition {
@@ -96,6 +96,8 @@ extension LocalPositionExtension on LocalPosition {
   }
 }
 
+// TODO have a MoveToIntent that extends LocalPosition maybe?
+// TODO and have MoveBy do the same, with the source and target and deltas?
 /// Component that signals an intent to move the entity by a relative offset.
 @MappableClass()
 class MoveByIntent extends AfterTick with MoveByIntentMappable implements Component{
@@ -104,7 +106,7 @@ class MoveByIntent extends AfterTick with MoveByIntentMappable implements Compon
   MoveByIntent({required this.dx, required this.dy});
 
   @override
-  Type get componentType => MoveByIntent;
+  String get componentType => "MoveByIntent";
 }
 
 /// Component added when an entity has successfully moved in a tick.
@@ -117,14 +119,14 @@ class DidMove extends BeforeTick with DidMoveMappable implements Component {
   DidMove({required this.from, required this.to}) : super(1);
 
   @override
-  Type get componentType => LocalPosition;
+  String get componentType => "LocalPosition";
 }
 
 /// Marker component indicating this entity blocks movement.
 @MappableClass()
 class BlocksMovement with BlocksMovementMappable implements Component {
   @override
-  Type get componentType => BlocksMovement;
+  String get componentType => "BlocksMovement";
 }
 
 /// Component added when an entity's movement was blocked by another entity.
@@ -135,20 +137,20 @@ class BlockedMove extends BeforeTick with BlockedMoveMappable implements Compone
   BlockedMove(this.attempted);
 
   @override
-  Type get componentType => LocalPosition;
+  String get componentType => "LocalPosition";
 }
 
 /// Marker component indicating the entity is controlled by the player.
 @MappableClass()
 class PlayerControlled with PlayerControlledMappable implements Component {
   @override
-  Type get componentType => PlayerControlled;
+  String get componentType => "PlayerControlled";
 }
 
 @MappableClass()
 class AiControlled with AiControlledMappable implements Component {
   @override
-  Type get componentType => AiControlled;
+  String get componentType => "AiControlled";
 }
 
 /// Component that provides a visual asset path for rendering the entity.
@@ -159,7 +161,7 @@ class Renderable with RenderableMappable implements Component {
   Renderable(this.svgAssetPath);
 
   @override
-  Type get componentType => Renderable;
+  String get componentType => "Renderable";
 }
 
 @MappableClass()
@@ -176,7 +178,7 @@ class Health with HealthMappable implements Component {
   }
 
   @override
-  Type get componentType => Health;
+  String get componentType => "Health";
 }
 
 extension HealthExtension on Health {
@@ -200,7 +202,7 @@ class AttackIntent with AttackIntentMappable implements Component {
   AttackIntent(this.targetId);
 
   @override
-  Type get componentType => AttackIntent;
+  String get componentType => "AttackIntent";
 }
 
 @MappableClass()
@@ -211,7 +213,7 @@ class DidAttack extends BeforeTick with DidAttackMappable implements Component{
   DidAttack({required this.targetId, required this.damage});
 
   @override
-  Type get componentType => DidAttack;
+  String get componentType => "DidAttack";
 }
 
 
@@ -223,7 +225,7 @@ class WasAttacked extends BeforeTick with WasAttackedMappable implements Compone
   WasAttacked({required this.sourceId, required this.damage});
 
   @override
-  Type get componentType => WasAttacked;
+  String get componentType => "WasAttacked";
 }
 
 // // TODO change this back to a class?
@@ -232,7 +234,7 @@ class WasAttacked extends BeforeTick with WasAttackedMappable implements Compone
 @MappableClass()
 class Dead with DeadMappable implements Component {
   @override
-  Type get componentType => Dead;
+  String get componentType => "Dead";
 }
 
 @MappableClass()
@@ -242,7 +244,7 @@ class Inventory with InventoryMappable implements Component {
   Inventory(this.items);
 
   @override
-  Type get componentType => Inventory;
+  String get componentType => "Inventory";
 }
 
 @MappableClass()
@@ -252,7 +254,7 @@ class InventoryMaxCount with InventoryMaxCountMappable implements Component {
   InventoryMaxCount(this.maxAmount);
 
   @override
-  Type get componentType => InventoryMaxCount;
+  String get componentType => "InventoryMaxCount";
 }
 
 
@@ -269,7 +271,7 @@ class Loot with LootMappable implements Component {
   });
 
   @override
-  Type get componentType => Loot;
+  String get componentType => "Loot";
 }
 
 @MappableClass()
@@ -279,7 +281,7 @@ class LootTable with LootTableMappable implements Component {
   LootTable(this.lootables);
 
   @override
-  Type get componentType => LootTable;
+  String get componentType => "LootTable";
 }
 
 @MappableClass()
@@ -289,13 +291,13 @@ class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable 
   InventoryFullFailure(this.targetEntityId);
 
   @override
-  Type get componentType => InventoryFullFailure;
+  String get componentType => "InventoryFullFailure";
 }
 
 @MappableClass()
 class Pickupable with PickupableMappable implements Component {
   @override
-  Type get componentType => Pickupable;
+  String get componentType => "Pickupable";
 }
 
 @MappableClass()
@@ -305,7 +307,7 @@ class PickupIntent extends AfterTick with PickupIntentMappable implements Compon
   PickupIntent(this.targetEntityId);
 
   @override
-  Type get componentType => PickupIntent;
+  String get componentType => "PickupIntent";
 }
 
 @MappableClass()
@@ -315,5 +317,5 @@ class PickedUp extends BeforeTick with PickedUpMappable implements Component{
   PickedUp(this.targetEntityId);
 
   @override
-  Type get componentType => PickedUp;
+  String get componentType => "PickedUp";
 }

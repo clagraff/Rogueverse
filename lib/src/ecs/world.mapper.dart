@@ -28,24 +28,27 @@ class WorldMapper extends ClassMapperBase<World> {
     'systems',
     _$systems,
   );
-  static Map<Type, Map<int, Component>> _$components(World v) => v.components;
-  static const Field<World, Map<Type, Map<int, Component>>> _f$components =
-      Field('components', _$components);
-  static EventBus _$eventBus(World v) => v.eventBus;
-  static const Field<World, EventBus> _f$eventBus = Field(
-    'eventBus',
-    _$eventBus,
-  );
+  static Map<String, Map<int, Component>> _$components(World v) => v.components;
+  static const Field<World, Map<String, Map<int, Component>>> _f$components =
+      Field('components', _$components, hook: ComponentsHook());
   static int _$tickId(World v) => v.tickId;
   static const Field<World, int> _f$tickId = Field(
     'tickId',
     _$tickId,
-    mode: FieldMode.member,
+    opt: true,
+    def: 0,
   );
   static int _$lastId(World v) => v.lastId;
   static const Field<World, int> _f$lastId = Field(
     'lastId',
     _$lastId,
+    opt: true,
+    def: 0,
+  );
+  static EventBus _$eventBus(World v) => v.eventBus;
+  static const Field<World, EventBus> _f$eventBus = Field(
+    'eventBus',
+    _$eventBus,
     mode: FieldMode.member,
   );
 
@@ -53,16 +56,17 @@ class WorldMapper extends ClassMapperBase<World> {
   final MappableFields<World> fields = const {
     #systems: _f$systems,
     #components: _f$components,
-    #eventBus: _f$eventBus,
     #tickId: _f$tickId,
     #lastId: _f$lastId,
+    #eventBus: _f$eventBus,
   };
 
   static World _instantiate(DecodingData data) {
     return World(
       data.dec(_f$systems),
       data.dec(_f$components),
-      data.dec(_f$eventBus),
+      data.dec(_f$tickId),
+      data.dec(_f$lastId),
     );
   }
 
@@ -115,15 +119,16 @@ abstract class WorldCopyWith<$R, $In extends World, $Out>
   ListCopyWith<$R, System, ObjectCopyWith<$R, System, System>> get systems;
   MapCopyWith<
     $R,
-    Type,
+    String,
     Map<int, Component>,
     ObjectCopyWith<$R, Map<int, Component>, Map<int, Component>>
   >
   get components;
   $R call({
     List<System>? systems,
-    Map<Type, Map<int, Component>>? components,
-    EventBus? eventBus,
+    Map<String, Map<int, Component>>? components,
+    int? tickId,
+    int? lastId,
   });
   WorldCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -144,7 +149,7 @@ class _WorldCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, World, $Out>
   @override
   MapCopyWith<
     $R,
-    Type,
+    String,
     Map<int, Component>,
     ObjectCopyWith<$R, Map<int, Component>, Map<int, Component>>
   >
@@ -156,20 +161,23 @@ class _WorldCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, World, $Out>
   @override
   $R call({
     List<System>? systems,
-    Map<Type, Map<int, Component>>? components,
-    EventBus? eventBus,
+    Map<String, Map<int, Component>>? components,
+    int? tickId,
+    int? lastId,
   }) => $apply(
     FieldCopyWithData({
       if (systems != null) #systems: systems,
       if (components != null) #components: components,
-      if (eventBus != null) #eventBus: eventBus,
+      if (tickId != null) #tickId: tickId,
+      if (lastId != null) #lastId: lastId,
     }),
   );
   @override
   World $make(CopyWithData data) => World(
     data.get(#systems, or: $value.systems),
     data.get(#components, or: $value.components),
-    data.get(#eventBus, or: $value.eventBus),
+    data.get(#tickId, or: $value.tickId),
+    data.get(#lastId, or: $value.lastId),
   );
 
   @override

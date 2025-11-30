@@ -4,6 +4,7 @@ import 'components.dart';
 import 'events.dart';
 import 'world.dart';
 import 'query.dart';
+import 'entity.dart';
 
 part 'systems.mapper.dart';
 
@@ -195,7 +196,7 @@ class CombatSystem extends System with CombatSystemMappable {
 
                 for (var c in lootable.components) {
                   // Have to do things the hard way to avoid `dynamic` component types in the components map.
-                  var comp = registry.components.putIfAbsent(c.runtimeType, () => {});
+                  var comp = registry.components.putIfAbsent(c.componentType, () => {});
                   comp[item.id] = c;
                 }
 
