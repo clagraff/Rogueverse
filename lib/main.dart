@@ -19,8 +19,7 @@ class MyGame extends FlameGame
   @override
   get debugMode => false;
 
-  late final ecs.Cell liveCell;
-  late final ecs.World registry;
+  late ecs.World registry;
   late final ScrollDispatcher scrollDispatcher;
 
   MyGame() {
@@ -32,8 +31,7 @@ class MyGame extends FlameGame
       ecs.CombatSystem(),
     ];
 
-    registry = ecs.World(systems, {}, ecs.EventBus());
-
+    registry = ecs.World(systems, {});
   }
 
   @override
@@ -59,8 +57,9 @@ class MyGame extends FlameGame
     }
   }
 
-  void tickEcs() {
+  Future<void> tickEcs() async {
     registry.tick();
+    await ecs.WorldSaves.writeSave(registry);
   }
 }
 
@@ -99,7 +98,7 @@ Future<void> setupWindow() async {
     center: true,
     backgroundColor: Colors.transparent,
     skipTaskbar: false,
-    titleBarStyle: TitleBarStyle.hidden,
+    titleBarStyle: TitleBarStyle.normal,
   );
   windowManager.waitUntilReadyToShow(windowOptions, () async {
     await windowManager.show();
