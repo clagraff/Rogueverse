@@ -17,6 +17,7 @@ void generateBarrels(String directory) {
       .whereType<File>()
       .where((file) => file.path.endsWith('.dart'))
       .where((file) => !path.basename(file.path).contains('.gen.'))
+      .where((file) => !path.basename(file.path).contains('.init.'))
       .where((file) => !path.basename(file.path).contains('.barrel.'))
       .where((file) => !path.basename(file.path).contains('.mapper.'))
       .toList();
