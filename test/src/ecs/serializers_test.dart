@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:rogueverse/src/ecs/ecs.barrel.dart';
+import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/ecs.init.dart';
+import 'package:rogueverse/ecs/serializers.dart';
 
 void main() {
   initializeMappers(); // required for the Mappers to work.

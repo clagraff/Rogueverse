@@ -1,17 +1,18 @@
 import 'dart:async';
 
-import 'package:flame/components.dart';
+import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:rogueverse/ecs/ecs.init.dart';
+import 'package:rogueverse/ecs/systems.dart';
+import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/ui/game_world.dart';
+import 'package:rogueverse/ui/hud/camera_controls.dart';
+import 'package:rogueverse/ui/mixins/scroll_callback.dart';
 import 'package:window_manager/window_manager.dart';
-
-import 'src/ui/mixins/scroll_callback.dart';
-import 'src/ui/hud/camera_controls.dart';
-import 'src/ui/game_world.dart';
-import 'src/ecs/ecs.barrel.dart' as ecs;
 
 
 class MyGame extends FlameGame
@@ -19,19 +20,19 @@ class MyGame extends FlameGame
   @override
   get debugMode => false;
 
-  late ecs.World registry;
+  late World registry;
   late final ScrollDispatcher scrollDispatcher;
 
   MyGame() {
     world = GameWorld();
     var systems = [
-      ecs.CollisionSystem(),
-      ecs.MovementSystem(),
-      ecs.InventorySystem(),
-      ecs.CombatSystem(),
+      CollisionSystem(),
+      MovementSystem(),
+      InventorySystem(),
+      CombatSystem(),
     ];
 
-    registry = ecs.World(systems, {});
+    registry = World(systems, {});
   }
 
   @override
@@ -59,12 +60,12 @@ class MyGame extends FlameGame
 
   Future<void> tickEcs() async {
     registry.tick();
-    await ecs.WorldSaves.writeSave(registry);
+    await WorldSaves.writeSave(registry);
   }
 }
 
 void main() async {
-  ecs.initializeMappers();
+  initializeMappers();
 
   // Set up hierarchical logging
   Logger.root.level = Level.INFO;
