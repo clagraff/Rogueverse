@@ -38,52 +38,52 @@ class Query {
   }
 
   /// Returns all matching entities in the [chunk].
-  Iterable<Entity> find(World registry) sync* {
+  Iterable<Entity> find(World world) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
     final firstRequiredType = _required.keys.first;
-    final store = registry.components.putIfAbsent(firstRequiredType.toString(), () => {});
+    final store = world.components.putIfAbsent(firstRequiredType.toString(), () => {});
 
     for (final id in store.keys) {
-      if (isMatching(registry, id)) {
-        yield registry.getEntity(id);
+      if (isMatching(world, id)) {
+        yield world.getEntity(id);
       }
     }
   }
 
   /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
-  Iterable<Entity> findFromIds(World registry, List<int> possibleIds) sync* {
+  Iterable<Entity> findFromIds(World world, List<int> possibleIds) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
     final firstRequiredType = _required.keys.first;
-    final store = registry.components.putIfAbsent(firstRequiredType.toString(), () => {});
+    final store = world.components.putIfAbsent(firstRequiredType.toString(), () => {});
 
     for (final id in store.keys) {
       if (!possibleIds.contains(id)) {
         continue;
       }
 
-      if (isMatching(registry, id)) {
-        yield registry.getEntity(id);
+      if (isMatching(world, id)) {
+        yield world.getEntity(id);
       }
     }
   }
 
   /// Returns the first matching entity or null.
-  Entity? first(World registry) => find(registry).firstOrNull;
+  Entity? first(World world) => find(world).firstOrNull;
 
-  bool any(World registry) => find(registry).firstOrNull != null;
+  bool any(World world) => find(world).firstOrNull != null;
 
 
-  bool isMatching(World registry, int entityId) {
+  bool isMatching(World world, int entityId) {
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = registry.components.putIfAbsent(type.toString(), () => {});
+      final store = world.components.putIfAbsent(type.toString(), () => {});
       if (!store.containsKey(entityId)) return false;
 
       if (predicate != null && !predicate(store[entityId]!)) { // TODO should we handle store[entityId]! better?
@@ -94,7 +94,7 @@ class Query {
     for (final entry in _excluded.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = registry.components.putIfAbsent(type.toString(), () => {});
+      final store = world.components.putIfAbsent(type.toString(), () => {});
       if (!store.containsKey(entityId)) continue;
 
       if (predicate == null || predicate(store[entityId]!)) {  // TODO should we handle store[entityId]! better?
@@ -120,11 +120,11 @@ class Query {
 
 // class CachedQuery {
 //   final Query _query;
-//   final Registry _registry;
+//   final Registry _world;
 //   final Set<int> _matching = {};
 //   final List<Disposable> _subscriptions = [];
 //
-//   CachedQuery(this._query, this._registry) {
+//   CachedQuery(this._query, this._world) {
 //     _initialize();
 //   }
 //
@@ -132,10 +132,10 @@ class Query {
 //     // Listen for all relevant component types (added/updated/removed)
 //     for (final type in _query._required.keys.followedBy(_query._excluded.keys)) {
 //       _subscriptions.add(
-//           _registry.eventBus.on(type).listen((event) {
+//           _world.eventBus.on(type).listen((event) {
 //             final id = event.id as int;
 //
-//             final matches = _query.isMatching(_registry, id);
+//             final matches = _query.isMatching(_world, id);
 //             final exists = _matching.contains(id);
 //
 //             if (matches && !exists) {
@@ -148,14 +148,14 @@ class Query {
 //     }
 //
 //     // Initial fill
-//     for (final entity in _query.find(_registry)) {
+//     for (final entity in _query.find(_world)) {
 //       _matching.add(entity.id);
 //     }
 //   }
 //
 //   Iterable<Entity> get entities sync* {
 //     for (final id in _matching) {
-//       yield _registry.getEntity(id);
+//       yield _world.getEntity(id);
 //     }
 //   }
 //

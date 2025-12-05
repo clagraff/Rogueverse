@@ -16,8 +16,8 @@ class Inverter extends Node with InverterMappable {
   Inverter(this.child);
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
-    final status = child.tick(blackboard);
+  BehaviorStatus tick(Entity entity) {
+    final status = child.tick(entity);
     if (status == BehaviorStatus.success) return BehaviorStatus.failure;
     if (status == BehaviorStatus.failure) return BehaviorStatus.success;
     return BehaviorStatus.running;
@@ -47,8 +47,8 @@ class Repeater extends Node with RepeaterMappable {
   Repeater(this.child, this.repeatCount);
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
-    final status = child.tick(blackboard);
+  BehaviorStatus tick(Entity entity) {
+    final status = child.tick(entity);
     if (status == BehaviorStatus.running) return BehaviorStatus.running;
 
     _currentCount++;
@@ -83,11 +83,11 @@ class Guard extends Node with GuardMappable {
   Guard(this.condition, this.child);
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
-    if (!condition(blackboard)) {
+  BehaviorStatus tick(Entity entity) {
+    if (!condition(entity)) {
       return BehaviorStatus.failure;
     }
-    return child.tick(blackboard);
+    return child.tick(entity);
   }
 
   @override
@@ -111,7 +111,7 @@ class Timeout extends Node with TimeoutMappable {
   Timeout(this.child, this.timeoutMs);
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
+  BehaviorStatus tick(Entity entity) {
     _startTime ??= DateTime.now();
 
     final elapsed = DateTime.now().difference(_startTime!).inMilliseconds;
@@ -120,7 +120,7 @@ class Timeout extends Node with TimeoutMappable {
       return BehaviorStatus.failure;
     }
 
-    final status = child.tick(blackboard);
+    final status = child.tick(entity);
     if (status != BehaviorStatus.running) {
       reset();
     }

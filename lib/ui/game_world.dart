@@ -31,9 +31,9 @@ class GameWorld extends flame.World with Disposer {
     var save = await WorldSaves.loadSave();
 
     if (save != null) {
-      game.registry = save;
+      game.currentWorld = save;
     } else {
-      var reg = game.registry;
+      var reg = game.currentWorld;
 
       reg.add([
         Renderable('images/player.svg'),
@@ -103,24 +103,24 @@ class GameWorld extends flame.World with Disposer {
       }
     }
 
-    var playerId = game.registry.get<PlayerControlled>().entries.first.key;
+    var playerId = game.currentWorld.get<PlayerControlled>().entries.first.key;
 
     var healthHud = HealthBar();
-    game.registry.eventBus.on<Health>(playerId).forEach((e) {
+    game.currentWorld.eventBus.on<Health>(playerId).forEach((e) {
       healthHud.onHealthChange(e.id);
     });
     game.camera.viewport.add(healthHud);
 
     // TODO: handle EventBus() for new Renderables.
-    game.registry
+    game.currentWorld
         .entities()
         .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
         .forEach((entity) {
       var pos = entity.get<LocalPosition>()!;
       if (entity.has<PlayerControlled>()) {
         add(PlayerControlledAgent(
-          registry: game.registry,
-          entity: game.registry.getEntity(playerId),
+          world: game.currentWorld,
+          entity: game.currentWorld.getEntity(playerId),
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
@@ -128,9 +128,8 @@ class GameWorld extends flame.World with Disposer {
       }
       if (entity.has<AiControlled>()) {
         add(Opponent(
-          game.registry,
-          registry: game.registry,
-          entity: game.registry.getEntity(entity.id),
+          world: game.currentWorld,
+          entity: game.currentWorld.getEntity(entity.id),
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
@@ -138,8 +137,8 @@ class GameWorld extends flame.World with Disposer {
       }
 
       add(Agent(
-        registry: game.registry,
-        entity: game.registry.getEntity(entity.id),
+        world: game.currentWorld,
+        entity: game.currentWorld.getEntity(entity.id),
         svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
         position: flame.Vector2(pos.x * 32, pos.y * 32),
       ));

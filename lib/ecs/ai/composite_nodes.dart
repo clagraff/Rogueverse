@@ -19,9 +19,9 @@ class Selector extends Node with SelectorMappable {
   Selector(this.children);
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
+  BehaviorStatus tick(Entity entity) {
     for (final child in children) {
-      final status = child.tick(blackboard);
+      final status = child.tick(entity);
       if (status == BehaviorStatus.running ||
           status == BehaviorStatus.success) {
         _resetLowerPriorityNodes(child);
@@ -73,12 +73,12 @@ class Parallel extends Node with ParallelMappable {
       {this.requireAllSuccess = true, this.requireAllFailure = false});
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
+  BehaviorStatus tick(Entity entity) {
     int successCount = 0;
     int failureCount = 0;
 
     for (final child in children) {
-      final status = child.tick(blackboard);
+      final status = child.tick(entity);
 
       if (status == BehaviorStatus.success) {
         successCount++;
@@ -127,10 +127,10 @@ class RandomSelector extends Node with RandomSelectorMappable {
   RandomSelector(this.children);
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
+  BehaviorStatus tick(Entity entity) {
     _selectedIndex ??= _random.nextInt(children.length);
 
-    final status = children[_selectedIndex!].tick(blackboard);
+    final status = children[_selectedIndex!].tick(entity);
     if (status != BehaviorStatus.running) {
       reset();
     }

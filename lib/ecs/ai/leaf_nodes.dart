@@ -19,8 +19,8 @@ class ConditionNode extends Node with ConditionNodeMappable {
   ConditionNode(this.condition);
 
   @override
-  BehaviorStatus tick(Entity blackboard) {
-    return condition(blackboard)
+  BehaviorStatus tick(Entity entity) {
+    return condition(entity)
         ? BehaviorStatus.success
         : BehaviorStatus.failure;
   }
@@ -41,7 +41,7 @@ class ActionNode extends Node with ActionNodeMappable {
 
 
   @override
-  BehaviorStatus tick(Entity blackboard) => action(blackboard);
+  BehaviorStatus tick(Entity entity) => action(entity);
 
   @override
   void reset() {}

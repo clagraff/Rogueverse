@@ -10,7 +10,7 @@ import 'package:rogueverse/ecs/world.dart';
 
 class EntityPlacer extends PositionComponent
     with DragCallbacks, TapCallbacks, Disposer {
-  final World registry;
+  final World world;
   final EntityTemplate archetype;
 
   Vector2? _dragStartScreen;
@@ -20,7 +20,7 @@ class EntityPlacer extends PositionComponent
   bool _isCtrlDown = false;
 
   EntityPlacer({
-    required this.registry,
+    required this.world,
     required this.archetype,
   });
 
@@ -130,7 +130,7 @@ class EntityPlacer extends PositionComponent
       final matches = Query()
           .require<LocalPosition>((lp) => lp.x == pos.x && lp.y == pos.y)
           .require<BlocksMovement>()
-          .find(registry)
+          .find(world)
           .toList();
 
       if (matches.isNotEmpty) {
@@ -138,7 +138,7 @@ class EntityPlacer extends PositionComponent
           m.destroy();
         }
       } else {
-        var entity = archetype.build(registry);
+        var entity = archetype.build(world);
         entity.upsert<LocalPosition>(pos);
       }
     }

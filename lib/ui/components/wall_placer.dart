@@ -7,9 +7,9 @@ import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
 
 class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
-  final World registry;
+  final World world;
 
-  WallPlacer({required this.registry});
+  WallPlacer({required this.world});
 
   @override
   void onRemove() {
@@ -31,7 +31,7 @@ class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
         .require<LocalPosition>(
             (lp) => lp.x == escPosition.x && lp.y == escPosition.y)
         .require<BlocksMovement>()
-        .find(registry)
+        .find(world)
         .toList();
 
     if (matches.isNotEmpty) {
@@ -41,7 +41,7 @@ class WallPlacer extends PositionComponent with TapCallbacks, Disposer {
       return;
     }
 
-    registry.add([
+    world.add([
       Renderable('images/wall.svg'),
       escPosition,
       BlocksMovement(),

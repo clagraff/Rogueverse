@@ -29,16 +29,16 @@ class EntityTemplate {
     _builders.addAll(other._builders);
   }
 
-  Entity build(World registry, {List<dynamic> baseComponents = const []}) {
-    final e = registry.add([...baseComponents]);
+  Entity build(World world, {List<dynamic> baseComponents = const []}) {
+    final e = world.add([...baseComponents]);
     for (final builder in _builders) {
       builder(e);
     }
     return e;
   }
 
-  List<Entity> buildMany(World registry, int count) {
-    return List.generate(count, (_) => build(registry));
+  List<Entity> buildMany(World world, int count) {
+    return List.generate(count, (_) => build(world));
   }
 
   EntityTemplate clone() {

@@ -29,10 +29,10 @@ typedef ActionFunc = BehaviorStatus Function(Entity);
 /// All nodes in a behavior tree must implement this interface.
 @MappableClass()
 abstract class Node with NodeMappable {
-  /// Executes the node's logic using the provided [blackboard].
+  /// Executes the node's logic using the provided [entity].
   ///
   /// Returns a [BehaviorStatus] indicating the result of execution.
-  BehaviorStatus tick(Entity blackboard);
+  BehaviorStatus tick(Entity entity);
 
   /// Resets the node to its initial state.
   ///

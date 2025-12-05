@@ -7,11 +7,9 @@ import 'package:rogueverse/ui/components/agent.dart';
 var random = Random();
 
 class Opponent extends Agent {
-  final World world;
   Effect? effect;
 
-  Opponent(this.world,
-      {required super.registry,
+  Opponent({required super.world,
       required super.entity,
       required super.svgAssetPath,
       super.position,

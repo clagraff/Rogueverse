@@ -20,7 +20,8 @@ class MyGame extends FlameGame
   @override
   get debugMode => false;
 
-  late World registry;
+  /// The current <code>ECS</code> world instance being processed.
+  late World currentWorld;
   late final ScrollDispatcher scrollDispatcher;
 
   MyGame() {
@@ -33,7 +34,7 @@ class MyGame extends FlameGame
       CombatSystem(),
     ];
 
-    registry = World(systems, {});
+    currentWorld = World(systems, {});
   }
 
   @override
@@ -60,8 +61,8 @@ class MyGame extends FlameGame
   }
 
   Future<void> tickEcs() async {
-    registry.tick();
-    await WorldSaves.writeSave(registry);
+    currentWorld.tick();
+    await WorldSaves.writeSave(currentWorld);
   }
 }
 

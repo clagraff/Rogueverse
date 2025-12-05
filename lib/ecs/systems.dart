@@ -29,7 +29,7 @@ part 'systems.mapper.dart';
 /// A base class for all systems that operate over a [Chunk] of ECS data.
 @MappableClass()
 abstract class System with SystemMappable {
-  void update(World registry);
+  void update(World world);
 }
 
 /// A system that handles collision detection by checking for blocked movement.
@@ -38,17 +38,17 @@ abstract class System with SystemMappable {
 @MappableClass()
 class CollisionSystem extends System with CollisionSystemMappable {
   @override
-  void update(World registry) {
-    final positions = registry.get<LocalPosition>();
-    final blocks = registry.get<BlocksMovement>();
-    final moveIntents = registry.get<MoveByIntent>();
+  void update(World world) {
+    final positions = world.get<LocalPosition>();
+    final blocks = world.get<BlocksMovement>();
+    final moveIntents = world.get<MoveByIntent>();
 
     final movingEntityIds = moveIntents.keys.toList();
 
     if (blocks.isEmpty) return;
 
     for (final id in movingEntityIds) {
-      final e = registry.getEntity(id);
+      final e = world.getEntity(id);
       final pos = e.get<LocalPosition>();
       final intent = e.get<MoveByIntent>();
 
@@ -60,7 +60,7 @@ class CollisionSystem extends System with CollisionSystemMappable {
       positions.forEach((key, value) {
         if (value.x == dest.x &&
             value.y == dest.y &&
-            registry.getEntity(key).has<BlocksMovement>()) {
+            world.getEntity(key).has<BlocksMovement>()) {
           blocked = true;
         }
       });
@@ -79,12 +79,12 @@ class CollisionSystem extends System with CollisionSystemMappable {
 @MappableClass()
 class MovementSystem extends System with MovementSystemMappable {
   @override
-  void update(World registry) {
-    final moveIntents = registry.get<MoveByIntent>();
+  void update(World world) {
+    final moveIntents = world.get<MoveByIntent>();
     final ids = moveIntents.keys.toList();
 
     for (final id in ids) {
-      final e = registry.getEntity(id);
+      final e = world.getEntity(id);
       final pos = e.get<LocalPosition>();
       final intent = e.get<MoveByIntent>();
       if (pos == null || intent == null) continue;
@@ -110,8 +110,8 @@ class InventorySystem extends System with InventorySystemMappable {
       Query().require<Pickupable>().require<LocalPosition>();
 
   @override
-  void update(World registry) {
-    final pickupIntents = registry.get<PickupIntent>();
+  void update(World world) {
+    final pickupIntents = world.get<PickupIntent>();
     if (pickupIntents.isEmpty) {
       return;
     }
@@ -121,8 +121,8 @@ class InventorySystem extends System with InventorySystemMappable {
 
     components.forEach((sourceId, intent) {
       var pickupIntent = intent as PickupIntent;
-      var source = registry.getEntity(sourceId);
-      var target = registry.getEntity(pickupIntent.targetEntityId);
+      var source = world.getEntity(sourceId);
+      var target = world.getEntity(pickupIntent.targetEntityId);
 
       if (!canPickup.isMatchEntity(source) ||
           !canBePickedUp.isMatchEntity(target)) {
@@ -164,14 +164,14 @@ class InventorySystem extends System with InventorySystemMappable {
 @MappableClass()
 class CombatSystem extends System with CombatSystemMappable {
   @override
-  void update(World registry) {
-    final attackIntents = registry.get<AttackIntent>();
+  void update(World world) {
+    final attackIntents = world.get<AttackIntent>();
 
     var components = Map.from(attackIntents);
     components.forEach((sourceId, intent) {
       var attackIntent = intent as AttackIntent;
-      var source = registry.getEntity(sourceId);
-      var target = registry.getEntity(attackIntent.targetId);
+      var source = world.getEntity(sourceId);
+      var target = world.getEntity(attackIntent.targetId);
 
       var health = target.get<Health>(Health(0, 0))!;
       // TODO change how damage is calculated
@@ -192,11 +192,11 @@ class CombatSystem extends System with CombatSystemMappable {
             if (prob <= lootable.probability) {
               var inv = target.get<Inventory>(Inventory([]))!; // Create inventory comp if it doesnt exist. Otherwise we cannot do anything from the LootTable
               for (var i = 0; i < lootable.quantity; i++) {
-                var item = registry.add([]);
+                var item = world.add([]);
 
                 for (var c in lootable.components) {
                   // Have to do things the hard way to avoid `dynamic` component types in the components map.
-                  var comp = registry.components.putIfAbsent(c.componentType, () => {});
+                  var comp = world.components.putIfAbsent(c.componentType, () => {});
                   comp[item.id] = c;
                 }
 
@@ -207,7 +207,7 @@ class CombatSystem extends System with CombatSystemMappable {
         }
       }
       target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
-      registry.eventBus.publish(Event<Health>(
+      world.eventBus.publish(Event<Health>(
           eventType: EventType.updated, id: target.id, value: health));
 
       source.remove<AttackIntent>();
@@ -221,10 +221,10 @@ class CombatSystem extends System with CombatSystemMappable {
 @MappableClass()
 class BehaviorSystem extends System with BehaviorSystemMappable {
   @override
-  void update(World registry) {
-    final behaviors = registry.get<Behavior>();
+  void update(World world) {
+    final behaviors = world.get<Behavior>();
     behaviors.forEach((e, b) {
-      var entity = registry.getEntity(e);
+      var entity = world.getEntity(e);
       var result = b.behavior.tick(entity); // TODO i dont know what to do with the result....
     });
   }
