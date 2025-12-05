@@ -9,6 +9,7 @@ import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.init.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/overlays/inspector/inspector_overlay.dart';
 import 'package:rogueverse/ui/game_world.dart';
 import 'package:rogueverse/ui/hud/camera_controls.dart';
 import 'package:rogueverse/ui/mixins/scroll_callback.dart';
@@ -131,7 +132,15 @@ class MyApp extends StatelessWidget {
         //   title: const Text('My Home Page'),
         // ),
         body: Stack(children: [
-          GameWidget(game: MyGame()),
+          GameWidget(game: MyGame(), overlayBuilderMap: {
+            "demoScreen": (context, game) => Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                width: 320, // or use your theme.maxWidth
+                child: const InspectorOverlay(),
+              ),
+            ),
+          },),
         ]),
       ),
     );
