@@ -26,6 +26,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
       BlockedMoveMapper.ensureInitialized();
       PlayerControlledMapper.ensureInitialized();
       AiControlledMapper.ensureInitialized();
+      BehaviorMapper.ensureInitialized();
       RenderableMapper.ensureInitialized();
       HealthMapper.ensureInitialized();
       AttackIntentMapper.ensureInitialized();
@@ -1541,6 +1542,125 @@ class _AiControlledCopyWithImpl<$R, $Out>
   AiControlledCopyWith<$R2, AiControlled, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _AiControlledCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class BehaviorMapper extends SubClassMapperBase<Behavior> {
+  BehaviorMapper._();
+
+  static BehaviorMapper? _instance;
+  static BehaviorMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = BehaviorMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      NodeMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Behavior';
+
+  static Node _$behavior(Behavior v) => v.behavior;
+  static const Field<Behavior, Node> _f$behavior = Field(
+    'behavior',
+    _$behavior,
+  );
+
+  @override
+  final MappableFields<Behavior> fields = const {#behavior: _f$behavior};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Behavior';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Behavior _instantiate(DecodingData data) {
+    return Behavior(data.dec(_f$behavior));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Behavior fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Behavior>(map);
+  }
+
+  static Behavior fromJson(String json) {
+    return ensureInitialized().decodeJson<Behavior>(json);
+  }
+}
+
+mixin BehaviorMappable {
+  String toJson() {
+    return BehaviorMapper.ensureInitialized().encodeJson<Behavior>(
+      this as Behavior,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return BehaviorMapper.ensureInitialized().encodeMap<Behavior>(
+      this as Behavior,
+    );
+  }
+
+  BehaviorCopyWith<Behavior, Behavior, Behavior> get copyWith =>
+      _BehaviorCopyWithImpl<Behavior, Behavior>(
+        this as Behavior,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return BehaviorMapper.ensureInitialized().stringifyValue(this as Behavior);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return BehaviorMapper.ensureInitialized().equalsValue(
+      this as Behavior,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return BehaviorMapper.ensureInitialized().hashValue(this as Behavior);
+  }
+}
+
+extension BehaviorValueCopy<$R, $Out> on ObjectCopyWith<$R, Behavior, $Out> {
+  BehaviorCopyWith<$R, Behavior, $Out> get $asBehavior =>
+      $base.as((v, t, t2) => _BehaviorCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class BehaviorCopyWith<$R, $In extends Behavior, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({Node? behavior});
+  BehaviorCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _BehaviorCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Behavior, $Out>
+    implements BehaviorCopyWith<$R, Behavior, $Out> {
+  _BehaviorCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Behavior> $mapper =
+      BehaviorMapper.ensureInitialized();
+  @override
+  $R call({Node? behavior}) =>
+      $apply(FieldCopyWithData({if (behavior != null) #behavior: behavior}));
+  @override
+  Behavior $make(CopyWithData data) =>
+      Behavior(data.get(#behavior, or: $value.behavior));
+
+  @override
+  BehaviorCopyWith<$R2, Behavior, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _BehaviorCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class RenderableMapper extends SubClassMapperBase<Renderable> {

@@ -18,6 +18,7 @@ class SystemMapper extends ClassMapperBase<System> {
       MovementSystemMapper.ensureInitialized();
       InventorySystemMapper.ensureInitialized();
       CombatSystemMapper.ensureInitialized();
+      BehaviorSystemMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -540,5 +541,122 @@ class _CombatSystemCopyWithImpl<$R, $Out>
   CombatSystemCopyWith<$R2, CombatSystem, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _CombatSystemCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class BehaviorSystemMapper extends SubClassMapperBase<BehaviorSystem> {
+  BehaviorSystemMapper._();
+
+  static BehaviorSystemMapper? _instance;
+  static BehaviorSystemMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = BehaviorSystemMapper._());
+      SystemMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'BehaviorSystem';
+
+  @override
+  final MappableFields<BehaviorSystem> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'BehaviorSystem';
+  @override
+  late final ClassMapperBase superMapper = SystemMapper.ensureInitialized();
+
+  static BehaviorSystem _instantiate(DecodingData data) {
+    return BehaviorSystem();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static BehaviorSystem fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<BehaviorSystem>(map);
+  }
+
+  static BehaviorSystem fromJson(String json) {
+    return ensureInitialized().decodeJson<BehaviorSystem>(json);
+  }
+}
+
+mixin BehaviorSystemMappable {
+  String toJson() {
+    return BehaviorSystemMapper.ensureInitialized().encodeJson<BehaviorSystem>(
+      this as BehaviorSystem,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return BehaviorSystemMapper.ensureInitialized().encodeMap<BehaviorSystem>(
+      this as BehaviorSystem,
+    );
+  }
+
+  BehaviorSystemCopyWith<BehaviorSystem, BehaviorSystem, BehaviorSystem>
+  get copyWith => _BehaviorSystemCopyWithImpl<BehaviorSystem, BehaviorSystem>(
+    this as BehaviorSystem,
+    $identity,
+    $identity,
+  );
+  @override
+  String toString() {
+    return BehaviorSystemMapper.ensureInitialized().stringifyValue(
+      this as BehaviorSystem,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return BehaviorSystemMapper.ensureInitialized().equalsValue(
+      this as BehaviorSystem,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return BehaviorSystemMapper.ensureInitialized().hashValue(
+      this as BehaviorSystem,
+    );
+  }
+}
+
+extension BehaviorSystemValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, BehaviorSystem, $Out> {
+  BehaviorSystemCopyWith<$R, BehaviorSystem, $Out> get $asBehaviorSystem =>
+      $base.as((v, t, t2) => _BehaviorSystemCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class BehaviorSystemCopyWith<$R, $In extends BehaviorSystem, $Out>
+    implements SystemCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  BehaviorSystemCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _BehaviorSystemCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, BehaviorSystem, $Out>
+    implements BehaviorSystemCopyWith<$R, BehaviorSystem, $Out> {
+  _BehaviorSystemCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<BehaviorSystem> $mapper =
+      BehaviorSystemMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  BehaviorSystem $make(CopyWithData data) => BehaviorSystem();
+
+  @override
+  BehaviorSystemCopyWith<$R2, BehaviorSystem, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _BehaviorSystemCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

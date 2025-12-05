@@ -215,3 +215,17 @@ class CombatSystem extends System with CombatSystemMappable {
     });
   }
 }
+
+
+
+@MappableClass()
+class BehaviorSystem extends System with BehaviorSystemMappable {
+  @override
+  void update(World registry) {
+    final behaviors = registry.get<Behavior>();
+    behaviors.forEach((e, b) {
+      var entity = registry.getEntity(e);
+      var result = b.behavior.tick(entity); // TODO i dont know what to do with the result....
+    });
+  }
+}

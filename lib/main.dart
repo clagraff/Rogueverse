@@ -6,7 +6,9 @@ import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
+import 'package:rogueverse/ecs/ai/leaf_nodes.dart';
 import 'package:rogueverse/ecs/ecs.init.dart';
+import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ui/game_world.dart';
@@ -26,6 +28,7 @@ class MyGame extends FlameGame
   MyGame() {
     world = GameWorld();
     var systems = [
+      BehaviorSystem(),
       CollisionSystem(),
       MovementSystem(),
       InventorySystem(),

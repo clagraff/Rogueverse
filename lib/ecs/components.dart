@@ -1,4 +1,5 @@
 import 'package:dart_mappable/dart_mappable.dart';
+import 'package:rogueverse/ecs/ai/nodes.dart';
 
 part 'components.mapper.dart';
 
@@ -153,6 +154,17 @@ class AiControlled with AiControlledMappable implements Component {
   String get componentType => "AiControlled";
 }
 
+@MappableClass()
+class Behavior with BehaviorMappable implements Component {
+  final Node behavior;
+
+  Behavior(this.behavior);
+
+  @override
+  String get componentType => "Behavior";
+}
+
+
 /// Component that provides a visual asset path for rendering the entity.
 @MappableClass()
 class Renderable with RenderableMappable implements Component {
@@ -179,9 +191,7 @@ class Health with HealthMappable implements Component {
 
   @override
   String get componentType => "Health";
-}
 
-extension HealthExtension on Health {
   Health cloneRelative(int change) {
     var next = current + change;
     if (next > max) {

@@ -7,10 +7,7 @@ class Entity {
   final int id;
 
   Entity({required this.parentCell, required this.id});
-}
 
-
-extension EntityExtensions on Entity {
   bool has<C extends Component>() {
     var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
     return entitiesWithComponent.containsKey(id);

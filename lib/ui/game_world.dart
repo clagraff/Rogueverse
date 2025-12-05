@@ -5,6 +5,7 @@ import 'package:logging/logging.dart';
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:rogueverse/ecs/ai/behaviors/behaviors.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -16,15 +17,16 @@ import 'package:rogueverse/ui/components/opponent.dart';
 import 'package:rogueverse/ui/components/player.dart';
 import 'package:rogueverse/ui/hud/health_bar.dart';
 
+import '../ecs/ai/leaf_nodes.dart';
+import '../ecs/ai/nodes.dart';
+
 class GameWorld extends flame.World with Disposer {
   @override
   Future<void> onLoad() async {
-
     final game = parent!.findGame() as MyGame;
 
     add(FpsComponent());
     add(TimeTrackComponent());
-
 
     var save = await WorldSaves.loadSave();
 
@@ -47,6 +49,7 @@ class GameWorld extends flame.World with Disposer {
         LocalPosition(x: 1, y: 2),
         AiControlled(),
         BlocksMovement(),
+        Behavior(MoveRandomlyNode())
       ]);
       reg.add([
         Renderable('images/wall.svg'),
@@ -67,15 +70,6 @@ class GameWorld extends flame.World with Disposer {
           ])
         ]),
       ]);
-
-      var c = CollisionSystem();
-      var i = InventorySystem();
-      List<System> s = List.from([c, i]);
-      Map<String, System> m = {
-        "Inventory": InventorySystem(),
-        "Collision": CollisionSystem(),
-      };
-
 
       var names = [
         'Iron short sword',
@@ -111,13 +105,11 @@ class GameWorld extends flame.World with Disposer {
 
     var playerId = game.registry.get<PlayerControlled>().entries.first.key;
 
-
     var healthHud = HealthBar();
     game.registry.eventBus.on<Health>(playerId).forEach((e) {
       healthHud.onHealthChange(e.id);
     });
     game.camera.viewport.add(healthHud);
-
 
     // TODO: handle EventBus() for new Renderables.
     game.registry
@@ -152,7 +144,6 @@ class GameWorld extends flame.World with Disposer {
         position: flame.Vector2(pos.x * 32, pos.y * 32),
       ));
     });
-
 
     //add(WallPlacer(chunk: chunk));
   }
