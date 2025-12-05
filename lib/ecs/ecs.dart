@@ -1,4 +1,5 @@
 @MappableLib(generateInitializerForScope: InitializerScope.package, discriminatorKey: "__type")
-library engine;
+
+library;
 
 import 'package:dart_mappable/dart_mappable.dart';

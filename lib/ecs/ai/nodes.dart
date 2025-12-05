@@ -1,6 +1,7 @@
-import 'package:meta/meta.dart' show mustCallSuper;
-
+// @MappableLib(generateInitializerForScope: InitializerScope.package, discriminatorKey: "__type")
 import 'package:dart_mappable/dart_mappable.dart';
+
+import 'package:meta/meta.dart' show mustCallSuper;
 import 'package:rogueverse/ecs/entity.dart';
 
 part 'nodes.mapper.dart';
@@ -26,7 +27,7 @@ typedef ActionFunc = BehaviorStatus Function(Entity);
 /// Base abstract class for all behavior tree nodes.
 ///
 /// All nodes in a behavior tree must implement this interface.
-@MappableClass(discriminatorKey: "__type")
+@MappableClass()
 abstract class Node with NodeMappable {
   /// Executes the node's logic using the provided [blackboard].
   ///

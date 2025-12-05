@@ -5,6 +5,5 @@ export 'entity.dart';
 export 'entity_template.dart';
 export 'events.dart';
 export 'query.dart';
-export 'serializers.dart';
 export 'systems.dart';
 export 'world.dart';

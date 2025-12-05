@@ -1,9 +1,16 @@
 global_options:
   dart_mappable_builder:
     options:
-      caseStyle: camelCase
-      enumCaseStyle: camelCase
+      caseStyle: none
+      enumCaseStyle: none
       ignoreNull: false
-      discriminatorKey: type
-#      # used to specify which methods to generate (all by default)
-#      generateMethods: [decode, encode, copy, stringify, equals]
+      discriminatorKey: __type
+targets:
+  $default:
+    builders:
+      dart_mappable_builder:
+        options:
+          build_extensions:
+            'lib/{{path}}/{{file}}.dart':
+              - 'lib/{{path}}/{{file}}.mapper.dart'
+              - 'lib/{{path}}/{{file}}.init.dart'

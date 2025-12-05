@@ -27,7 +27,7 @@ part 'systems.mapper.dart';
 // }
 
 /// A base class for all systems that operate over a [Chunk] of ECS data.
-@MappableClass(discriminatorKey: "__type")
+@MappableClass()
 abstract class System with SystemMappable {
   void update(World registry);
 }

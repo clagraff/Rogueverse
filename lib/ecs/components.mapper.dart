@@ -232,7 +232,7 @@ class BeforeTickMapper extends SubClassMapperBase<BeforeTick> {
   final MappableFields<BeforeTick> fields = const {#lifetime: _f$lifetime};
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'BeforeTick';
   @override
@@ -358,7 +358,7 @@ class AfterTickMapper extends SubClassMapperBase<AfterTick> {
   final MappableFields<AfterTick> fields = const {#lifetime: _f$lifetime};
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'AfterTick';
   @override
@@ -815,7 +815,7 @@ class MoveByIntentMapper extends SubClassMapperBase<MoveByIntent> {
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'MoveByIntent';
   @override
@@ -953,7 +953,7 @@ class DidMoveMapper extends SubClassMapperBase<DidMove> {
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'DidMove';
   @override
@@ -1210,7 +1210,7 @@ class BlockedMoveMapper extends SubClassMapperBase<BlockedMove> {
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'BlockedMove';
   @override
@@ -2059,7 +2059,7 @@ class DidAttackMapper extends SubClassMapperBase<DidAttack> {
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'DidAttack';
   @override
@@ -2202,7 +2202,7 @@ class WasAttackedMapper extends SubClassMapperBase<WasAttacked> {
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'WasAttacked';
   @override
@@ -2974,7 +2974,7 @@ class InventoryFullFailureMapper
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'InventoryFullFailure';
   @override
@@ -3235,7 +3235,7 @@ class PickupIntentMapper extends SubClassMapperBase<PickupIntent> {
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'PickupIntent';
   @override
@@ -3372,7 +3372,7 @@ class PickedUpMapper extends SubClassMapperBase<PickedUp> {
   };
 
   @override
-  final String discriminatorKey = 'type';
+  final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'PickedUp';
   @override

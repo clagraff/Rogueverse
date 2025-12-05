@@ -3,7 +3,7 @@ import 'package:rogueverse/ecs/ai/nodes.dart';
 
 part 'components.mapper.dart';
 
-@MappableClass(discriminatorKey: "__type")
+@MappableClass()
 abstract class Component with ComponentMappable {
   String get componentType;
 }
