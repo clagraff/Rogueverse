@@ -1,3 +1,4 @@
+import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/events.dart';
@@ -43,7 +44,7 @@ class Entity {
   }
 
   void upsert<C extends Component>(C c) {
-    var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
+    var entitiesWithComponent = parentCell.components.putIfAbsent(c.componentType, () => {});
     var alreadyExisted = entitiesWithComponent.containsKey(id);
 
     entitiesWithComponent[id] = c;

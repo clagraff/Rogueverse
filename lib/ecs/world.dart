@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:dart_mappable/dart_mappable.dart';
+import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:rogueverse/ecs/systems.dart';
@@ -156,6 +157,7 @@ class WorldSaves {
     var supportDir = await getApplicationSupportDirectory();
     var saveGame = File("${supportDir.path}/save.json");
     if (saveGame.existsSync()) {
+      Logger("WorldSaves").info("loading save: ${supportDir.path}/save.json");
       var jsonContents = saveGame.readAsStringSync();
       return WorldMapper.fromJson(jsonContents);
     }
@@ -168,6 +170,9 @@ class WorldSaves {
     var saveState = JsonEncoder.withIndent(indentChar).convert(world.toMap());
     var supportDir = await getApplicationSupportDirectory();
     var saveFile = File("${supportDir.path}/save.json");
+
+    Logger("WorldSaves").info("writing save: ${supportDir.path}/save.json");
+
 
     saveFile.open(mode: FileMode.write);
     var writer = saveFile.openWrite();

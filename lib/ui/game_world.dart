@@ -124,6 +124,8 @@ class GameWorld extends flame.World with Disposer {
           svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
           position: flame.Vector2(pos.x * 32, pos.y * 32),
         ));
+
+        game.selectedEntity.value = entity;
         return;
       }
       if (entity.has<AiControlled>()) {

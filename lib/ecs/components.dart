@@ -120,7 +120,7 @@ class DidMove extends BeforeTick with DidMoveMappable implements Component {
   DidMove({required this.from, required this.to}) : super(1);
 
   @override
-  String get componentType => "LocalPosition";
+  String get componentType => "DidMove";
 }
 
 /// Marker component indicating this entity blocks movement.

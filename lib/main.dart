@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.init.dart';
+import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/overlays/inspector/inspector_overlay.dart';
@@ -18,6 +19,8 @@ import 'package:window_manager/window_manager.dart';
 
 class MyGame extends FlameGame
     with HasKeyboardHandlerComponents, ScrollDetector {
+  final ValueNotifier<Entity?> selectedEntity = ValueNotifier(null);
+
   @override
   get debugMode => false;
 
@@ -137,7 +140,9 @@ class MyApp extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: SizedBox(
                 width: 320, // or use your theme.maxWidth
-                child: const InspectorOverlay(),
+                child: InspectorOverlay(
+                  entityNotifier: (game as MyGame).selectedEntity,
+                ),
               ),
             ),
           },),
