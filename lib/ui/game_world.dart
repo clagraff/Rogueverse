@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
 import 'package:flame/components.dart' as flame;
@@ -13,6 +14,7 @@ import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/main.dart';
 import 'package:rogueverse/ui/components/agent.dart';
+import 'package:rogueverse/ui/components/grid_tap.dart';
 import 'package:rogueverse/ui/components/opponent.dart';
 import 'package:rogueverse/ui/components/player.dart';
 import 'package:rogueverse/ui/hud/health_bar.dart';
@@ -25,6 +27,9 @@ class GameWorld extends flame.World with Disposer {
   Future<void> onLoad() async {
     final game = parent!.findGame() as MyGame;
 
+    var xy = ValueNotifier<XY>(XY(0, 0));
+    add(GridTapComponent(32, xy));
+    add(GridTapVisualizerComponent(xy));
     add(FpsComponent());
     add(TimeTrackComponent());
 

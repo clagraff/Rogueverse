@@ -182,7 +182,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
   bool handleMetaControls(Meta check, MyGame game) {
     switch (check) {
       case Meta.paused:
-        game.overlays.toggle("demoScreen");
+        //game.overlays.toggle("demoScreen");
         game.tickEcs();
         break;
       case Meta.inventory:
