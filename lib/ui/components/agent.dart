@@ -32,33 +32,58 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
         opacityTo: 0.8,));
     });
 
-    world.eventBus.on<DidMove>(entity.id).forEach((e) {
-      var didMove = e.value;
+    // world.eventBus.on<DidMove>(entity.id).forEach((e) {
+    //   var didMove = e.value;
+    //
+    //   add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
+    //       EffectController(duration: 0.1)));
+    // });
 
-      add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
-          EffectController(duration: 0.1)));
-    });
+    // world.eventBus.on<LocalPosition>(entity.id, [EventType.removed]).forEach((e) {
+    //   removeFromParent();
+    // });
 
-    world.eventBus.on<LocalPosition>(entity.id, [EventType.removed]).forEach((e) {
-      removeFromParent();
-    });
+    // world.eventBus.on<Renderable>(entity.id, [EventType.removed]).forEach((e) {
+    //   removeFromParent();
+    // });
 
-    world.eventBus.on<Renderable>(entity.id, [EventType.removed]).forEach((e) {
-      removeFromParent();
-    });
+    // world.eventBus.on<int>(entity.id, [EventType.removed]).forEach((e) {
+    //   removeFromParent();
+    // });
 
-    world.eventBus.on<int>(entity.id, [EventType.removed]).forEach((e) {
-      removeFromParent();
-    });
-
-    world.eventBus.on<Dead>(entity.id).first.then((e) {
-      world.remove(entity.id);
-    });
+    // world.eventBus.on<Dead>(entity.id).first.then((e) {
+    //   world.remove(entity.id);
+    // });
 
 
     add(AgentHealthBar(entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
 
     return super.onLoad();
+  }
+
+
+  @override void update(double dt) {
+    super.update(dt);
+
+    var localPos = entity.get<LocalPosition>();
+    if (localPos != null) {
+      var dx = localPos.x * 32.0;
+      var dy = localPos.y * 32.0;
+
+      if (position != Vector2(dx, dy) && !children.any((c) => c is MoveToEffect)) {
+        add(MoveToEffect(Vector2(localPos.x * 32.0, localPos.y * 32.0),
+            EffectController(duration: 0.1)));
+      }
+    }
+
+    if (!entity.has<Renderable>()) {
+      remove(this);
+    }
+
+    if (entity.has<Dead>()) {
+      world.remove(entity.id);
+      remove(this);
+    }
   }
 
   @override

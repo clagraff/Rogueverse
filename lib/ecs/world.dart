@@ -58,6 +58,10 @@ class World with WorldMappable {
     return components.putIfAbsent(C.toString(), () => {}).cast<int, C>();
   }
 
+  Map<int, Component> getByName(String componentType) {
+    return components.putIfAbsent(componentType, () => {}).cast<int, Component>();
+  }
+
   Entity add(List<Component> comps) {
     var entityId = lastId++;
     for (var c in comps) {

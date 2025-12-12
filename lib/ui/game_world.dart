@@ -21,13 +21,12 @@ import 'package:rogueverse/ui/components/opponent.dart';
 import 'package:rogueverse/ui/components/player.dart';
 import 'package:rogueverse/ui/hud/health_bar.dart';
 
-
 class GameWorld extends flame.World with Disposer {
   late FocusNode gameFocusNode;
+
   GameWorld(FocusNode focusNode) {
     gameFocusNode = focusNode;
   }
-
 
   @override
   bool containsLocalPoint(flame.Vector2 point) => true;
@@ -44,6 +43,7 @@ class GameWorld extends flame.World with Disposer {
       var reg = game.currentWorld;
 
       reg.add([
+        Name(name: "Player"),
         Renderable('images/player.svg'),
         LocalPosition(x: 0, y: 0),
         PlayerControlled(),
@@ -53,6 +53,7 @@ class GameWorld extends flame.World with Disposer {
         Health(4, 5),
       ]);
       reg.add([
+        Name(name: "Snake"),
         Renderable('images/snake.svg'),
         LocalPosition(x: 1, y: 2),
         AiControlled(),
@@ -60,11 +61,13 @@ class GameWorld extends flame.World with Disposer {
         Behavior(MoveRandomlyNode())
       ]);
       reg.add([
+        Name(name: "Wall"),
         Renderable('images/wall.svg'),
         LocalPosition(x: 1, y: 0),
         BlocksMovement(),
       ]);
       reg.add([
+        Name(name: "Mineral"),
         Renderable('images/mineral.svg'),
         LocalPosition(x: 3, y: 2),
         Name(name: 'Iron'),
@@ -112,9 +115,11 @@ class GameWorld extends flame.World with Disposer {
     }
 
     var xy = ValueNotifier<XY>(XY(0, 0));
-    var entityNotifier = ValueNotifier<Entity?>(null);
-    // add(FocusOnTapComponent(gameFocusNode));
-    // add(GridTapComponent(32, xy));
+    var entityNotifier = game.selectedEntity;
+    add(FocusOnTapComponent(gameFocusNode, () {
+      game.overlays.remove("demoScreen");
+    }));
+    add(GridTapComponent(32, xy));
     add(EntityTapComponent(32, entityNotifier, game.currentWorld));
     add(EntityTapVisualizerComponent(entityNotifier));
     add(GridTapVisualizerComponent(xy));
@@ -126,9 +131,9 @@ class GameWorld extends flame.World with Disposer {
       entities.forEach((id, comp) {
         if (comp.x == xy.value.x && comp.y == xy.value.y) {
           var overlayName = "demoScreen";
-          if (!game.overlays.activeOverlays.contains(overlayName)) {
-            game.overlays.toggle(overlayName);
-          }
+          game.overlays.remove(overlayName);
+          entityNotifier.value = game.currentWorld.getEntity(id);
+          game.overlays.add(overlayName);
         }
       });
     });

@@ -31,6 +31,22 @@ class Entity {
     return null;
   }
 
+  Component? getByName(String componentType, [Component? orDefault]) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(componentType, () => <int, Component>{});
+    if (entitiesWithComponent.containsKey(id)) {
+      return entitiesWithComponent[id] as Component;
+    }
+
+    if (orDefault != null) {
+      entitiesWithComponent[id] = orDefault;
+      parentCell.eventBus.publish(Event<Component>(eventType:EventType.added, id: id, value: orDefault)); // TODO gotta figure this out since `<Component>` is not good.
+
+      return orDefault;
+    }
+
+    return null;
+  }
+
   List<Component> getAll() {
     List<Component> comps = [];
     parentCell.components.forEach((k, v) {
@@ -52,6 +68,15 @@ class Entity {
     parentCell.eventBus.publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c));
   }
 
+  void upsertByName(Component c) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(c.componentType, () => {});
+    var alreadyExisted = entitiesWithComponent.containsKey(id);
+
+    entitiesWithComponent[id] = c;
+
+    parentCell.eventBus.publish(Event<Component>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c)); // TODO `<Component>` sucks
+  }
+
   void remove<C>() {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
     var componentExists = entitiesWithComponent.containsKey(id);
@@ -61,6 +86,18 @@ class Entity {
       entitiesWithComponent.remove(id);
 
       parentCell.eventBus.publish(Event<C>(eventType: EventType.removed, id: id, value: oldComponent));
+    }
+  }
+
+  void removeByName(String componentType) {
+    var entitiesWithComponent = parentCell.components.putIfAbsent(componentType, () => {});
+    var componentExists = entitiesWithComponent.containsKey(id);
+
+    if (componentExists) {
+      var oldComponent = entitiesWithComponent[id] as Component;
+      entitiesWithComponent.remove(id);
+
+      parentCell.eventBus.publish(Event<Component>(eventType: EventType.removed, id: id, value: oldComponent)); // TODO `<Component>` sucks
     }
   }
 

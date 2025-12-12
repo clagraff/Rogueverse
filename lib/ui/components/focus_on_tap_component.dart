@@ -13,8 +13,9 @@ import 'package:rogueverse/ui/components/svg_component.dart' show SvgTileCompone
 
 class FocusOnTapComponent extends PositionComponent with TapCallbacks {
   final FocusNode focusNode;
+  final VoidCallback? onFocus;
 
-  FocusOnTapComponent(this.focusNode);
+  FocusOnTapComponent(this.focusNode, [this.onFocus]);
 
   @override
   bool containsLocalPoint(Vector2 point) => true;
@@ -27,8 +28,15 @@ class FocusOnTapComponent extends PositionComponent with TapCallbacks {
   @override
   void onTapUp(TapUpEvent event) {
     event.continuePropagation = true;
-    Logger("FocusOnTapComponent").info("hasFocus=${focusNode.hasFocus}");
-    focusNode.requestFocus();
-    Logger("FocusOnTapComponent").info("requested focus");
+    var hasFocus = focusNode.hasFocus;
+
+    if (!hasFocus) {
+      focusNode.requestFocus();
+      Logger("FocusOnTapComponent").info("requested focus");
+
+      if (onFocus != null) {
+       onFocus!();
+      }
+    }
   }
 }

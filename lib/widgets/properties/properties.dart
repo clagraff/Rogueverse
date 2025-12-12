@@ -34,7 +34,7 @@ class PropertySectionData {
     required this.id,
     required this.title,
     required this.items,
-    this.initiallyExpanded = true,
+    this.initiallyExpanded = false,
   });
 }
 
