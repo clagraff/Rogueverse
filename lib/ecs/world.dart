@@ -1,6 +1,8 @@
+import 'dart:async' show StreamController;
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:collection/collection.dart';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -29,12 +31,46 @@ class PostTickEvent {
 }
 
 
+enum ChangeKind { added, removed, updated }
+
+class ComponentChange {
+  final int entityId;
+  final String componentType;
+  final Component? oldValue;
+  final Component? newValue;
+
+  const ComponentChange({
+    required this.entityId,
+    required this.componentType,
+    required this.oldValue,
+    required this.newValue,
+  });
+
+  ChangeKind get kind {
+    if (oldValue == null && newValue != null) return ChangeKind.added;
+    if (oldValue != null && newValue == null) return ChangeKind.removed;
+    return ChangeKind.updated;
+  }
+}
+
+
+
+
+
 @MappableClass()
 class World with WorldMappable {
   int tickId = 0; // TODO not de/serializing to json/map
   int lastId = 0; // TODO not de/serializing to json/map
   final List<System> systems;
   final EventBus eventBus = EventBus();
+
+
+  final _componentChanges = StreamController<ComponentChange>.broadcast(sync: true);
+  Stream<ComponentChange> get componentChanges => _componentChanges.stream;
+
+  void notifyChange(ComponentChange change) {
+    _componentChanges.add(change);
+  }
 
   @MappableField(hook: ComponentsHook())
   Map<String, Map<int, Component>> components;
@@ -68,6 +104,7 @@ class World with WorldMappable {
       var entitiesWithComponent =
       components.putIfAbsent(c.componentType, () => {});
       entitiesWithComponent[entityId] = c;
+      notifyChange(ComponentChange(entityId: entityId, componentType: c.componentType, oldValue: null, newValue: c));
     }
 
     eventBus.publish(Event<int>(
@@ -80,7 +117,11 @@ class World with WorldMappable {
 
   void remove(int entityId) {
     for (var entityComponentMap in components.entries) {
-      entityComponentMap.value.removeWhere((id, c) => id == entityId);
+      var entry = entityComponentMap.value.entries.firstWhereOrNull((e) => e.key == entityId);
+      if (entry != null) {
+        entityComponentMap.value.remove(entry.key);
+        notifyChange(ComponentChange(entityId: entityId, componentType: entry.value.componentType, oldValue: entry.value, newValue: null));
+      }
     }
 
     eventBus.publish(Event<int>(
@@ -121,6 +162,9 @@ class World with WorldMappable {
             (entityToComponent.value as T).tick()) {
           // if is BeforeTick and is dead, remove.
           componentMap.remove(entityToComponent.key);
+
+          notifyChange(ComponentChange(entityId: entityToComponent.key, componentType: entityToComponent.value.componentType, oldValue: entityToComponent.value, newValue: null));
+
         }
       }
     }

@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/world.dart';
@@ -61,42 +62,50 @@ class Entity {
 
   void upsert<C extends Component>(C c) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(c.componentType, () => {});
-    var alreadyExisted = entitiesWithComponent.containsKey(id);
+    var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
+    var alreadyExisted = existing != null;
 
     entitiesWithComponent[id] = c;
 
+    parentCell.notifyChange(ComponentChange(entityId: id, componentType: C.toString(), oldValue: existing?.value, newValue: c));
     parentCell.eventBus.publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c));
   }
 
   void upsertByName(Component c) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(c.componentType, () => {});
-    var alreadyExisted = entitiesWithComponent.containsKey(id);
+    var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
+    var alreadyExisted = existing != null;
 
     entitiesWithComponent[id] = c;
 
+    parentCell.notifyChange(ComponentChange(entityId: id, componentType: c.componentType, oldValue: existing?.value, newValue: c));
     parentCell.eventBus.publish(Event<Component>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c)); // TODO `<Component>` sucks
   }
 
   void remove<C>() {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
-    var componentExists = entitiesWithComponent.containsKey(id);
+    var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
+    var componentExists = existing != null;
 
     if (componentExists) {
       var oldComponent = entitiesWithComponent[id] as C;
       entitiesWithComponent.remove(id);
 
+      parentCell.notifyChange(ComponentChange(entityId: id, componentType: C.toString(), oldValue: existing.value, newValue: null));
       parentCell.eventBus.publish(Event<C>(eventType: EventType.removed, id: id, value: oldComponent));
     }
   }
 
   void removeByName(String componentType) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(componentType, () => {});
-    var componentExists = entitiesWithComponent.containsKey(id);
+    var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
+    var componentExists = existing != null;
 
     if (componentExists) {
       var oldComponent = entitiesWithComponent[id] as Component;
       entitiesWithComponent.remove(id);
 
+      parentCell.notifyChange(ComponentChange(entityId: id, componentType: componentType, oldValue: existing.value, newValue: null));
       parentCell.eventBus.publish(Event<Component>(eventType: EventType.removed, id: id, value: oldComponent)); // TODO `<Component>` sucks
     }
   }
