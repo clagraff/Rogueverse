@@ -25,8 +25,15 @@ class GridTapComponent extends PositionComponent with TapCallbacks {
   @override
   bool containsLocalPoint(Vector2 point) => true;
 
+
+  @override
+  void onTapDown(TapDownEvent event) {
+    event.continuePropagation = true;
+  }
+
   @override
   void onTapUp(TapUpEvent event) {
+    event.continuePropagation = true;
     var screenPosition = event.localPosition;
     var x = (screenPosition.x / gridSize).floor();
     var y = (screenPosition.y / gridSize).floor();

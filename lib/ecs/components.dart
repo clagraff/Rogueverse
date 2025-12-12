@@ -138,7 +138,7 @@ class BlockedMove extends BeforeTick with BlockedMoveMappable implements Compone
   BlockedMove(this.attempted);
 
   @override
-  String get componentType => "LocalPosition";
+  String get componentType => "BlockedMove";
 }
 
 /// Marker component indicating the entity is controlled by the player.

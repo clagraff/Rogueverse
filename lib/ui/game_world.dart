@@ -14,24 +14,27 @@ import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/main.dart';
 import 'package:rogueverse/ui/components/agent.dart';
+import 'package:rogueverse/ui/components/entity_tap_component.dart';
+import 'package:rogueverse/ui/components/focus_on_tap_component.dart';
 import 'package:rogueverse/ui/components/grid_tap.dart';
 import 'package:rogueverse/ui/components/opponent.dart';
 import 'package:rogueverse/ui/components/player.dart';
 import 'package:rogueverse/ui/hud/health_bar.dart';
 
-import '../ecs/ai/leaf_nodes.dart';
-import '../ecs/ai/nodes.dart';
 
 class GameWorld extends flame.World with Disposer {
+  late FocusNode gameFocusNode;
+  GameWorld(FocusNode focusNode) {
+    gameFocusNode = focusNode;
+  }
+
+
+  @override
+  bool containsLocalPoint(flame.Vector2 point) => true;
+
   @override
   Future<void> onLoad() async {
     final game = parent!.findGame() as MyGame;
-
-    var xy = ValueNotifier<XY>(XY(0, 0));
-    add(GridTapComponent(32, xy));
-    add(GridTapVisualizerComponent(xy));
-    add(FpsComponent());
-    add(TimeTrackComponent());
 
     var save = await WorldSaves.loadSave();
 
@@ -107,6 +110,28 @@ class GameWorld extends flame.World with Disposer {
         ]);
       }
     }
+
+    var xy = ValueNotifier<XY>(XY(0, 0));
+    var entityNotifier = ValueNotifier<Entity?>(null);
+    // add(FocusOnTapComponent(gameFocusNode));
+    // add(GridTapComponent(32, xy));
+    add(EntityTapComponent(32, entityNotifier, game.currentWorld));
+    add(EntityTapVisualizerComponent(entityNotifier));
+    add(GridTapVisualizerComponent(xy));
+    add(FpsComponent());
+    add(TimeTrackComponent());
+
+    xy.addListener(() {
+      var entities = game.currentWorld.get<LocalPosition>();
+      entities.forEach((id, comp) {
+        if (comp.x == xy.value.x && comp.y == xy.value.y) {
+          var overlayName = "demoScreen";
+          if (!game.overlays.activeOverlays.contains(overlayName)) {
+            game.overlays.toggle(overlayName);
+          }
+        }
+      });
+    });
 
     var playerId = game.currentWorld.get<PlayerControlled>().entries.first.key;
 

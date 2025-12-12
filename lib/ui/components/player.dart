@@ -51,7 +51,7 @@ enum Action { interactAtPosition }
 final actionControls = KeyBindingMap<Action>()
   ..bind(Action.interactAtPosition, [LogicalKeyboardKey.keyE]);
 
-class PlayerControlledAgent extends Agent with KeyboardHandler, TapCallbacks {
+class PlayerControlledAgent extends Agent with KeyboardHandler {
   Effect? effect;
   Function()? toggleInventoryOverlay;
 

@@ -16,7 +16,6 @@ import 'package:rogueverse/ui/hud/camera_controls.dart';
 import 'package:rogueverse/ui/mixins/scroll_callback.dart';
 import 'package:window_manager/window_manager.dart';
 
-
 class MyGame extends FlameGame
     with HasKeyboardHandlerComponents, ScrollDetector {
   final ValueNotifier<Entity?> selectedEntity = ValueNotifier(null);
@@ -28,8 +27,8 @@ class MyGame extends FlameGame
   late World currentWorld;
   late final ScrollDispatcher scrollDispatcher;
 
-  MyGame() {
-    world = GameWorld();
+  MyGame(FocusNode gameFocusNode) {
+    world = GameWorld(gameFocusNode);
     var systems = [
       BehaviorSystem(),
       CollisionSystem(),
@@ -76,8 +75,7 @@ void main() async {
   // Set up hierarchical logging
   Logger.root.level = Level.INFO;
   Logger.root.onRecord.listen((record) {
-    var message =
-        "[${record.level}: ${record.loggerName}] ${record.message}";
+    var message = "[${record.level}: ${record.loggerName}] ${record.message}";
     if (record.error != null) {
       message += " ${record.error!.toString()}";
     }
@@ -99,7 +97,7 @@ Future<void> setupWindow() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Must add this line.
   await windowManager.ensureInitialized();
-  
+
   WindowOptions windowOptions = WindowOptions(
     size: Size(800, 600),
     center: true,
@@ -114,7 +112,11 @@ Future<void> setupWindow() async {
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  late FocusNode gameFocusNode;
+
+  MyApp({super.key}) {
+    gameFocusNode = FocusNode(debugLabel: 'game');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +128,8 @@ class MyApp extends StatelessWidget {
         dialogTheme: DialogThemeData(
           backgroundColor: darkColorScheme.surface,
           elevation: 6.0,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       // Root widget
@@ -135,17 +138,21 @@ class MyApp extends StatelessWidget {
         //   title: const Text('My Home Page'),
         // ),
         body: Stack(children: [
-          GameWidget(game: MyGame(), overlayBuilderMap: {
-            "demoScreen": (context, game) => Align(
-              alignment: Alignment.centerRight,
-              child: SizedBox(
-                width: 320, // or use your theme.maxWidth
-                child: InspectorOverlay(
-                  entityNotifier: (game as MyGame).selectedEntity,
-                ),
-              ),
-            ),
-          },),
+          GameWidget(
+            focusNode: gameFocusNode,
+            game: MyGame(gameFocusNode),
+            overlayBuilderMap: {
+              "demoScreen": (context, game) => Align(
+                    alignment: Alignment.centerRight,
+                    child: SizedBox(
+                      width: 320, // or use your theme.maxWidth
+                      child: InspectorOverlay(
+                        entityNotifier: (game as MyGame).selectedEntity,
+                      ),
+                    ),
+                  ),
+            },
+          ),
         ]),
       ),
     );
