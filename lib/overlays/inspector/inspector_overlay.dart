@@ -1,5 +1,6 @@
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
@@ -62,6 +63,14 @@ class InspectorOverlay extends StatefulWidget {
 }
 
 class _InspectorOverlayState extends State<InspectorOverlay> {
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Entity?>(
@@ -72,9 +81,41 @@ class _InspectorOverlayState extends State<InspectorOverlay> {
         }
 
         // Keying by entity.id ensures the panel resets state (like scroll position) when the entity changes.
-        return _InspectorPanel(key: Key(entity.id.toString()), entity: entity);
+        return Shortcuts(
+          shortcuts: {
+            LogicalKeySet(LogicalKeyboardKey.escape): const _CloseInspectorIntent(),
+          },
+          child: Actions(
+            actions: {
+              _CloseInspectorIntent: _CloseInspectorAction(widget.entityNotifier),
+            },
+            child: Focus(
+              focusNode: _focusNode,
+              autofocus: true,
+              child: _InspectorPanel(key: Key(entity.id.toString()), entity: entity),
+            ),
+          ),
+        );
       },
     );
+  }
+}
+
+/// Intent to close the inspector
+class _CloseInspectorIntent extends Intent {
+  const _CloseInspectorIntent();
+}
+
+/// Action to close the inspector by setting the entity notifier to null
+class _CloseInspectorAction extends Action<_CloseInspectorIntent> {
+  final ValueNotifier<Entity?> entityNotifier;
+
+  _CloseInspectorAction(this.entityNotifier);
+
+  @override
+  Object? invoke(_CloseInspectorIntent intent) {
+    entityNotifier.value = null;
+    return null;
   }
 }
 
@@ -150,6 +191,9 @@ class _InspectorPanel extends StatelessWidget {
                       _DidMoveSection(entity: entity),
                     if (entity.has<BlockedMove>())
                       _BlockedMoveSection(entity: entity),
+
+                    // Add Component button
+                    _AddComponentButton(entity: entity),
                   ],
                 );
               },
@@ -800,6 +844,154 @@ class _BlockedMoveSectionState extends State<_BlockedMoveSection> {
           color: scheme.outlineVariant,
         ),
       ],
+    );
+  }
+}
+
+/// Button to add new components to the entity
+class _AddComponentButton extends StatelessWidget {
+  final Entity entity;
+
+  const _AddComponentButton({required this.entity});
+
+  /// Create a default instance of a component by name
+  Component _createDefaultComponent(String componentType) {
+    switch (componentType) {
+      case 'Name':
+        return Name(name: 'Unnamed');
+      case 'LocalPosition':
+        return LocalPosition(x: 0, y: 0);
+      case 'Health':
+        return Health(10, 10);
+      case 'Renderable':
+        return Renderable('assets/sprites/default.svg');
+      case 'Inventory':
+        return Inventory([]);
+      case 'InventoryMaxCount':
+        return InventoryMaxCount(10);
+      case 'PlayerControlled':
+        return PlayerControlled();
+      case 'AiControlled':
+        return AiControlled();
+      case 'BlocksMovement':
+        return BlocksMovement();
+      case 'Pickupable':
+        return Pickupable();
+      case 'Dead':
+        return Dead();
+      case 'MoveByIntent':
+        return MoveByIntent(dx: 0, dy: 0);
+      case 'BlockedMove':
+        return BlockedMove(LocalPosition(x: 0, y: 0));
+      default:
+        throw Exception('Unknown component type: $componentType');
+    }
+  }
+
+  /// Get list of component types that can be added (not already on entity)
+  List<String> _getAvailableComponents() {
+    final all = [
+      'Name',
+      'LocalPosition',
+      'Health',
+      'Renderable',
+      'Inventory',
+      'InventoryMaxCount',
+      'PlayerControlled',
+      'AiControlled',
+      'BlocksMovement',
+      'Pickupable',
+      'Dead',
+      'MoveByIntent',
+      'BlockedMove',
+    ];
+
+    return all.where((type) {
+      switch (type) {
+        case 'Name':
+          return !entity.has<Name>();
+        case 'LocalPosition':
+          return !entity.has<LocalPosition>();
+        case 'Health':
+          return !entity.has<Health>();
+        case 'Renderable':
+          return !entity.has<Renderable>();
+        case 'Inventory':
+          return !entity.has<Inventory>();
+        case 'InventoryMaxCount':
+          return !entity.has<InventoryMaxCount>();
+        case 'PlayerControlled':
+          return !entity.has<PlayerControlled>();
+        case 'AiControlled':
+          return !entity.has<AiControlled>();
+        case 'BlocksMovement':
+          return !entity.has<BlocksMovement>();
+        case 'Pickupable':
+          return !entity.has<Pickupable>();
+        case 'Dead':
+          return !entity.has<Dead>();
+        case 'MoveByIntent':
+          return !entity.has<MoveByIntent>();
+        case 'BlockedMove':
+          return !entity.has<BlockedMove>();
+        default:
+          return false;
+      }
+    }).toList();
+  }
+
+  void _addComponent(BuildContext context, String componentType) {
+    final component = _createDefaultComponent(componentType);
+    entity.upsertByName(component);
+
+    // Show a brief confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Added $componentType'),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final available = _getAvailableComponents();
+
+    if (available.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: PopupMenuButton<String>(
+        onSelected: (componentType) => _addComponent(context, componentType),
+        itemBuilder: (context) => available
+            .map((type) => PopupMenuItem<String>(
+                  value: type,
+                  child: Text(type),
+                ))
+            .toList(),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            border: Border.all(color: Theme.of(context).colorScheme.outline),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add, size: 18, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 8),
+              Text(
+                'Add Component',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
