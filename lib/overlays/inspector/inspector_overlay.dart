@@ -6,6 +6,51 @@ import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/widgets/properties/properties.dart';
 
+/// Helper widget to build a section accordion header with a delete button
+Widget _buildSectionHeader({
+  required BuildContext context,
+  required String title,
+  required bool expanded,
+  required VoidCallback onTap,
+  required VoidCallback onDelete,
+}) {
+  final scheme = Theme.of(context).colorScheme;
+
+  return Container(
+    height: 32,
+    padding: const EdgeInsets.only(left: 12, right: 4),
+    color: scheme.surfaceVariant.withOpacity(0.6),
+    child: Row(
+      children: [
+        Expanded(
+          child: InkWell(
+            onTap: onTap,
+            child: Row(
+              children: [
+                Icon(
+                  expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
+                  size: 18,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ],
+            ),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.close, size: 16),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(),
+          onPressed: onDelete,
+          tooltip: 'Remove component',
+        ),
+      ],
+    ),
+  );
+}
 
 class InspectorOverlay extends StatefulWidget {
   final ValueNotifier<Entity?> entityNotifier;
@@ -62,47 +107,52 @@ class _InspectorPanel extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
-          // Sections
+          // Sections - listen to ALL entity changes to rebuild when components are added/removed
           Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 4),
-              children: [
-                // Core components
-                if (entity.has<Name>())
-                  _NameSection(entity: entity),
-                if (entity.has<LocalPosition>())
-                  _LocalPositionSection(entity: entity),
-                if (entity.has<Health>())
-                  _HealthSection(entity: entity),
-                if (entity.has<Renderable>())
-                  _RenderableSection(entity: entity),
+            child: StreamBuilder<Change>(
+              stream: entity.parentCell.onEntityChange(entity.id),
+              builder: (context, snapshot) {
+                return ListView(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  children: [
+                    // Core components
+                    if (entity.has<Name>())
+                      _NameSection(entity: entity),
+                    if (entity.has<LocalPosition>())
+                      _LocalPositionSection(entity: entity),
+                    if (entity.has<Health>())
+                      _HealthSection(entity: entity),
+                    if (entity.has<Renderable>())
+                      _RenderableSection(entity: entity),
 
-                // Inventory
-                if (entity.has<Inventory>())
-                  _InventorySection(entity: entity),
-                if (entity.has<InventoryMaxCount>())
-                  _InventoryMaxCountSection(entity: entity),
+                    // Inventory
+                    if (entity.has<Inventory>())
+                      _InventorySection(entity: entity),
+                    if (entity.has<InventoryMaxCount>())
+                      _InventoryMaxCountSection(entity: entity),
 
-                // Marker components
-                if (entity.has<PlayerControlled>())
-                  _MarkerSection(entity: entity, componentType: 'PlayerControlled'),
-                if (entity.has<AiControlled>())
-                  _MarkerSection(entity: entity, componentType: 'AiControlled'),
-                if (entity.has<BlocksMovement>())
-                  _MarkerSection(entity: entity, componentType: 'BlocksMovement'),
-                if (entity.has<Pickupable>())
-                  _MarkerSection(entity: entity, componentType: 'Pickupable'),
-                if (entity.has<Dead>())
-                  _MarkerSection(entity: entity, componentType: 'Dead'),
+                    // Marker components
+                    if (entity.has<PlayerControlled>())
+                      _MarkerSection(entity: entity, componentType: 'PlayerControlled'),
+                    if (entity.has<AiControlled>())
+                      _MarkerSection(entity: entity, componentType: 'AiControlled'),
+                    if (entity.has<BlocksMovement>())
+                      _MarkerSection(entity: entity, componentType: 'BlocksMovement'),
+                    if (entity.has<Pickupable>())
+                      _MarkerSection(entity: entity, componentType: 'Pickupable'),
+                    if (entity.has<Dead>())
+                      _MarkerSection(entity: entity, componentType: 'Dead'),
 
-                // Temporary/Event components (read-only, for debugging)
-                if (entity.has<MoveByIntent>())
-                  _MoveByIntentSection(entity: entity),
-                if (entity.has<DidMove>())
-                  _DidMoveSection(entity: entity),
-                if (entity.has<BlockedMove>())
-                  _BlockedMoveSection(entity: entity),
-              ],
+                    // Temporary/Event components (read-only, for debugging)
+                    if (entity.has<MoveByIntent>())
+                      _MoveByIntentSection(entity: entity),
+                    if (entity.has<DidMove>())
+                      _DidMoveSection(entity: entity),
+                    if (entity.has<BlockedMove>())
+                      _BlockedMoveSection(entity: entity),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -130,27 +180,12 @@ class _NameSectionState extends State<_NameSection> {
 
     return Column(
       children: [
-        // Accordion header (never rebuilds)
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'Name',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Name',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<Name>(),
         ),
         // Content (rebuilds via StreamBuilder)
         if (_expanded)
@@ -208,29 +243,13 @@ class _LocalPositionSectionState extends State<_LocalPositionSection> {
 
     return Column(
       children: [
-        // Accordion header (never rebuilds)
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'LocalPosition',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'LocalPosition',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<LocalPosition>(),
         ),
-        // Content (rebuilds via StreamBuilder)
         if (_expanded)
           StreamBuilder<Change>(
             stream: widget.entity.parentCell.onEntityOnComponent<LocalPosition>(widget.entity.id),
@@ -300,26 +319,12 @@ class _HealthSectionState extends State<_HealthSection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'Health',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Health',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<Health>(),
         ),
         if (_expanded)
           StreamBuilder<Change>(
@@ -388,26 +393,12 @@ class _RenderableSectionState extends State<_RenderableSection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'Renderable',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Renderable',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<Renderable>(),
         ),
         if (_expanded)
           StreamBuilder<Change>(
@@ -464,26 +455,12 @@ class _InventorySectionState extends State<_InventorySection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'Inventory',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'Inventory',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<Inventory>(),
         ),
         if (_expanded)
           StreamBuilder<Change>(
@@ -546,26 +523,12 @@ class _InventoryMaxCountSectionState extends State<_InventoryMaxCountSection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'InventoryMaxCount',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'InventoryMaxCount',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<InventoryMaxCount>(),
         ),
         if (_expanded)
           StreamBuilder<Change>(
@@ -623,26 +586,12 @@ class _MarkerSectionState extends State<_MarkerSection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: widget.componentType,
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  widget.componentType,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.removeByName(widget.componentType),
         ),
         if (_expanded)
           Container(
@@ -684,26 +633,12 @@ class _MoveByIntentSectionState extends State<_MoveByIntentSection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'MoveByIntent',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'MoveByIntent',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<MoveByIntent>(),
         ),
         if (_expanded)
           StreamBuilder<Change>(
@@ -764,26 +699,12 @@ class _DidMoveSectionState extends State<_DidMoveSection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'DidMove',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'DidMove',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<DidMove>(),
         ),
         if (_expanded)
           StreamBuilder<Change>(
@@ -844,26 +765,12 @@ class _BlockedMoveSectionState extends State<_BlockedMoveSection> {
 
     return Column(
       children: [
-        InkWell(
+        _buildSectionHeader(
+          context: context,
+          title: 'BlockedMove',
+          expanded: _expanded,
           onTap: () => setState(() => _expanded = !_expanded),
-          child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            color: scheme.surfaceVariant.withOpacity(0.6),
-            child: Row(
-              children: [
-                Icon(
-                  _expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                  size: 18,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  'BlockedMove',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
+          onDelete: () => widget.entity.remove<BlockedMove>(),
         ),
         if (_expanded)
           StreamBuilder<Change>(
