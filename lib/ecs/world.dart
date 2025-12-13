@@ -8,7 +8,6 @@ import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'package:rogueverse/ecs/systems.dart';
-import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 
@@ -30,16 +29,15 @@ class PostTickEvent {
   PostTickEvent(this.tickId);
 }
 
-
 enum ChangeKind { added, removed, updated }
 
-class ComponentChange {
+class Change {
   final int entityId;
   final String componentType;
   final Component? oldValue;
   final Component? newValue;
 
-  const ComponentChange({
+  const Change({
     required this.entityId,
     required this.componentType,
     required this.oldValue,
@@ -53,22 +51,16 @@ class ComponentChange {
   }
 }
 
-
-
-
-
 @MappableClass()
 class World with WorldMappable {
   int tickId = 0; // TODO not de/serializing to json/map
   int lastId = 0; // TODO not de/serializing to json/map
   final List<System> systems;
-  final EventBus eventBus = EventBus();
 
+  final _componentChanges = StreamController<Change>.broadcast(sync: true);
+  Stream<Change> get componentChanges => _componentChanges.stream;
 
-  final _componentChanges = StreamController<ComponentChange>.broadcast(sync: true);
-  Stream<ComponentChange> get componentChanges => _componentChanges.stream;
-
-  void notifyChange(ComponentChange change) {
+  void notifyChange(Change change) {
     _componentChanges.add(change);
   }
 
@@ -95,46 +87,48 @@ class World with WorldMappable {
   }
 
   Map<int, Component> getByName(String componentType) {
-    return components.putIfAbsent(componentType, () => {}).cast<int, Component>();
+    return components
+        .putIfAbsent(componentType, () => {})
+        .cast<int, Component>();
   }
 
   Entity add(List<Component> comps) {
     var entityId = lastId++;
     for (var c in comps) {
       var entitiesWithComponent =
-      components.putIfAbsent(c.componentType, () => {});
+          components.putIfAbsent(c.componentType, () => {});
       entitiesWithComponent[entityId] = c;
-      notifyChange(ComponentChange(entityId: entityId, componentType: c.componentType, oldValue: null, newValue: c));
+      notifyChange(Change(
+          entityId: entityId,
+          componentType: c.componentType,
+          oldValue: null,
+          newValue: c));
     }
 
-    eventBus.publish(Event<int>(
-      eventType: EventType.added,
-      id: null,
-      value: entityId,
-    ));
+    // TODO notify on creation of new entitiy, separate from the component notifications?
     return getEntity(entityId);
   }
 
   void remove(int entityId) {
     for (var entityComponentMap in components.entries) {
-      var entry = entityComponentMap.value.entries.firstWhereOrNull((e) => e.key == entityId);
+      var entry = entityComponentMap.value.entries
+          .firstWhereOrNull((e) => e.key == entityId);
       if (entry != null) {
         entityComponentMap.value.remove(entry.key);
-        notifyChange(ComponentChange(entityId: entityId, componentType: entry.value.componentType, oldValue: entry.value, newValue: null));
+        notifyChange(Change(
+            entityId: entityId,
+            componentType: entry.value.componentType,
+            oldValue: entry.value,
+            newValue: null));
       }
     }
 
-    eventBus.publish(Event<int>(
-      eventType: EventType.removed,
-      id: null,
-      value: entityId,
-    ));
+    // TODO notify on deletion of an entity, separate from the component notifications?
   }
 
   /// Executes a single ECS update tick.
   void tick() {
-    eventBus.publish(Event<PreTickEvent>(
-        eventType: EventType.updated, value: PreTickEvent(tickId), id: tickId));
+    // TODO pre-tick notification???
     clearLifetimeComponents<
         BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
@@ -144,10 +138,8 @@ class World with WorldMappable {
 
     clearLifetimeComponents<
         AfterTick>(); // TODO would be cool to find a better way of pulling this out from the class.
-    eventBus.publish(Event<PostTickEvent>(
-        eventType: EventType.updated,
-        value: PostTickEvent(tickId),
-        id: tickId));
+
+    // TODO post-tick notification???
 
     tickId++; // TODO: wrap around to avoid out of bounds type error?
   }
@@ -163,18 +155,64 @@ class World with WorldMappable {
           // if is BeforeTick and is dead, remove.
           componentMap.remove(entityToComponent.key);
 
-          notifyChange(ComponentChange(entityId: entityToComponent.key, componentType: entityToComponent.value.componentType, oldValue: entityToComponent.value, newValue: null));
-
+          notifyChange(Change(
+              entityId: entityToComponent.key,
+              componentType: entityToComponent.value.componentType,
+              oldValue: entityToComponent.value,
+              newValue: null));
         }
       }
     }
   }
 }
 
+extension WorldChangeFilters on World {
+  Stream<Change> onChange(
+          {int? entityId, String? componentType, ChangeKind? kind}) =>
+      componentChanges.where((c) =>
+          (entityId == null || c.entityId == entityId) &&
+          (componentType == null || c.componentType == componentType) &&
+          (kind == null || c.kind == kind));
+
+  Stream<Change> onEntityChange(int entityId) =>
+      onChange(entityId: entityId);
+
+  Stream<Change> onComponentChanged<C extends Component>() =>
+      onChange(componentType: C.toString());
+
+  Stream<Change> onComponentChangedByName(String componentType) =>
+      onChange(componentType: componentType);
+
+  Stream<Change> onComponentAdded<C extends Component>() =>
+      onChange(componentType: C.toString(), kind: ChangeKind.added);
+
+  Stream<Change> onComponentAddedByName(String componentType) =>
+      onChange(componentType: componentType, kind: ChangeKind.added);
+
+  Stream<Change> onComponentRemoved<C extends Component>() =>
+      onChange(componentType: C.toString(), kind: ChangeKind.removed);
+
+  Stream<Change> onComponentRemovedByName(String componentType) =>
+      onChange(componentType: componentType, kind: ChangeKind.removed);
+
+  Stream<Change> onComponentUpdated<C extends Component>() =>
+      onChange(componentType: C.toString(), kind: ChangeKind.updated);
+
+  Stream<Change> onComponentUpdatedByName(String componentType) =>
+      onChange(componentType: componentType, kind: ChangeKind.updated);
+
+  Stream<Change> onEntityOnComponent<C extends Component>(
+          int entityId) =>
+      onChange(entityId: entityId, componentType: C.toString());
+
+  Stream<Change> onEntityOnComponentByName(
+          int entityId, String componentType) =>
+      onChange(entityId: entityId, componentType: componentType);
+}
 
 /// A dart_mappable hook to handle de/serializing the complex map (for JSON).
 /// Necessary as we cannot use integers as JSON keys, so we convert to/from strings instead.
-class ComponentsHook extends MappingHook  {
+class ComponentsHook extends MappingHook {
   const ComponentsHook();
 
   /// Receives the ecoded value before decoding.
@@ -185,7 +223,9 @@ class ComponentsHook extends MappingHook  {
     return comps.map((type, entityMap) {
       var idMap = entityMap as Map<String, dynamic>;
       return MapEntry(
-        type, entityMap.map((id, comp) => MapEntry(id.toString(), MapperContainer.globals.fromMap(comp))));
+          type,
+          entityMap.map((id, comp) =>
+              MapEntry(id.toString(), MapperContainer.globals.fromMap(comp))));
     });
   }
 
@@ -194,11 +234,11 @@ class ComponentsHook extends MappingHook  {
   Object? beforeEncode(Object? value) {
     var comps = value as Map<String, Map<int, Component>>;
     return comps.map((type, entityMap) => MapEntry(
-        type, entityMap.map((id, comp) => MapEntry(id.toString(), MapperContainer.globals.toMap(comp)))));
+        type,
+        entityMap.map((id, comp) =>
+            MapEntry(id.toString(), MapperContainer.globals.toMap(comp)))));
   }
 }
-
-
 
 class WorldSaves {
   static Future<World?> loadSave() async {
@@ -220,7 +260,6 @@ class WorldSaves {
     var saveFile = File("${supportDir.path}/save.json");
 
     Logger("WorldSaves").info("writing save: ${supportDir.path}/save.json");
-
 
     saveFile.open(mode: FileMode.write);
     var writer = saveFile.openWrite();

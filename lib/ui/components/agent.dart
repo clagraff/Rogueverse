@@ -5,7 +5,6 @@ import 'package:flame/effects.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ui/components/agent_health_bar.dart';
 import 'package:rogueverse/ui/components/svg_component.dart';
@@ -24,13 +23,14 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
   @override
   Future<void> onLoad() {
-    world.eventBus.on<Dead>(entity.id).forEach((e) {
-      // isVisible = false;
-      // TODO figure out a better way to handle corpses.
-      add(ColorEffect(const Color(0xFF00FF00),   EffectController(duration: 1.5),
-        opacityFrom: 0.2,
-        opacityTo: 0.8,));
-    });
+    // TODO convert this to something that can run in `update(dt)`
+    // world.eventBus.on<Dead>(entity.id).forEach((e) {
+    //   // isVisible = false;
+    //   // TODO figure out a better way to handle corpses.
+    //   add(ColorEffect(const Color(0xFF00FF00),   EffectController(duration: 1.5),
+    //     opacityFrom: 0.2,
+    //     opacityTo: 0.8,));
+    // });
 
     // world.eventBus.on<DidMove>(entity.id).forEach((e) {
     //   var didMove = e.value;

@@ -141,9 +141,10 @@ class GameWorld extends flame.World with Disposer {
     var playerId = game.currentWorld.get<PlayerControlled>().entries.first.key;
 
     var healthHud = HealthBar();
-    game.currentWorld.eventBus.on<Health>(playerId).forEach((e) {
-      healthHud.onHealthChange(e.id);
-    });
+    // TODO change to component notification.
+    // game.currentWorld.eventBus.on<Health>(playerId).forEach((e) {
+    //   healthHud.onHealthChange(e.id);
+    // });
     game.camera.viewport.add(healthHud);
 
     // TODO: handle EventBus() for new Renderables.

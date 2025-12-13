@@ -45,12 +45,6 @@ class WorldMapper extends ClassMapperBase<World> {
     opt: true,
     def: 0,
   );
-  static EventBus _$eventBus(World v) => v.eventBus;
-  static const Field<World, EventBus> _f$eventBus = Field(
-    'eventBus',
-    _$eventBus,
-    mode: FieldMode.member,
-  );
 
   @override
   final MappableFields<World> fields = const {
@@ -58,7 +52,6 @@ class WorldMapper extends ClassMapperBase<World> {
     #components: _f$components,
     #tickId: _f$tickId,
     #lastId: _f$lastId,
-    #eventBus: _f$eventBus,
   };
 
   static World _instantiate(DecodingData data) {

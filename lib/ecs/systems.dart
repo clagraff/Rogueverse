@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:rogueverse/ecs/components.dart';
-import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -196,7 +195,7 @@ class CombatSystem extends System with CombatSystemMappable {
 
                 for (var c in lootable.components) {
                   // Have to do things the hard way to avoid `dynamic` component types in the components map.
-                  var comp = world.components.putIfAbsent(c.componentType, () => {});
+                  var comp = world.components.putIfAbsent(c.componentType, () => {}); // TODO must never update `world.components` directly as it side-steps our notifications.
                   comp[item.id] = c;
                 }
 
@@ -207,8 +206,7 @@ class CombatSystem extends System with CombatSystemMappable {
         }
       }
       target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
-      world.eventBus.publish(Event<Health>(
-          eventType: EventType.updated, id: target.id, value: health));
+      // TODO notify on health change?
 
       source.remove<AttackIntent>();
       source.upsert<DidAttack>(DidAttack(targetId: target.id, damage: 1));

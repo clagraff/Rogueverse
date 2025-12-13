@@ -2,7 +2,6 @@ import 'package:collection/collection.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/world.dart';
-import 'package:rogueverse/ecs/events.dart';
 
 class Entity {
   final World parentCell;
@@ -24,7 +23,7 @@ class Entity {
 
     if (orDefault != null) {
       entitiesWithComponent[id] = orDefault;
-      parentCell.eventBus.publish(Event<C>(eventType:EventType.added, id: id, value: orDefault));
+      parentCell.notifyChange(Change(entityId: id, componentType: orDefault.componentType, oldValue: null, newValue: orDefault));
 
       return orDefault;
     }
@@ -40,7 +39,7 @@ class Entity {
 
     if (orDefault != null) {
       entitiesWithComponent[id] = orDefault;
-      parentCell.eventBus.publish(Event<Component>(eventType:EventType.added, id: id, value: orDefault)); // TODO gotta figure this out since `<Component>` is not good.
+      parentCell.notifyChange(Change(entityId: id, componentType: orDefault.componentType, oldValue: null, newValue: orDefault));
 
       return orDefault;
     }
@@ -67,8 +66,7 @@ class Entity {
 
     entitiesWithComponent[id] = c;
 
-    parentCell.notifyChange(ComponentChange(entityId: id, componentType: C.toString(), oldValue: existing?.value, newValue: c));
-    parentCell.eventBus.publish(Event<C>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c));
+    parentCell.notifyChange(Change(entityId: id, componentType: C.toString(), oldValue: existing?.value, newValue: c));
   }
 
   void upsertByName(Component c) {
@@ -78,8 +76,7 @@ class Entity {
 
     entitiesWithComponent[id] = c;
 
-    parentCell.notifyChange(ComponentChange(entityId: id, componentType: c.componentType, oldValue: existing?.value, newValue: c));
-    parentCell.eventBus.publish(Event<Component>(eventType: alreadyExisted ? EventType.updated : EventType.added, id: id, value: c)); // TODO `<Component>` sucks
+    parentCell.notifyChange(Change(entityId: id, componentType: c.componentType, oldValue: existing?.value, newValue: c));
   }
 
   void remove<C>() {
@@ -91,8 +88,7 @@ class Entity {
       var oldComponent = entitiesWithComponent[id] as C;
       entitiesWithComponent.remove(id);
 
-      parentCell.notifyChange(ComponentChange(entityId: id, componentType: C.toString(), oldValue: existing.value, newValue: null));
-      parentCell.eventBus.publish(Event<C>(eventType: EventType.removed, id: id, value: oldComponent));
+      parentCell.notifyChange(Change(entityId: id, componentType: C.toString(), oldValue: existing.value, newValue: null));
     }
   }
 
@@ -105,8 +101,7 @@ class Entity {
       var oldComponent = entitiesWithComponent[id] as Component;
       entitiesWithComponent.remove(id);
 
-      parentCell.notifyChange(ComponentChange(entityId: id, componentType: componentType, oldValue: existing.value, newValue: null));
-      parentCell.eventBus.publish(Event<Component>(eventType: EventType.removed, id: id, value: oldComponent)); // TODO `<Component>` sucks
+      parentCell.notifyChange(Change(entityId: id, componentType: componentType, oldValue: existing.value, newValue: null));
     }
   }
 

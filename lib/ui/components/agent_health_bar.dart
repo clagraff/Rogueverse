@@ -35,9 +35,10 @@ class AgentHealthBar extends PositionComponent with Disposer {
   /// Creates the background bar, foreground health bar, and health text display.
   @override
   FutureOr<void> onLoad() {
-    entity.parentCell.eventBus.on<Health>(entity.id).forEach((e) {
-      updateBar();
-    });
+    // TODO: change to component notification.
+    // entity.parentCell.eventBus.on<Health>(entity.id).forEach((e) {
+    //   updateBar();
+    // });
 
     // Always spans the whole width.
     background = RectangleComponent(

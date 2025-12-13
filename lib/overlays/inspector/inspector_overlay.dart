@@ -1,6 +1,8 @@
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/widgets/properties/properties.dart';
 
@@ -23,23 +25,25 @@ class _InspectorOverlayState extends State<InspectorOverlay> {
         if (entity == null) {
           return const SizedBox.shrink();
         }
-        // Keying by entity.id ensures the panel resets state (like scroll position) when the entity changes.
-        return _InspectorPanel(key: ValueKey(entity.id), entity: entity);
+
+        return StreamBuilder<Change>(
+          stream: entity.parentCell.onEntityChange(entity.id),
+          builder: (context, snapshot) {
+            // Keying by entity.id ensures the panel resets state (like scroll position) when the entity changes.
+            var lp = entity.get<LocalPosition>();
+            Logger("inspector").info("pos: $lp");
+            return _InspectorPanel(key: Key(entity.id.toString()), entity: entity);
+          },
+        );
       },
     );
   }
 }
 
-class _InspectorPanel extends StatefulWidget {
+class _InspectorPanel extends StatelessWidget {
   final Entity entity;
 
   const _InspectorPanel({super.key, required this.entity});
-
-  @override
-  State<_InspectorPanel> createState() => _InspectorPanelState();
-}
-
-class _InspectorPanelState extends State<_InspectorPanel> {
 
   void _updateComponentField(Component component, String key, dynamic value) {
     // 1. Convert component to Map
@@ -53,10 +57,8 @@ class _InspectorPanelState extends State<_InspectorPanel> {
       // Note: This relies on dart_mappable being able to infer the type or the map containing type info.
       final newComponent = MapperContainer.globals.fromMap<Component>(map);
 
-      // 4. Save back to entity
-      setState(() {
-        widget.entity.upsert(newComponent);
-      });
+      // 4. Save back to entity (this will trigger the stream, causing a rebuild)
+      entity.upsert(newComponent);
     } catch (e) {
       debugPrint("Failed to update component: $e");
     }
@@ -64,26 +66,27 @@ class _InspectorPanelState extends State<_InspectorPanel> {
 
   @override
   Widget build(BuildContext context) {
-    final components = widget.entity.getAll();
+    final components = entity.getAll();
     final sections = <PropertySectionData>[];
 
-    var name = widget.entity.get<Name>();
+    var name = entity.get<Name>();
     if (name != null) {
       sections.add(PropertySectionData(id: "", title: "Name", items: [
         StringPropertyItem(id: "", label: "Name", value: name.name, onChanged: (String s) {
-          widget.entity.upsert<Name>(name.copyWith(name: s));
+          entity.upsert<Name>(name.copyWith(name: s));
         })
       ]));
     }
 
-    var localPosition = widget.entity.get<LocalPosition>();
+    var localPosition = entity.get<LocalPosition>();
     if (localPosition != null) {
+      Logger("InspectorPanel.build").info("Building with position: x=${localPosition.x}, y=${localPosition.y}");
       sections.add(PropertySectionData(id: "", title: "LocalPosition", items: [
         IntPropertyItem(id: "", label: "X", value: localPosition.x, onChanged: (int newX) {
-          widget.entity.upsert<LocalPosition>(localPosition.copyWith(x: newX));
+          entity.upsert<LocalPosition>(localPosition.copyWith(x: newX));
         }),
         IntPropertyItem(id: "", label: "Y", value: localPosition.y, onChanged: (int newY) {
-          widget.entity.upsert<LocalPosition>(localPosition.copyWith(y: newY));
+          entity.upsert<LocalPosition>(localPosition.copyWith(y: newY));
         }),
       ]));
     }
@@ -136,10 +139,14 @@ class _InspectorPanelState extends State<_InspectorPanel> {
     //   ));
     // }
 
+    // Create a key based on the entity's component data to force rebuild when data changes
+    final dataKey = '${entity.id}_${components.map((c) => c.toString()).join('_')}';
+
     return Material(
       elevation: 4,
       color: Theme.of(context).colorScheme.surface,
       child: PropertyPanel(
+        key: ValueKey(dataKey),
         sections: sections,
         theme: const PropertyPanelThemeData(
           minWidth: 260,
