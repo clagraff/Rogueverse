@@ -71,6 +71,15 @@ class _InspectorOverlayState extends State<InspectorOverlay> {
     super.dispose();
   }
 
+  void _requestFocusAfterBuild() {
+    // Request focus on the next frame to ensure the widget is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<Entity?>(
@@ -80,42 +89,36 @@ class _InspectorOverlayState extends State<InspectorOverlay> {
           return const SizedBox.shrink();
         }
 
+        // Request focus after the panel is built
+        _requestFocusAfterBuild();
+
         // Keying by entity.id ensures the panel resets state (like scroll position) when the entity changes.
-        return Shortcuts(
-          shortcuts: {
-            LogicalKeySet(LogicalKeyboardKey.escape): const _CloseInspectorIntent(),
+        return KeyboardListener(
+          focusNode: _focusNode,
+          autofocus: true,
+          onKeyEvent: (event) {
+            // Only handle ESC key on key down
+            if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+              // Check if any text field currently has focus
+              final currentFocus = FocusScope.of(context).focusedChild;
+
+              // If a text field or other input has primary focus, let it handle ESC (to unfocus)
+              // Otherwise, close the panel
+              if (currentFocus == null || currentFocus == _focusNode) {
+                widget.entityNotifier.value = null;
+              }
+            }
           },
-          child: Actions(
-            actions: {
-              _CloseInspectorIntent: _CloseInspectorAction(widget.entityNotifier),
+          child: GestureDetector(
+            // Request focus when clicking on the panel (but not on inputs)
+            onTap: () {
+              _focusNode.requestFocus();
             },
-            child: Focus(
-              focusNode: _focusNode,
-              autofocus: true,
-              child: _InspectorPanel(key: Key(entity.id.toString()), entity: entity),
-            ),
+            child: _InspectorPanel(key: Key(entity.id.toString()), entity: entity),
           ),
         );
       },
     );
-  }
-}
-
-/// Intent to close the inspector
-class _CloseInspectorIntent extends Intent {
-  const _CloseInspectorIntent();
-}
-
-/// Action to close the inspector by setting the entity notifier to null
-class _CloseInspectorAction extends Action<_CloseInspectorIntent> {
-  final ValueNotifier<Entity?> entityNotifier;
-
-  _CloseInspectorAction(this.entityNotifier);
-
-  @override
-  Object? invoke(_CloseInspectorIntent intent) {
-    entityNotifier.value = null;
-    return null;
   }
 }
 
