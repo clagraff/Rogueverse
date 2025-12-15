@@ -205,7 +205,7 @@ class _SafeSvgPicture extends StatelessWidget {
     try {
       // Try to load the primary asset
       return SvgPicture.asset(
-        assetPath,
+        "assets/$assetPath",
         width: 48,
         height: 48,
         fit: BoxFit.contain,

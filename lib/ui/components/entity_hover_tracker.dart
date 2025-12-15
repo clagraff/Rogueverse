@@ -1,6 +1,6 @@
 import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide PointerMoveEvent;
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
@@ -26,8 +26,9 @@ class EntityHoverTracker extends PositionComponent with HoverCallbacks {
   bool containsLocalPoint(Vector2 point) => true;
 
   @override
-  void onHoverUpdate(PointerHoverInfo info) {
-    final gridPos = _toGridPosition(info.eventPosition.widget);
+  void onPointerMove(PointerMoveEvent event) {
+    super.onPointerMove(event); // keep enter/exit tracking intact
+    final gridPos = _toGridPosition(event.localPosition);
     _updateHoveredEntity(gridPos);
   }
 
