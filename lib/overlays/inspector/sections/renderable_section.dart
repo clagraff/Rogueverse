@@ -43,7 +43,7 @@ class RenderableMetadata extends ComponentMetadata {
   }
 
   @override
-  Component createDefault() => Renderable('assets/sprites/default.svg');
+  Component createDefault() => Renderable('sprites/default.svg');
 
   @override
   void removeComponent(Entity entity) => entity.remove<Renderable>();

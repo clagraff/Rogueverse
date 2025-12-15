@@ -10,8 +10,9 @@ import 'ai/decorator_nodes.dart' as p2;
 import 'ai/leaf_nodes.dart' as p3;
 import 'ai/nodes.dart' as p4;
 import 'components.dart' as p5;
-import 'systems.dart' as p6;
-import 'world.dart' as p7;
+import 'entity_template.dart' as p6;
+import 'systems.dart' as p7;
+import 'world.dart' as p8;
 
 void initializeMappers() {
   p0.MoveRandomlyNodeMapper.ensureInitialized();
@@ -53,12 +54,13 @@ void initializeMappers() {
   p5.PickupableMapper.ensureInitialized();
   p5.PickupIntentMapper.ensureInitialized();
   p5.PickedUpMapper.ensureInitialized();
-  p6.SystemMapper.ensureInitialized();
-  p6.CollisionSystemMapper.ensureInitialized();
-  p6.MovementSystemMapper.ensureInitialized();
-  p6.InventorySystemMapper.ensureInitialized();
-  p6.CombatSystemMapper.ensureInitialized();
-  p6.BehaviorSystemMapper.ensureInitialized();
-  p7.WorldMapper.ensureInitialized();
+  p6.EntityTemplateMapper.ensureInitialized();
+  p7.SystemMapper.ensureInitialized();
+  p7.CollisionSystemMapper.ensureInitialized();
+  p7.MovementSystemMapper.ensureInitialized();
+  p7.InventorySystemMapper.ensureInitialized();
+  p7.CombatSystemMapper.ensureInitialized();
+  p7.BehaviorSystemMapper.ensureInitialized();
+  p8.WorldMapper.ensureInitialized();
 }
 

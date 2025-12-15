@@ -18,11 +18,15 @@ import 'package:rogueverse/ui/components/entity_tap_component.dart';
 import 'package:rogueverse/ui/components/focus_on_tap_component.dart';
 import 'package:rogueverse/ui/components/grid_tap.dart';
 import 'package:rogueverse/ui/components/opponent.dart';
+import 'package:rogueverse/ui/components/entity_hover_tracker.dart';
 import 'package:rogueverse/ui/components/player.dart';
+import 'package:rogueverse/ui/components/template_panel_toggle.dart';
 import 'package:rogueverse/ui/hud/health_bar.dart';
+import 'package:rogueverse/overlays/template_panel/template_placer_component.dart';
 
 class GameWorld extends flame.World with Disposer {
   late FocusNode gameFocusNode;
+  TemplatePlacerComponent? _currentPlacer;
 
   GameWorld(FocusNode focusNode) {
     gameFocusNode = focusNode;
@@ -125,6 +129,11 @@ class GameWorld extends flame.World with Disposer {
     add(GridTapVisualizerComponent(xy));
     add(FpsComponent());
     add(TimeTrackComponent());
+    add(TemplatePanelToggle());
+    add(EntityHoverTracker(
+      world: game.currentWorld,
+      titleNotifier: game.hoveredEntityName,
+    ));
 
     xy.addListener(() {
       var entities = game.currentWorld.get<LocalPosition>();
@@ -182,7 +191,31 @@ class GameWorld extends flame.World with Disposer {
       ));
     });
 
+    // Listen to template selection for placement
+    game.selectedTemplate.addListener(() {
+      _updateTemplatePlacer(game);
+    });
+
     //add(WallPlacer(chunk: chunk));
+  }
+
+  /// Updates the template placer component based on selected template.
+  void _updateTemplatePlacer(MyGame game) {
+    // Remove existing placer if any
+    if (_currentPlacer != null) {
+      remove(_currentPlacer!);
+      _currentPlacer = null;
+    }
+
+    // Add new placer if a template is selected
+    final template = game.selectedTemplate.value;
+    if (template != null) {
+      _currentPlacer = TemplatePlacerComponent(
+        world: game.currentWorld,
+        template: template,
+      );
+      add(_currentPlacer!);
+    }
   }
 
   @override
