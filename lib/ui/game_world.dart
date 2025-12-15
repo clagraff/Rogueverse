@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math';
+import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
@@ -27,6 +28,8 @@ import 'package:rogueverse/overlays/template_panel/template_placer_component.dar
 class GameWorld extends flame.World with Disposer {
   late FocusNode gameFocusNode;
   TemplatePlacerComponent? _currentPlacer;
+  final Set<int> _renderedEntities = {};
+  StreamSubscription<Change>? _spawnListener;
 
   GameWorld(FocusNode focusNode) {
     gameFocusNode = focusNode;
@@ -134,6 +137,17 @@ class GameWorld extends flame.World with Disposer {
       world: game.currentWorld,
       titleNotifier: game.hoveredEntityName,
     ));
+    _spawnListener = game.currentWorld.componentChanges.listen((change) {
+      if (change.kind != ChangeKind.added) return;
+      // Only react to renderable/position changes; order doesn't matter.
+      if (change.componentType == Renderable('').componentType ||
+          change.componentType == LocalPosition(x: 0, y: 0).componentType) {
+        _spawnRenderableEntity(
+          game,
+          game.currentWorld.getEntity(change.entityId),
+        );
+      }
+    });
 
     xy.addListener(() {
       var entities = game.currentWorld.get<LocalPosition>();
@@ -163,32 +177,16 @@ class GameWorld extends flame.World with Disposer {
         .forEach((entity) {
       var pos = entity.get<LocalPosition>()!;
       if (entity.has<PlayerControlled>()) {
-        add(PlayerControlledAgent(
-          world: game.currentWorld,
-          entity: game.currentWorld.getEntity(playerId),
-          svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
-          position: flame.Vector2(pos.x * 32, pos.y * 32),
-        ));
-
+        _spawnRenderableEntity(game, game.currentWorld.getEntity(playerId));
         game.selectedEntity.value = entity;
         return;
       }
       if (entity.has<AiControlled>()) {
-        add(Opponent(
-          world: game.currentWorld,
-          entity: game.currentWorld.getEntity(entity.id),
-          svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
-          position: flame.Vector2(pos.x * 32, pos.y * 32),
-        ));
+        _spawnRenderableEntity(game, game.currentWorld.getEntity(entity.id));
         return;
       }
 
-      add(Agent(
-        world: game.currentWorld,
-        entity: game.currentWorld.getEntity(entity.id),
-        svgAssetPath: entity.get<Renderable>()!.svgAssetPath,
-        position: flame.Vector2(pos.x * 32, pos.y * 32),
-      ));
+      _spawnRenderableEntity(game, game.currentWorld.getEntity(entity.id));
     });
 
     // Listen to template selection for placement
@@ -220,6 +218,43 @@ class GameWorld extends flame.World with Disposer {
 
   @override
   void onRemove() {
+    _spawnListener?.cancel();
     disposeAll();
+  }
+
+  void _spawnRenderableEntity(MyGame game, Entity entity) {
+    if (_renderedEntities.contains(entity.id)) return;
+    final renderable = entity.get<Renderable>();
+    final lp = entity.get<LocalPosition>();
+    if (renderable == null || lp == null) return;
+
+    final position = flame.Vector2(lp.x * 32, lp.y * 32);
+    flame.Component component;
+
+    if (entity.has<PlayerControlled>()) {
+      component = PlayerControlledAgent(
+        world: game.currentWorld,
+        entity: game.currentWorld.getEntity(entity.id),
+        svgAssetPath: renderable.svgAssetPath,
+        position: position,
+      );
+    } else if (entity.has<AiControlled>()) {
+      component = Opponent(
+        world: game.currentWorld,
+        entity: game.currentWorld.getEntity(entity.id),
+        svgAssetPath: renderable.svgAssetPath,
+        position: position,
+      );
+    } else {
+      component = Agent(
+        world: game.currentWorld,
+        entity: game.currentWorld.getEntity(entity.id),
+        svgAssetPath: renderable.svgAssetPath,
+        position: position,
+      );
+    }
+
+    add(component);
+    _renderedEntities.add(entity.id);
   }
 }
