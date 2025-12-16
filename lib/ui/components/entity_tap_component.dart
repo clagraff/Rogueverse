@@ -9,6 +9,7 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ui/components/svg_component.dart' show SvgTileComponent;
+import 'package:rogueverse/ui/utils/grid_coordinates.dart' show GridCoordinates;
 
 
 /// Handles tap events on the game grid to select entities at tapped positions.
@@ -39,8 +40,9 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   void onTapUp(TapUpEvent event) {
     event.continuePropagation = true;
     var screenPosition = event.localPosition;
-    var x = (screenPosition.x / gridSize).floor();
-    var y = (screenPosition.y / gridSize).floor();
+    final gridPos = GridCoordinates.screenToGrid(screenPosition);
+    var x = gridPos.x;
+    var y = gridPos.y;
 
     var matched = false;
     world.get<LocalPosition>().forEach((entityId, localPos) {
@@ -86,7 +88,7 @@ class EntityTapVisualizerComponent extends SvgTileComponent with HasVisibility {
       return;
     }
 
-    position = Vector2(lp.x * 32, lp.y * 32);
+    position = GridCoordinates.gridToScreen(lp);
     isVisible = true;
 
     super.update(dt);

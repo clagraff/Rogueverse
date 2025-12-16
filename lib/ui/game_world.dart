@@ -22,12 +22,11 @@ import 'package:rogueverse/ui/components/opponent.dart';
 import 'package:rogueverse/ui/components/entity_hover_tracker.dart';
 import 'package:rogueverse/ui/components/player.dart';
 import 'package:rogueverse/ui/components/template_panel_toggle.dart';
+import 'package:rogueverse/ui/components/template_entity_spawner.dart';
 import 'package:rogueverse/ui/hud/health_bar.dart';
-import 'package:rogueverse/overlays/template_panel/template_placer_component.dart';
 
 class GameWorld extends flame.World with Disposer {
   late FocusNode gameFocusNode;
-  TemplatePlacerComponent? _currentPlacer;
   final Set<int> _renderedEntities = {};
   StreamSubscription<Change>? _spawnListener;
 
@@ -41,6 +40,12 @@ class GameWorld extends flame.World with Disposer {
   @override
   Future<void> onLoad() async {
     final game = parent!.findGame() as MyGame;
+
+    // Create template entity spawner (listens to template selection)
+    add(TemplateEntitySpawner(
+      world: game.currentWorld,
+      templateNotifier: game.selectedTemplate,
+    ));
 
     var save = await WorldSaves.loadSave();
 
@@ -188,32 +193,6 @@ class GameWorld extends flame.World with Disposer {
 
       _spawnRenderableEntity(game, game.currentWorld.getEntity(entity.id));
     });
-
-    // Listen to template selection for placement
-    game.selectedTemplate.addListener(() {
-      _updateTemplatePlacer(game);
-    });
-
-    //add(WallPlacer(chunk: chunk));
-  }
-
-  /// Updates the template placer component based on selected template.
-  void _updateTemplatePlacer(MyGame game) {
-    // Remove existing placer if any
-    if (_currentPlacer != null) {
-      remove(_currentPlacer!);
-      _currentPlacer = null;
-    }
-
-    // Add new placer if a template is selected
-    final template = game.selectedTemplate.value;
-    if (template != null) {
-      _currentPlacer = TemplatePlacerComponent(
-        world: game.currentWorld,
-        template: template,
-      );
-      add(_currentPlacer!);
-    }
   }
 
   @override

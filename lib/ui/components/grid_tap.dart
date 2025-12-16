@@ -8,6 +8,7 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ui/components/svg_component.dart' show SvgTileComponent;
+import 'package:rogueverse/ui/utils/grid_coordinates.dart' show GridCoordinates;
 
 class XY {
   final int x;
@@ -35,17 +36,16 @@ class GridTapComponent extends PositionComponent with TapCallbacks {
   void onTapUp(TapUpEvent event) {
     event.continuePropagation = true;
     var screenPosition = event.localPosition;
-    var x = (screenPosition.x / gridSize).floor();
-    var y = (screenPosition.y / gridSize).floor();
+    final gridPos = GridCoordinates.screenToGrid(screenPosition);
 
-    notifier.value = XY(x, y);
+    notifier.value = XY(gridPos.x, gridPos.y);
   }
 }
 
 class GridTapVisualizerComponent extends SvgTileComponent with HasVisibility {
   final ValueNotifier<XY> notifier;
 
-  GridTapVisualizerComponent(this.notifier) : super(svgAssetPath: 'images/crosshair.svg', size: Vector2(32, 32), position: Vector2(0, 0)) {
+  GridTapVisualizerComponent(this.notifier) : super(svgAssetPath: 'images/crosshair.svg', size: Vector2.all(GridCoordinates.TILE_SIZE), position: Vector2(0, 0)) {
     notifier.addListener(onListen);
     isVisible = false;
   }
@@ -62,7 +62,7 @@ class GridTapVisualizerComponent extends SvgTileComponent with HasVisibility {
     opacity = 1;
 
     var xy = notifier.value;
-    position = Vector2(xy.x * 32, xy.y * 32);
+    position = GridCoordinates.gridToScreen(LocalPosition(x: xy.x, y: xy.y));
 
     // Remove any previous opacity effects so they don't stack
     children.whereType<OpacityEffect>().forEach((e) => e.removeFromParent());
