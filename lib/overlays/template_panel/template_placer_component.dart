@@ -119,22 +119,46 @@ class TemplatePlacerComponent extends PositionComponent with DragCallbacks, TapC
 
   @override
   void onSecondaryTapDown(SecondaryTapDownEvent event) {
-    _rightDragStartGrid = _toGridPosition(event.localPosition);
-    _rightDragUpdateGrid = _rightDragStartGrid;
-    _updateModifierKeys();
-    _logger.info('Right tap down at grid position: (${_rightDragStartGrid!.x}, ${_rightDragStartGrid!.y})');
+    try {
+      _rightDragStartGrid = _toGridPosition(event.localPosition);
+      _rightDragUpdateGrid = _rightDragStartGrid;
+      _updateModifierKeys();
+      _logger.info('Right tap down at grid position: (${_rightDragStartGrid!.x}, ${_rightDragStartGrid!.y})');
+    } catch (e, stackTrace) {
+      _logger.severe('Error in onSecondaryTapDown accessing localPosition: $e', e, stackTrace);
+      // Clear state on error
+      _rightDragStartGrid = null;
+      _rightDragUpdateGrid = null;
+    }
   }
 
   @override
   void onSecondaryTapUp(SecondaryTapUpEvent event) {
-    final endGrid = _toGridPosition(event.localPosition);
-    final start = _rightDragStartGrid;
+    try {
+      final start = _rightDragStartGrid;
 
-    _logger.info('Right tap up at grid position: (${endGrid.x}, ${endGrid.y})');
-    _processRemoval(start, endGrid);
+      if (start == null) {
+        _logger.warning('Secondary tap up without tap down - ignoring');
+        return;
+      }
 
-    _rightDragStartGrid = null;
-    _rightDragUpdateGrid = null;
+      // Try to get position from event, but fall back to stored position if unavailable
+      LocalPosition endGrid;
+      try {
+        endGrid = _toGridPosition(event.localPosition);
+      } catch (e) {
+        _logger.warning('Could not get localPosition from tap up event, using tap down position: $e');
+        endGrid = start;
+      }
+
+      _logger.info('Right tap up at grid position: (${endGrid.x}, ${endGrid.y})');
+      _processRemoval(start, endGrid);
+    } catch (e, stackTrace) {
+      _logger.severe('Error in onSecondaryTapUp: $e', e, stackTrace);
+    } finally {
+      _rightDragStartGrid = null;
+      _rightDragUpdateGrid = null;
+    }
   }
 
   @override
@@ -413,20 +437,25 @@ class TemplatePlacerComponent extends PositionComponent with DragCallbacks, TapC
   void _removeEntity(LocalPosition pos) {
     _logger.info('Removing entity at (${pos.x}, ${pos.y})');
 
-    // Find entities with BlocksMovement at this position
-    final matches = Query()
-        .require<LocalPosition>((lp) => lp.x == pos.x && lp.y == pos.y)
-        .require<BlocksMovement>()
-        .find(world)
-        .toList();
+    try {
+      // Find entities with BlocksMovement at this position
+      final matches = Query()
+          .require<LocalPosition>((lp) => lp.x == pos.x && lp.y == pos.y)
+          .require<BlocksMovement>()
+          .find(world)
+          .toList();
 
-    if (matches.isNotEmpty) {
-      _logger.info('Found ${matches.length} entities at position, removing them');
-      for (var entity in matches) {
-        entity.destroy();
+      if (matches.isNotEmpty) {
+        _logger.info('Found ${matches.length} entities at position, removing them');
+        for (var entity in matches) {
+          entity.destroy();
+        }
+      } else {
+        _logger.info('No entities to remove at this position');
       }
-    } else {
-      _logger.info('No entities to remove at this position');
+    } catch (e, stackTrace) {
+      _logger.severe('Error removing entity at (${pos.x}, ${pos.y}): $e', e, stackTrace);
+      // Don't rethrow - just log and continue
     }
   }
 

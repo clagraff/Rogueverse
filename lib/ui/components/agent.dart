@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flame/components.dart' hide World;
 import 'package:flame/effects.dart';
 import 'package:rogueverse/ecs/components.dart';
@@ -77,12 +75,12 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     }
 
     if (!entity.has<Renderable>()) {
-      remove(this);
+      removeFromParent();
     }
 
     if (entity.has<Dead>()) {
       world.remove(entity.id);
-      remove(this);
+      removeFromParent();
     }
   }
 
