@@ -13,8 +13,8 @@ import 'package:rogueverse/ecs/world.dart';
 /// Supports multiple placement modes:
 /// - Single click: Place one entity
 /// - Click + drag: Place a line of entities
-/// - Shift + drag: Place a hollow rectangle
-/// - Ctrl + Shift + drag: Place a filled rectangle
+/// - Ctrl + drag: Place a filled rectangle
+/// - Ctrl + Shift + drag: Place a hollow rectangle
 ///
 /// When placing on a tile with an existing BlocksMovement entity, that entity is destroyed
 /// and replaced with the new one (toggle behavior).
@@ -37,6 +37,8 @@ class TemplatePlacerComponent extends PositionComponent with DragCallbacks, TapC
     this.tileSize = 32.0,
   }) {
     _logger.info('TemplatePlacerComponent created for template: ${template.displayName}');
+    // Set high priority so this component receives events before camera controls
+    priority = 100;
   }
 
   @override
@@ -49,18 +51,24 @@ class TemplatePlacerComponent extends PositionComponent with DragCallbacks, TapC
     _dragUpdateGrid = _toGridPosition(_dragStartScreen!);
     _updateModifierKeys();
 
+    // Mark event as handled so camera doesn't process it
+    event.handled = true;
     super.onDragStart(event);
   }
 
   @override
   void onDragUpdate(DragUpdateEvent event) {
     _dragUpdateGrid = _toGridPosition(event.localEndPosition);
+    // Mark event as handled so camera doesn't process it
+    event.handled = true;
   }
 
   @override
   void onDragEnd(DragEndEvent event) {
     _processPlacement(_dragStartGrid, _dragUpdateGrid!);
 
+    // Mark event as handled so camera doesn't process it
+    event.handled = true;
     super.onDragEnd(event);
   }
 
@@ -119,21 +127,14 @@ class TemplatePlacerComponent extends PositionComponent with DragCallbacks, TapC
   List<LocalPosition> _calculatePositions(LocalPosition start, LocalPosition end) {
     final positions = <LocalPosition>[];
 
-    if (_isShiftDown) {
+    if (_isCtrlDown) {
       // Rectangle mode (hollow or filled)
       final minX = start.x < end.x ? start.x : end.x;
       final maxX = start.x > end.x ? start.x : end.x;
       final minY = start.y < end.y ? start.y : end.y;
       final maxY = start.y > end.y ? start.y : end.y;
 
-      if (_isCtrlDown) {
-        // Filled rectangle
-        for (var x = minX; x <= maxX; x++) {
-          for (var y = minY; y <= maxY; y++) {
-            positions.add(LocalPosition(x: x, y: y));
-          }
-        }
-      } else {
+      if (_isShiftDown) {
         // Hollow rectangle (border only)
         for (var x = minX; x <= maxX; x++) {
           positions.add(LocalPosition(x: x, y: minY)); // Top edge
@@ -142,6 +143,13 @@ class TemplatePlacerComponent extends PositionComponent with DragCallbacks, TapC
         for (var y = minY + 1; y < maxY; y++) {
           positions.add(LocalPosition(x: minX, y: y)); // Left edge
           positions.add(LocalPosition(x: maxX, y: y)); // Right edge
+        }
+      } else {
+        // Filled rectangle
+        for (var x = minX; x <= maxX; x++) {
+          for (var y = minY; y <= maxY; y++) {
+            positions.add(LocalPosition(x: x, y: y));
+          }
         }
       }
     } else {

@@ -58,7 +58,10 @@ class MyGame extends FlameGame
   @override
   FutureOr<void> onLoad() {
     camera.viewfinder.anchor = Anchor.topLeft;
-    camera.viewfinder.add(CameraControls());
+
+    // Add CameraControls to the world, not the viewfinder, so it's in the same
+    // component hierarchy as TemplatePlacerComponent for proper event priority handling
+    world.add(CameraControls());
 
     scrollDispatcher = ScrollDispatcher();
     //registerKey(scrollDispatcher.key!, scrollDispatcher);
