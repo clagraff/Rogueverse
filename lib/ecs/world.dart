@@ -53,8 +53,8 @@ class Change {
 
 @MappableClass()
 class World with WorldMappable {
-  int tickId = 0; // TODO not de/serializing to json/map
-  int lastId = 0; // TODO not de/serializing to json/map
+  int tickId = 0; // TODO not de/serializing to json/map?
+  int lastId = 0; // TODO not de/serializing to json/map?
   final List<System> systems;
 
   final _componentChanges = StreamController<Change>.broadcast(sync: true);
