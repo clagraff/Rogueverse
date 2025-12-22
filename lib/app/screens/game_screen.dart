@@ -42,12 +42,6 @@ class GameScreen extends flame.World with Disposer {
   Future<void> onLoad() async {
     final game = parent!.findGame() as GameArea;
 
-    // Create template entity spawner (listens to template selection)
-    add(TemplateEntitySpawner(
-      world: game.currentWorld,
-      templateNotifier: game.selectedTemplate,
-    ));
-
     // Attempt to load world-state from local save file.
     // TODO this can only work when running on Desktop, not web!
     var save = await WorldSaves.loadSave();
@@ -57,9 +51,16 @@ class GameScreen extends flame.World with Disposer {
       _initializeEntities(game);
     }
 
+    // Create template entity spawner (listens to template selection)
+    add(TemplateEntitySpawner(
+      world: game.currentWorld,
+      templateNotifier: game.selectedTemplate,
+    ));
+
     var gridNotifier = ValueNotifier<XY>(XY(0, 0));
     var entityNotifier = game.selectedEntity;
     add(FocusOnTapComponent(gameFocusNode, () {
+      Logger("game_screen").info("taking focus");
       game.overlays.remove("inspectorPanel");
     }));
 
@@ -85,6 +86,7 @@ class GameScreen extends flame.World with Disposer {
       // Only react to renderable/position changes; order doesn't matter.
       if (change.componentType == Renderable('').componentType ||
           change.componentType == LocalPosition(x: 0, y: 0).componentType) {
+        Logger("game_screen").info("Entity(${change.entityId}) was given Renderable or LocalPosition");
         _spawnRenderableEntity(
           game,
           game.currentWorld.getEntity(change.entityId),
