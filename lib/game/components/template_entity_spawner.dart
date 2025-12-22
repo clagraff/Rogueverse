@@ -1,5 +1,5 @@
 import 'package:flame/components.dart' show PositionComponent, Vector2, KeyboardHandler;
-import 'package:flame/events.dart' show TapCallbacks, DragCallbacks, SecondaryTapCallbacks, PointerMoveCallbacks, TapDownEvent, TapUpEvent, DragStartEvent, DragUpdateEvent, DragEndEvent, SecondaryTapDownEvent, SecondaryTapUpEvent, SecondaryTapCancelEvent, PointerMoveEvent;
+import 'package:flame/events.dart' show TapCallbacks, DragCallbacks, SecondaryTapCallbacks, TapDownEvent, TapUpEvent, DragStartEvent, DragUpdateEvent, DragEndEvent, SecondaryTapUpEvent;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyEvent, LogicalKeyboardKey, KeyDownEvent;
 import 'package:flutter/widgets.dart' show ValueNotifier;
 import 'package:logging/logging.dart' show Logger;
@@ -23,13 +23,13 @@ import 'package:rogueverse/game/utils/entity_manipulator.dart' show EntityManipu
 /// - Handles ESC to deselect template and exit placement mode
 ///
 /// **Interactions:**
-/// - Left-click/drag: Place entities
-/// - Right-click/drag: Remove entities
+/// - Left-click/drag: Place entities (or remove if in removal mode)
+/// - Right-click: Toggle removal mode (sets template to null)
 /// - Ctrl: Filled rectangle mode
 /// - Ctrl+Shift: Hollow rectangle mode
-/// - ESC: Deselect template
+/// - ESC: Exit removal mode / deselect template
 class TemplateEntitySpawner extends PositionComponent
-    with TapCallbacks, DragCallbacks, SecondaryTapCallbacks, PointerMoveCallbacks, KeyboardHandler {
+    with TapCallbacks, DragCallbacks, SecondaryTapCallbacks, KeyboardHandler {
 
   final World world;
   final ValueNotifier<EntityTemplate?> templateNotifier;
@@ -39,7 +39,6 @@ class TemplateEntitySpawner extends PositionComponent
   PlacementPreview? _preview;
   LocalPosition? _dragStart;
   LocalPosition? _dragCurrent;
-  bool _isRightDragging = false;
 
   TemplateEntitySpawner({
     required this.world,
@@ -49,7 +48,7 @@ class TemplateEntitySpawner extends PositionComponent
   }
 
   EntityTemplate? get _template => templateNotifier.value;
-  bool get _isActive => _template != null;
+  bool get _isActive => _preview != null; // Active when preview exists (placement or removal mode)
 
   @override
   Future<void> onLoad() async {
@@ -62,38 +61,36 @@ class TemplateEntitySpawner extends PositionComponent
 
   /// Updates preview component when template changes
   void _onTemplateChanged() {
-    // Remove old preview
-    if (_preview != null) {
-      _preview!.removeFromParent();
-      _preview = null;
-    }
-
-    // Create new preview if template has renderable
     final template = _template;
+
     if (template != null) {
+      // Template selected - create preview with entity's SVG
+      if (_preview != null) {
+        _preview!.removeFromParent();
+        _preview = null;
+      }
+
       final renderable = template.components.whereType<Renderable>().firstOrNull;
       if (renderable != null) {
         _preview = PlacementPreview(svgAssetPath: renderable.svgAssetPath);
         add(_preview!);
-        _logger.info('Template selected: ${template.displayName}');
       }
-    } else {
-      _logger.info('Template deselected');
     }
+    // Note: When template becomes null, we don't automatically remove preview
+    // It might be in removal mode (showing removal.svg)
   }
 
-  /// Only intercept events when a template is selected
+  /// Only intercept events when in placement or removal mode
   @override
   bool containsLocalPoint(Vector2 point) => _isActive;
 
-  // === LEFT-CLICK PLACEMENT ===
+  // === LEFT-CLICK PLACEMENT/REMOVAL ===
 
   @override
   void onTapDown(TapDownEvent event) {
     if (!_isActive) return;
 
     _dragStart = GridCoordinates.screenToGrid(event.localPosition);
-    _logger.info('Left tap down at: $_dragStart');
     event.handled = true;
   }
 
@@ -118,7 +115,6 @@ class TemplateEntitySpawner extends PositionComponent
     _dragStart = GridCoordinates.screenToGrid(event.localPosition);
     _dragCurrent = _dragStart;
 
-    _logger.info('Left drag start at: $_dragStart');
     event.handled = true;
     super.onDragStart(event);
   }
@@ -149,63 +145,55 @@ class TemplateEntitySpawner extends PositionComponent
     super.onDragEnd(event);
   }
 
-  // === RIGHT-CLICK REMOVAL ===
-
-  @override
-  void onSecondaryTapDown(SecondaryTapDownEvent event) {
-    if (!_isActive) return;
-
-    _dragStart = GridCoordinates.screenToGrid(event.localPosition);
-    _dragCurrent = _dragStart;
-    _isRightDragging = true;
-
-    _logger.info('Right tap down at: $_dragStart');
-    // Don't set event.handled for secondary - can cause issues
-  }
+  // === RIGHT-CLICK: TOGGLE REMOVAL MODE ===
 
   @override
   void onSecondaryTapUp(SecondaryTapUpEvent event) {
-    if (!_isActive) return;
-
-    final endPos = GridCoordinates.screenToGrid(event.localPosition);
-
-    if (_dragStart != null) {
-      _execute(_dragStart!, endPos, isPlacement: false);
+    // Right-click toggles removal mode by setting template to null
+    // Remove old preview
+    if (_preview != null) {
+      _preview!.removeFromParent();
+      _preview = null;
     }
 
-    _clearState();
-    // Don't set event.handled for secondary - can cause issues
-  }
+    // Set template to null (signals removal mode)
+    templateNotifier.value = null;
 
-  @override
-  void onSecondaryTapCancel(SecondaryTapCancelEvent event) {
-    // Don't clear state - this fires during drag which is expected
-    _logger.info('Secondary tap cancel (expected during drag)');
-  }
+    // Create removal mode preview
+    _preview = PlacementPreview(svgAssetPath: 'images/cross.svg');
+    add(_preview!);
 
-  // === POINTER MOVE (for right-drag tracking) ===
-
-  @override
-  void onPointerMove(PointerMoveEvent event) {
-    if (!_isActive) return;
-
-    // Track mouse movement during right-drag (left-drag uses onDragUpdate instead)
-    if (_isRightDragging && _dragStart != null) {
-      _dragCurrent = GridCoordinates.screenToGrid(event.localPosition);
-      _updatePreview(_dragStart!, _dragCurrent!, isPlacement: false);
-    }
+    event.handled = true;
   }
 
   // === KEYBOARD ===
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    _logger.info('[ESC] onKeyEvent called - event type: ${event.runtimeType}, key: ${event.logicalKey}, _isActive: $_isActive');
+
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
+      _logger.info('[ESC] ESC key detected, _isActive: $_isActive, _preview: ${_preview != null}, _template: ${_template != null}');
+
       if (_isActive) {
-        _logger.info('ESC pressed - deselecting template');
+        _logger.info('[ESC] Exiting editor mode');
+
+        // Clear drag state
         _clearState();
-        templateNotifier.value = null; // Deselect template
+
+        // Clear preview (exits removal mode or deselects template)
+        if (_preview != null) {
+          _preview!.removeFromParent();
+          _preview = null;
+        }
+
+        // Clear template
+        templateNotifier.value = null;
+
+        _logger.info('[ESC] Editor mode exited successfully');
         return true; // Consumed ESC
+      } else {
+        _logger.info('[ESC] Not active, letting other handlers process ESC');
       }
     }
     return false; // Let others handle
@@ -222,15 +210,14 @@ class TemplateEntitySpawner extends PositionComponent
       mode: mode,
     );
 
-    _logger.info('Preview: ${positions.length} positions, mode: $mode, placement: $isPlacement');
-    _preview?.updatePreview(positions, !isPlacement);
+    // Show as removal if template is null (removal mode)
+    final isRemoval = _template == null;
+    _preview?.updatePreview(positions, isRemoval);
   }
 
   /// Executes placement or removal at calculated positions
   void _execute(LocalPosition start, LocalPosition end, {required bool isPlacement}) {
     final template = _template;
-    if (template == null) return;
-
     final mode = _getPlacementMode();
     final positions = PlacementStrategy.calculate(
       start: start,
@@ -238,13 +225,13 @@ class TemplateEntitySpawner extends PositionComponent
       mode: mode,
     );
 
-    _logger.info('Execute ${isPlacement ? "placement" : "removal"}: ${positions.length} positions');
-
     for (final pos in positions) {
-      if (isPlacement) {
-        EntityManipulator.placeEntity(world, template, pos);
-      } else {
+      if (template == null) {
+        // Removal mode - delete entities at position
         EntityManipulator.removeEntitiesAt(world, pos);
+      } else {
+        // Placement mode - place/replace entities
+        EntityManipulator.placeEntity(world, template, pos);
       }
     }
 
@@ -269,7 +256,6 @@ class TemplateEntitySpawner extends PositionComponent
   void _clearState() {
     _dragStart = null;
     _dragCurrent = null;
-    _isRightDragging = false;
     _preview?.clearPreview();
   }
 

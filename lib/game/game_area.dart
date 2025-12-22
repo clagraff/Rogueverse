@@ -71,7 +71,7 @@ class GameArea extends FlameGame
     // CameraControls could potentially conflict with other in-game controls. To
     // help alleviate this, we'll add CameraControls to the world, not the viewfinder, so it's in the same
     // component hierarchy and can be more easily worked around.
-    world.add(CameraControls());
+    //world.add(CameraControls());
 
     // Setup the ScrollDispatcher so other components can use `ScrollCallback`.
     scrollDispatcher = ScrollDispatcher();
@@ -91,8 +91,22 @@ class GameArea extends FlameGame
     // If not handled (eg, by a component or something), then assume we are trying
     // to zoom in/out the camera.
     if (!handled) {
-      camera.viewfinder.zoom += info.scrollDelta.global.y.sign * 0.02;
-      camera.viewfinder.zoom = camera.viewfinder.zoom.clamp(0.1, 3.0);
+      final camera = this.camera;
+      final viewfinder = camera.viewfinder;
+
+      // Get world position under the cursor BEFORE zoom
+      final worldBefore = camera.globalToLocal(info.eventPosition.global);
+
+      // Zoom in or out
+      final zoomChange = info.scrollDelta.global.y.sign * 0.1 * -1;
+      viewfinder.zoom = (viewfinder.zoom + zoomChange).clamp(0.1, 4.0);
+
+      // Get world position under the cursor AFTER zoom
+      final worldAfter = camera.globalToLocal(info.eventPosition.global);
+
+      // Compute the change and shift the camera to preserve cursor focus
+      final shift = worldBefore - worldAfter;
+      viewfinder.position += shift;
     }
   }
 
