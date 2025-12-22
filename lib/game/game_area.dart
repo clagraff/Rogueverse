@@ -10,7 +10,6 @@ import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/app/screens/game_screen.dart';
-import 'package:rogueverse/game/hud/camera_controls.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
 
 /// The main game area component that manages the ECS world, camera controls,

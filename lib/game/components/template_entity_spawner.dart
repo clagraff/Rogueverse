@@ -191,12 +191,12 @@ class TemplateEntitySpawner extends PositionComponent
         templateNotifier.value = null;
 
         _logger.info('[ESC] Editor mode exited successfully');
-        return true; // Consumed ESC
+        return false; // Consumed ESC
       } else {
         _logger.info('[ESC] Not active, letting other handlers process ESC');
       }
     }
-    return false; // Let others handle
+    return true; // Let others handle
   }
 
   // === INTERNAL LOGIC ===
