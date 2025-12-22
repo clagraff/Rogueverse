@@ -1,5 +1,5 @@
 import 'package:flame/components.dart' show PositionComponent, Vector2, KeyboardHandler;
-import 'package:flame/events.dart' show TapCallbacks, DragCallbacks, SecondaryTapCallbacks, TapDownEvent, TapUpEvent, DragStartEvent, DragUpdateEvent, DragEndEvent, SecondaryTapUpEvent;
+import 'package:flame/events.dart' show TapCallbacks, DragCallbacks, SecondaryTapCallbacks, HoverCallbacks, TapDownEvent, TapUpEvent, DragStartEvent, DragUpdateEvent, DragEndEvent, SecondaryTapUpEvent, PointerMoveEvent;
 import 'package:flutter/services.dart' show HardwareKeyboard, KeyEvent, LogicalKeyboardKey, KeyDownEvent;
 import 'package:flutter/widgets.dart' show ValueNotifier;
 import 'package:logging/logging.dart' show Logger;
@@ -23,13 +23,14 @@ import 'package:rogueverse/game/utils/entity_manipulator.dart' show EntityManipu
 /// - Handles ESC to deselect template and exit placement mode
 ///
 /// **Interactions:**
+/// - Hover: Show preview at current mouse position (when template selected)
 /// - Left-click/drag: Place entities (or remove if in removal mode)
 /// - Right-click: Toggle removal mode (sets template to null)
 /// - Ctrl: Filled rectangle mode
 /// - Ctrl+Shift: Hollow rectangle mode
 /// - ESC: Exit removal mode / deselect template
 class TemplateEntitySpawner extends PositionComponent
-    with TapCallbacks, DragCallbacks, SecondaryTapCallbacks, KeyboardHandler {
+    with TapCallbacks, DragCallbacks, SecondaryTapCallbacks, KeyboardHandler, HoverCallbacks {
 
   final World world;
   final ValueNotifier<EntityTemplate?> templateNotifier;
@@ -39,6 +40,8 @@ class TemplateEntitySpawner extends PositionComponent
   PlacementPreview? _preview;
   LocalPosition? _dragStart;
   LocalPosition? _dragCurrent;
+  LocalPosition? _hoverPosition;
+  DateTime? _lastHoverUpdate;
 
   TemplateEntitySpawner({
     required this.world,
@@ -115,6 +118,10 @@ class TemplateEntitySpawner extends PositionComponent
     _dragStart = GridCoordinates.screenToGrid(event.localPosition);
     _dragCurrent = _dragStart;
 
+    // Clear hover state during drag
+    _hoverPosition = null;
+    _lastHoverUpdate = null;
+
     event.handled = true;
     super.onDragStart(event);
   }
@@ -164,6 +171,50 @@ class TemplateEntitySpawner extends PositionComponent
     add(_preview!);
 
     event.handled = true;
+  }
+
+  // === HOVER PREVIEW ===
+
+  /// Debounce interval for hover updates (in milliseconds)
+  static const int _hoverDebounceMs = 16; // ~60fps
+
+  @override
+  void onPointerMove(PointerMoveEvent event) {
+    if (!_isActive) return;
+
+    // Don't show hover preview while dragging
+    if (_dragStart != null) return;
+
+    // Debounce hover updates
+    final now = DateTime.now();
+    if (_lastHoverUpdate != null) {
+      final elapsed = now.difference(_lastHoverUpdate!).inMilliseconds;
+      if (elapsed < _hoverDebounceMs) {
+        return;
+      }
+    }
+    _lastHoverUpdate = now;
+
+    final gridPos = GridCoordinates.screenToGrid(event.localPosition);
+
+    // Only update if position changed
+    if (_hoverPosition == gridPos) return;
+
+    _hoverPosition = gridPos;
+
+    // Show single-cell preview at hover position
+    final isRemoval = _template == null;
+    _preview?.updatePreview([gridPos], isRemoval);
+
+    super.onPointerMove(event);
+  }
+
+  @override
+  void onHoverExit() {
+    // Clear hover state when mouse leaves the game area
+    _hoverPosition = null;
+    _lastHoverUpdate = null;
+    _preview?.clearPreview();
   }
 
   // === KEYBOARD ===
@@ -256,6 +307,7 @@ class TemplateEntitySpawner extends PositionComponent
   void _clearState() {
     _dragStart = null;
     _dragCurrent = null;
+    // Note: Don't clear hover state here, as we want hover to resume after drag ends
     _preview?.clearPreview();
   }
 
