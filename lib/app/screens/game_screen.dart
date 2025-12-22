@@ -49,6 +49,7 @@ class GameScreen extends flame.World with Disposer {
     ));
 
     // Attempt to load world-state from local save file.
+    // TODO this can only work when running on Desktop, not web!
     var save = await WorldSaves.loadSave();
     if (save != null) {
       game.currentWorld = save;

@@ -21,6 +21,11 @@ class TemplatePanel extends StatefulWidget {
   /// This should prompt the user for a name, then open the inspector.
   final VoidCallback onCreateTemplate;
 
+  /// Callback to edit an existing template.
+  ///
+  /// This should open the inspector with the template's components.
+  final void Function(EntityTemplate) onEditTemplate;
+
   /// Callback to close the template panel.
   final VoidCallback onClose;
 
@@ -28,6 +33,7 @@ class TemplatePanel extends StatefulWidget {
     super.key,
     required this.selectedTemplateNotifier,
     required this.onCreateTemplate,
+    required this.onEditTemplate,
     required this.onClose,
   });
 
@@ -213,10 +219,10 @@ class _TemplatePanelState extends State<TemplatePanel> {
         return GridView.builder(
           padding: const EdgeInsets.all(12.0),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.0,
+            crossAxisCount: 4,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 0.85,
           ),
           itemCount: templates.length,
           itemBuilder: (context, index) {
@@ -236,6 +242,7 @@ class _TemplatePanelState extends State<TemplatePanel> {
                   }
                 });
               },
+              onEdit: () => widget.onEditTemplate(template),
               onDelete: () async {
                 // Show confirmation dialog
                 final confirmed = await _confirmDelete(context, template);

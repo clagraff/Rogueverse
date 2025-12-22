@@ -144,7 +144,7 @@ class GameArea extends FlameGame
 
     // Open inspector for editing
     selectedEntity.value = _templateEditingEntity;
-    overlays.add('inspector');
+    overlays.add('inspectorPanel');
   }
 
   /// Sets up a listener to auto-save template changes.
@@ -169,6 +169,26 @@ class GameArea extends FlameGame
 
       await TemplateRegistry.instance.save(template);
     });
+  }
+
+  /// Starts editing an existing template by loading it into a temp world and opening the inspector.
+  Future<void> startTemplateEditing(BuildContext context, EntityTemplate template) async {
+    // Create temporary world and entity for editing
+    _templateEditingWorld = World([], {});
+    _templateEditingEntity = _templateEditingWorld!.add([]);
+    _editingTemplateId = template.id;
+
+    // Load template components into the temporary entity
+    for (final component in template.components) {
+      _templateEditingEntity!.upsertByName(component);
+    }
+
+    // Set up auto-save listener (reuse existing method)
+    _setupTemplateAutoSave();
+
+    // Open inspector for editing
+    selectedEntity.value = _templateEditingEntity;
+    overlays.add('inspectorPanel');
   }
 
   /// Shows a dialog to input a template name.

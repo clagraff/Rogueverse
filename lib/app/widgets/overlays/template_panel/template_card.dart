@@ -19,12 +19,16 @@ class TemplateCard extends StatefulWidget {
   /// Callback when the delete button is pressed.
   final VoidCallback onDelete;
 
+  /// Callback when the edit button is pressed.
+  final VoidCallback onEdit;
+
   const TemplateCard({
     super.key,
     required this.template,
     required this.isSelected,
     required this.onTap,
     required this.onDelete,
+    required this.onEdit,
   });
 
   @override
@@ -66,7 +70,7 @@ class _TemplateCardState extends State<TemplateCard> {
                   // Icon area
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.all(8.0),
                       child: _buildIcon(context),
                     ),
                   ),
@@ -74,8 +78,8 @@ class _TemplateCardState extends State<TemplateCard> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 8,
+                      horizontal: 4,
+                      vertical: 6,
                     ),
                     decoration: BoxDecoration(
                       color: widget.isSelected
@@ -88,7 +92,7 @@ class _TemplateCardState extends State<TemplateCard> {
                     ),
                     child: Text(
                       widget.template.displayName,
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.textTheme.labelSmall?.copyWith(
                         fontWeight: widget.isSelected
                             ? FontWeight.w600
                             : FontWeight.normal,
@@ -103,6 +107,31 @@ class _TemplateCardState extends State<TemplateCard> {
                   ),
                 ],
               ),
+              // Edit button (shows on hover)
+              if (_isHovering)
+                Positioned(
+                  top: 4,
+                  right: 26,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: widget.onEdit,
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surface.withValues(alpha: 0.9),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(
+                          Icons.edit_outlined,
+                          size: 14,
+                          color: colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               // Delete button (shows on hover)
               if (_isHovering)
                 Positioned(
@@ -117,14 +146,14 @@ class _TemplateCardState extends State<TemplateCard> {
                       },
                       borderRadius: BorderRadius.circular(16),
                       child: Container(
-                        padding: const EdgeInsets.all(4),
+                        padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
                           color: colorScheme.surface.withValues(alpha: 0.9),
                           shape: BoxShape.circle,
                         ),
                         child: Icon(
                           Icons.delete_outline,
-                          size: 18,
+                          size: 14,
                           color: colorScheme.error,
                         ),
                       ),
@@ -149,7 +178,7 @@ class _TemplateCardState extends State<TemplateCard> {
     if (renderable == null) {
       return Icon(
         Icons.help_outline,
-        size: 48,
+        size: 32,
         color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
       );
     }
@@ -186,14 +215,14 @@ class _SafeSvgPicture extends StatelessWidget {
           // Final fallback: show icon
           return Icon(
             fallbackIcon,
-            size: 48,
+            size: 32,
             color: Theme.of(context).colorScheme.error.withValues(alpha: 0.5),
           );
         } else {
           // Loading
           return Icon(
             Icons.image_outlined,
-            size: 48,
+            size: 32,
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
           );
         }
@@ -206,8 +235,8 @@ class _SafeSvgPicture extends StatelessWidget {
       // Try to load the primary asset
       return SvgPicture.asset(
         "assets/$assetPath",
-        width: 48,
-        height: 48,
+        width: 32,
+        height: 32,
         fit: BoxFit.contain,
       );
     } catch (e) {
@@ -218,8 +247,8 @@ class _SafeSvgPicture extends StatelessWidget {
       try {
         return SvgPicture.asset(
           'sprites/default.svg',
-          width: 48,
-          height: 48,
+          width: 32,
+          height: 32,
           fit: BoxFit.contain,
         );
       } catch (e2) {

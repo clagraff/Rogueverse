@@ -111,6 +111,9 @@ class _ApplicationState extends State<Application> {
                         onCreateTemplate: () async {
                           await _game.startTemplateCreation(context);
                         },
+                        onEditTemplate: (template) async {
+                          await _game.startTemplateEditing(context, template);
+                        },
                         onClose: () {
                           _game.overlays.remove('templatePanel');
                         },
