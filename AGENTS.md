@@ -8,6 +8,13 @@
 - `dart run build_runner build` - Generate mapper files for dart_mappable
 - `dart tools/barrel_generator.dart` - Generate barrel exports
 
+The app should NEVER be ran (`flutter run`) without explicit instructions to
+do so. 
+Prefer `flutter analyze` or `flutter build` over `flutter run` in almost all cases.
+
+For `flutter analyze`, prefer running it over the specific files changed (if any)
+instead of the whole project for speed & efficiency.
+
 ## Code Style
 
 ### Imports

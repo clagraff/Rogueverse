@@ -81,15 +81,31 @@ class _TemplatePanelState extends State<TemplatePanel> {
       focusNode: _focusNode,
       autofocus: false, // Don't auto-focus on every rebuild
       onKeyEvent: (event) {
-        // Process Ctrl+E to close the panel
-        if (event is KeyDownEvent &&
-            event.logicalKey == LogicalKeyboardKey.keyE &&
-            (HardwareKeyboard.instance.isControlPressed)) {
-          // Determine if a text input field currently has focus
-          final currentFocus = FocusScope.of(context).focusedChild;
+        if (event is! KeyDownEvent) return;
 
+        // Determine if a text input field currently has focus
+        final currentFocus = FocusScope.of(context).focusedChild;
+        final isTextFieldFocused = currentFocus != null && currentFocus != _focusNode;
+
+        // Handle ESC key
+        if (event.logicalKey == LogicalKeyboardKey.escape) {
+          // Don't handle ESC if a text field has focus (let it unfocus naturally)
+          if (isTextFieldFocused) return;
+
+          // If a template is selected, deselect it first
+          if (widget.selectedTemplateNotifier.value != null) {
+            widget.selectedTemplateNotifier.value = null;
+          } else {
+            // If no template selected, close the panel
+            widget.onClose();
+          }
+        }
+
+        // Process Ctrl+E to close the panel
+        if (event.logicalKey == LogicalKeyboardKey.keyE &&
+            (HardwareKeyboard.instance.isControlPressed)) {
           // Allow text fields to handle Ctrl+E for unfocusing; otherwise close the panel
-          if (currentFocus == null || currentFocus == _focusNode) {
+          if (!isTextFieldFocused) {
             widget.onClose();
           }
         }

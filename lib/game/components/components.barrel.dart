@@ -1,6 +1,13 @@
 export 'agent.dart';
 export 'agent_health_bar.dart';
+export 'entity_drag_mover.dart';
+export 'entity_hover_tracker.dart';
+export 'entity_tap_component.dart';
+export 'focus_on_tap_component.dart';
+export 'grid_tap.dart';
 export 'opponent.dart';
+export 'placement_preview.dart';
 export 'player.dart';
 export 'svg_component.dart';
 export 'template_entity_spawner.dart';
+export 'template_panel_toggle.dart';

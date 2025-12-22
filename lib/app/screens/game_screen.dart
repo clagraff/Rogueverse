@@ -24,6 +24,7 @@ import 'package:rogueverse/game/components/entity_hover_tracker.dart';
 import 'package:rogueverse/game/components/player.dart';
 import 'package:rogueverse/game/components/template_panel_toggle.dart';
 import 'package:rogueverse/game/components/template_entity_spawner.dart';
+import 'package:rogueverse/game/components/entity_drag_mover.dart';
 import 'package:rogueverse/game/hud/health_bar.dart';
 
 class GameScreen extends flame.World with Disposer {
@@ -55,6 +56,13 @@ class GameScreen extends flame.World with Disposer {
     add(TemplateEntitySpawner(
       world: game.currentWorld,
       templateNotifier: game.selectedTemplate,
+    ));
+
+    // Create entity drag mover (allows dragging entities when no template selected)
+    add(EntityDragMover(
+      world: game.currentWorld,
+      templateNotifier: game.selectedTemplate,
+      game: game,
     ));
 
     var gridNotifier = ValueNotifier<XY>(XY(0, 0));

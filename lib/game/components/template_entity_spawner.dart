@@ -78,9 +78,22 @@ class TemplateEntitySpawner extends PositionComponent
         _preview = PlacementPreview(svgAssetPath: renderable.svgAssetPath);
         add(_preview!);
       }
+    } else {
+      // Template deselected - exit placement/removal mode completely
+      exitPlacementMode();
     }
-    // Note: When template becomes null, we don't automatically remove preview
-    // It might be in removal mode (showing removal.svg)
+  }
+
+  /// Exits placement mode completely, clearing all state and preview
+  void exitPlacementMode() {
+    _clearState();
+    _hoverPosition = null;
+    _lastHoverUpdate = null;
+
+    if (_preview != null) {
+      _preview!.removeFromParent();
+      _preview = null;
+    }
   }
 
   /// Only intercept events when in placement or removal mode
@@ -229,16 +242,8 @@ class TemplateEntitySpawner extends PositionComponent
       if (_isActive) {
         _logger.info('[ESC] Exiting editor mode');
 
-        // Clear drag state
-        _clearState();
-
-        // Clear preview (exits removal mode or deselects template)
-        if (_preview != null) {
-          _preview!.removeFromParent();
-          _preview = null;
-        }
-
-        // Clear template
+        // Exit placement mode and clear template
+        exitPlacementMode();
         templateNotifier.value = null;
 
         _logger.info('[ESC] Editor mode exited successfully');
