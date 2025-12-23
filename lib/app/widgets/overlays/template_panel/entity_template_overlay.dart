@@ -150,7 +150,7 @@ class _TemplatePanelState extends State<TemplatePanel> {
   /// Builds the panel header with "Templates" title.
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         border: Border(
@@ -162,7 +162,10 @@ class _TemplatePanelState extends State<TemplatePanel> {
       ),
       child: Text(
         'Templates',
-        style: Theme.of(context).textTheme.titleMedium,
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -170,19 +173,25 @@ class _TemplatePanelState extends State<TemplatePanel> {
   /// Builds the search bar for filtering templates.
   Widget _buildSearchBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(8.0),
       child: TextField(
         controller: _searchController,
+        style: const TextStyle(fontSize: 12),
         decoration: InputDecoration(
-          hintText: 'Search templates...',
-          prefixIcon: const Icon(Icons.search),
+          hintText: 'Search...',
+          hintStyle: const TextStyle(fontSize: 12),
+          prefixIcon: const Icon(Icons.search, size: 18),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(6),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          isDense: true,
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
-                  icon: const Icon(Icons.clear),
+                  icon: const Icon(Icons.clear, size: 16),
+                  iconSize: 16,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
                   onPressed: () {
                     _searchController.clear();
                   },
@@ -198,29 +207,32 @@ class _TemplatePanelState extends State<TemplatePanel> {
     if (templates.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.inventory_2_outlined,
-                size: 64,
+                size: 40,
                 color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.3),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
               Text(
                 _searchQuery.isEmpty ? 'No templates yet' : 'No templates found',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ).copyWith(
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
               if (_searchQuery.isEmpty) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   'Create your first template!',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
+                  style: const TextStyle(fontSize: 11).copyWith(
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+                  ),
                 ),
               ],
             ],
@@ -233,12 +245,12 @@ class _TemplatePanelState extends State<TemplatePanel> {
       valueListenable: widget.selectedTemplateNotifier,
       builder: (context, selectedTemplate, child) {
         return GridView.builder(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(8.0),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 0.85,
+            crossAxisSpacing: 6,
+            mainAxisSpacing: 6,
+            childAspectRatio: 0.9,
           ),
           itemCount: templates.length,
           itemBuilder: (context, index) {
@@ -280,7 +292,7 @@ class _TemplatePanelState extends State<TemplatePanel> {
   /// Builds the "Create Template" button at the bottom.
   Widget _buildCreateButton(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(8.0),
       decoration: BoxDecoration(
         border: Border(
           top: BorderSide(
@@ -293,10 +305,11 @@ class _TemplatePanelState extends State<TemplatePanel> {
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: widget.onCreateTemplate,
-          icon: const Icon(Icons.add),
-          label: const Text('Create Template'),
+          icon: const Icon(Icons.add, size: 16),
+          label: const Text('Create Template', style: TextStyle(fontSize: 12)),
           style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 12),
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            minimumSize: const Size(0, 32),
           ),
         ),
       ),

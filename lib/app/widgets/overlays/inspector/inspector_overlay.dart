@@ -146,7 +146,7 @@ class _InspectorPanel extends StatelessWidget {
                 final presentComponents = ComponentRegistry.getPresent(entity);
 
                 return ListView(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  padding: const EdgeInsets.symmetric(vertical: 2),
                   children: [
                     // Display a section for each component present on the entity
                     ...presentComponents.map(
@@ -170,7 +170,7 @@ class _InspectorPanel extends StatelessWidget {
   /// Builds the panel header with "Properties" title.
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         border: Border(
@@ -182,7 +182,10 @@ class _InspectorPanel extends StatelessWidget {
       ),
       child: Text(
         'Properties',
-        style: Theme.of(context).textTheme.titleMedium,
+        style: const TextStyle(
+          fontSize: 14,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -220,19 +223,20 @@ class _AddComponentButton extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.all(12.0),
+      padding: const EdgeInsets.all(8.0),
       child: PopupMenuButton<ComponentMetadata>(
         onSelected: (metadata) => _addComponent(context, metadata),
         itemBuilder: (context) => available
             .map(
               (metadata) => PopupMenuItem<ComponentMetadata>(
                 value: metadata,
-                child: Text(metadata.componentName),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Text(metadata.componentName, style: const TextStyle(fontSize: 12)),
               ),
             )
             .toList(),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
             border: Border.all(color: Theme.of(context).colorScheme.outline),
             borderRadius: BorderRadius.circular(4),
@@ -242,15 +246,17 @@ class _AddComponentButton extends StatelessWidget {
             children: [
               Icon(
                 Icons.add,
-                size: 18,
+                size: 14,
                 color: Theme.of(context).colorScheme.primary,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
                 'Add Component',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
+                style: const TextStyle(
+                  fontSize: 12,
+                ).copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
             ],
           ),

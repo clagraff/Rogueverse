@@ -12,11 +12,11 @@ class PropertyPanelThemeData {
   final EdgeInsetsGeometry rowPadding;
 
   const PropertyPanelThemeData({
-    this.minWidth = 260,
-    this.maxWidth = 420,
-    this.labelColumnWidth = 140,
-    this.headerPadding = const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-    this.rowPadding = const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    this.minWidth = 200,
+    this.maxWidth = 320,
+    this.labelColumnWidth = 100,
+    this.headerPadding = const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    this.rowPadding = const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
   });
 }
 
@@ -85,7 +85,7 @@ class StringPropertyItem extends PropertyItem {
       enabled: !readOnly,
       maxLines: multiline ? null : 1,
       decoration: _inputDecoration(context, suffixText: suffixText, hintText: hintText),
-      style: Theme.of(context).textTheme.bodySmall,
+      style: const TextStyle(fontSize: 12),
       onFieldSubmitted: onChanged,
     );
   }
@@ -115,7 +115,7 @@ class IntPropertyItem extends PropertyItem {
       enabled: !readOnly,
       keyboardType: TextInputType.number,
       decoration: _inputDecoration(context, suffixText: suffixText),
-      style: Theme.of(context).textTheme.bodySmall,
+      style: const TextStyle(fontSize: 12),
       onFieldSubmitted: (text) {
         final parsed = int.tryParse(text);
         if (parsed != null) {
@@ -150,7 +150,7 @@ class DoublePropertyItem extends PropertyItem {
       enabled: !readOnly,
       keyboardType: TextInputType.number,
       decoration: _inputDecoration(context, suffixText: suffixText),
-      style: Theme.of(context).textTheme.bodySmall,
+      style: const TextStyle(fontSize: 12),
       onFieldSubmitted: (text) {
         final parsed = double.tryParse(text);
         if (parsed != null) {
@@ -213,6 +213,7 @@ class EnumPropertyItem<T> extends PropertyItem {
       value: current,
       isDense: true,
       isExpanded: true, // avoid internal overflow
+      style: const TextStyle(fontSize: 12, color: Colors.white),
       items: options
           .map(
             (o) => DropdownMenuItem<T>(
@@ -221,6 +222,7 @@ class EnumPropertyItem<T> extends PropertyItem {
             alignment: Alignment.centerLeft,
             child: Text(
               optionLabelBuilder(o),
+              style: const TextStyle(fontSize: 12),
               softWrap: false,
               overflow: TextOverflow.ellipsis,
             ),
@@ -258,7 +260,7 @@ class ReadonlyPropertyItem extends PropertyItem {
       readOnly: true,
       enabled: false,
       decoration: _inputDecoration(context, suffixText: suffixText),
-      style: Theme.of(context).textTheme.bodySmall,
+      style: const TextStyle(fontSize: 12),
     );
   }
 }
@@ -305,8 +307,10 @@ InputDecoration _inputDecoration(
   return InputDecoration(
     isDense: true,
     hintText: hintText,
+    hintStyle: const TextStyle(fontSize: 12),
     suffixText: suffixText,
-    contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+    suffixStyle: const TextStyle(fontSize: 12),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
     border: OutlineInputBorder(
       borderRadius: BorderRadius.circular(4),
       borderSide: BorderSide(color: scheme.outlineVariant),
@@ -365,9 +369,9 @@ class PropertyPanel extends StatelessWidget {
                   ),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'Properties',
-                style: Theme.of(context).textTheme.titleMedium,
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
             ),
             Expanded(
@@ -422,8 +426,8 @@ class _PropertySectionState extends State<PropertySection> {
         InkWell(
           onTap: () => setState(() => _expanded = !_expanded),
           child: Container(
-            height: 32,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            height: 26,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             color: scheme.surfaceVariant.withOpacity(0.6),
             child: Row(
               children: [
@@ -431,15 +435,12 @@ class _PropertySectionState extends State<PropertySection> {
                   _expanded
                       ? Icons.keyboard_arrow_down
                       : Icons.keyboard_arrow_right,
-                  size: 18,
+                  size: 14,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   widget.section.title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelLarge
-                      ?.copyWith(fontWeight: FontWeight.w600),
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
                 ),
               ],
             ),
@@ -479,10 +480,10 @@ class PropertyRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final labelStyle = Theme.of(context)
-        .textTheme
-        .bodySmall!
-        .copyWith(color: scheme.onSurface.withOpacity(0.9));
+    final labelStyle = TextStyle(
+      fontSize: 12,
+      color: scheme.onSurface.withOpacity(0.9),
+    );
 
     return Container(
       padding: theme.rowPadding,
@@ -497,7 +498,7 @@ class PropertyRow extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           Expanded(
             child: item.buildEditor(context),
           ),

@@ -68,8 +68,8 @@ class _ComponentSectionState extends State<ComponentSection> {
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
-      height: 32,
-      padding: const EdgeInsets.only(left: 12, right: 4),
+      height: 26,
+      padding: const EdgeInsets.only(left: 8, right: 2),
       color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
       child: Row(
         children: [
@@ -81,14 +81,15 @@ class _ComponentSectionState extends State<ComponentSection> {
                 children: [
                   Icon(
                     expanded ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_right,
-                    size: 18,
+                    size: 14,
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   Text(
                     title,
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ],
               ),
@@ -96,7 +97,7 @@ class _ComponentSectionState extends State<ComponentSection> {
           ),
           // Delete button
           IconButton(
-            icon: const Icon(Icons.close, size: 16),
+            icon: const Icon(Icons.close, size: 13),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             onPressed: onDelete,

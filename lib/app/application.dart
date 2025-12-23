@@ -96,7 +96,7 @@ class _ApplicationState extends State<Application> {
                   "inspectorPanel": (context, game) => Align(
                     alignment: Alignment.centerRight,
                     child: SizedBox(
-                      width: 320,
+                      width: 260,
                       child: InspectorPanel(
                         entityNotifier: (_game).selectedEntity,
                       ),
@@ -105,7 +105,7 @@ class _ApplicationState extends State<Application> {
                   "templatePanel": (context, game) => Align(
                     alignment: Alignment.centerLeft,
                     child: SizedBox(
-                      width: 320,
+                      width: 260,
                       child: TemplatePanel(
                         selectedTemplateNotifier: _game.selectedTemplate,
                         onCreateTemplate: () async {
