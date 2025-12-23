@@ -4,6 +4,7 @@
 /// how each component type is displayed and managed in the inspector.
 library;
 
+export 'direction_section.dart';
 export 'event_sections.dart';
 export 'health_section.dart';
 export 'inventory_section.dart';

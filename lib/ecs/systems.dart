@@ -65,6 +65,8 @@ class CollisionSystem extends System with CollisionSystemMappable {
       });
 
       if (blocked) {
+        // Update direction even when movement is blocked
+        e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
         e.upsert(BlockedMove(dest));
         e.remove<MoveByIntent>();
       }
@@ -94,6 +96,9 @@ class MovementSystem extends System with MovementSystemMappable {
 
       e.upsert<LocalPosition>(
           LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy));
+
+      // Update direction based on movement
+      e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
 
       e.upsert(DidMove(from: from, to: to));
       e.remove<MoveByIntent>();

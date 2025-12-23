@@ -7,6 +7,76 @@
 
 part of 'components.dart';
 
+class CompassDirectionMapper extends EnumMapper<CompassDirection> {
+  CompassDirectionMapper._();
+
+  static CompassDirectionMapper? _instance;
+  static CompassDirectionMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CompassDirectionMapper._());
+    }
+    return _instance!;
+  }
+
+  static CompassDirection fromValue(dynamic value) {
+    ensureInitialized();
+    return MapperContainer.globals.fromValue(value);
+  }
+
+  @override
+  CompassDirection decode(dynamic value) {
+    switch (value) {
+      case r'north':
+        return CompassDirection.north;
+      case r'south':
+        return CompassDirection.south;
+      case r'east':
+        return CompassDirection.east;
+      case r'west':
+        return CompassDirection.west;
+      case r'northeast':
+        return CompassDirection.northeast;
+      case r'northwest':
+        return CompassDirection.northwest;
+      case r'southeast':
+        return CompassDirection.southeast;
+      case r'southwest':
+        return CompassDirection.southwest;
+      default:
+        throw MapperException.unknownEnumValue(value);
+    }
+  }
+
+  @override
+  dynamic encode(CompassDirection self) {
+    switch (self) {
+      case CompassDirection.north:
+        return r'north';
+      case CompassDirection.south:
+        return r'south';
+      case CompassDirection.east:
+        return r'east';
+      case CompassDirection.west:
+        return r'west';
+      case CompassDirection.northeast:
+        return r'northeast';
+      case CompassDirection.northwest:
+        return r'northwest';
+      case CompassDirection.southeast:
+        return r'southeast';
+      case CompassDirection.southwest:
+        return r'southwest';
+    }
+  }
+}
+
+extension CompassDirectionMapperExtension on CompassDirection {
+  String toValue() {
+    CompassDirectionMapper.ensureInitialized();
+    return MapperContainer.globals.toValue<CompassDirection>(this) as String;
+  }
+}
+
 class ComponentMapper extends ClassMapperBase<Component> {
   ComponentMapper._();
 
@@ -14,6 +84,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
   static ComponentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = ComponentMapper._());
+      DirectionMapper.ensureInitialized();
       LifetimeMapper.ensureInitialized();
       BeforeTickMapper.ensureInitialized();
       AfterTickMapper.ensureInitialized();
@@ -81,6 +152,127 @@ abstract class ComponentCopyWith<$R, $In extends Component, $Out>
     implements ClassCopyWith<$R, $In, $Out> {
   $R call();
   ComponentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class DirectionMapper extends SubClassMapperBase<Direction> {
+  DirectionMapper._();
+
+  static DirectionMapper? _instance;
+  static DirectionMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DirectionMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      CompassDirectionMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Direction';
+
+  static CompassDirection _$facing(Direction v) => v.facing;
+  static const Field<Direction, CompassDirection> _f$facing = Field(
+    'facing',
+    _$facing,
+  );
+
+  @override
+  final MappableFields<Direction> fields = const {#facing: _f$facing};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Direction';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Direction _instantiate(DecodingData data) {
+    return Direction(data.dec(_f$facing));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Direction fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Direction>(map);
+  }
+
+  static Direction fromJson(String json) {
+    return ensureInitialized().decodeJson<Direction>(json);
+  }
+}
+
+mixin DirectionMappable {
+  String toJson() {
+    return DirectionMapper.ensureInitialized().encodeJson<Direction>(
+      this as Direction,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DirectionMapper.ensureInitialized().encodeMap<Direction>(
+      this as Direction,
+    );
+  }
+
+  DirectionCopyWith<Direction, Direction, Direction> get copyWith =>
+      _DirectionCopyWithImpl<Direction, Direction>(
+        this as Direction,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DirectionMapper.ensureInitialized().stringifyValue(
+      this as Direction,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DirectionMapper.ensureInitialized().equalsValue(
+      this as Direction,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DirectionMapper.ensureInitialized().hashValue(this as Direction);
+  }
+}
+
+extension DirectionValueCopy<$R, $Out> on ObjectCopyWith<$R, Direction, $Out> {
+  DirectionCopyWith<$R, Direction, $Out> get $asDirection =>
+      $base.as((v, t, t2) => _DirectionCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DirectionCopyWith<$R, $In extends Direction, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({CompassDirection? facing});
+  DirectionCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DirectionCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Direction, $Out>
+    implements DirectionCopyWith<$R, Direction, $Out> {
+  _DirectionCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Direction> $mapper =
+      DirectionMapper.ensureInitialized();
+  @override
+  $R call({CompassDirection? facing}) =>
+      $apply(FieldCopyWithData({if (facing != null) #facing: facing}));
+  @override
+  Direction $make(CopyWithData data) =>
+      Direction(data.get(#facing, or: $value.facing));
+
+  @override
+  DirectionCopyWith<$R2, Direction, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DirectionCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class LifetimeMapper extends SubClassMapperBase<Lifetime> {

@@ -27,6 +27,7 @@ void initializeMappers() {
   p3.ActionNodeMapper.ensureInitialized();
   p4.NodeMapper.ensureInitialized();
   p5.ComponentMapper.ensureInitialized();
+  p5.DirectionMapper.ensureInitialized();
   p5.LifetimeMapper.ensureInitialized();
   p5.BeforeTickMapper.ensureInitialized();
   p5.AfterTickMapper.ensureInitialized();
@@ -54,6 +55,7 @@ void initializeMappers() {
   p5.PickupableMapper.ensureInitialized();
   p5.PickupIntentMapper.ensureInitialized();
   p5.PickedUpMapper.ensureInitialized();
+  p5.CompassDirectionMapper.ensureInitialized();
   p6.EntityTemplateMapper.ensureInitialized();
   p7.SystemMapper.ensureInitialized();
   p7.CollisionSystemMapper.ensureInitialized();

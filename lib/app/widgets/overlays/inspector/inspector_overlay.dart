@@ -45,6 +45,7 @@ class _InspectorPanelState extends State<InspectorPanel> {
       // Core gameplay components
       ComponentRegistry.register(NameMetadata());
       ComponentRegistry.register(LocalPositionMetadata());
+      ComponentRegistry.register(DirectionMetadata());
       ComponentRegistry.register(HealthMetadata());
       ComponentRegistry.register(RenderableMetadata());
 

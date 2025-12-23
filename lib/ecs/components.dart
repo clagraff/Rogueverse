@@ -8,6 +8,45 @@ abstract class Component with ComponentMappable {
   String get componentType;
 }
 
+/// Enum representing the 8 compass directions.
+@MappableEnum()
+enum CompassDirection {
+  north,      // (0, -1)
+  south,      // (0, 1)
+  east,       // (1, 0)
+  west,       // (-1, 0)
+  northeast,  // (1, -1)
+  northwest,  // (-1, -1)
+  southeast,  // (1, 1)
+  southwest   // (-1, 1)
+}
+
+/// Component that tracks which direction an entity is facing.
+///
+/// Updated whenever an entity attempts to move (even if blocked).
+@MappableClass()
+class Direction with DirectionMappable implements Component {
+  final CompassDirection facing;
+
+  Direction(this.facing);
+
+  @override
+  String get componentType => "Direction";
+
+  /// Calculate direction from a movement offset (dx, dy).
+  static CompassDirection fromOffset(int dx, int dy) {
+    if (dx == 0 && dy < 0) return CompassDirection.north;
+    if (dx == 0 && dy > 0) return CompassDirection.south;
+    if (dx > 0 && dy == 0) return CompassDirection.east;
+    if (dx < 0 && dy == 0) return CompassDirection.west;
+    if (dx > 0 && dy < 0) return CompassDirection.northeast;
+    if (dx < 0 && dy < 0) return CompassDirection.northwest;
+    if (dx > 0 && dy > 0) return CompassDirection.southeast;
+    if (dx < 0 && dy > 0) return CompassDirection.southwest;
+    return CompassDirection.south; // Default fallback
+  }
+}
+
 /// Base class for components with a limited lifespan that can expire
 /// after a certain number of ticks. When lifetime reaches 0, the component
 /// is removed when processed.
