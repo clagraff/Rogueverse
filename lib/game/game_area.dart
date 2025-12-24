@@ -26,6 +26,10 @@ class GameArea extends FlameGame
   /// The current title displayed in the app bar.
   final ValueNotifier<String> title = ValueNotifier('');
 
+  /// The entity ID whose perspective we're viewing from (for vision-based rendering).
+  /// Defaults to the player's entity ID. Used to determine which entities are visible.
+  final ValueNotifier<int?> observerEntityId = ValueNotifier(null);
+
   /// Temporary world used for editing templates in the inspector.
   World? _templateEditingWorld;
 

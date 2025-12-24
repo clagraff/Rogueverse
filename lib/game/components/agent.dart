@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flame/components.dart' hide World;
 import 'package:flame/effects.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +15,12 @@ import 'package:rogueverse/game/game_area.dart';
 class Agent extends SvgTileComponent with HasVisibility, Disposer {
   final World world;
   final Entity entity;
+
+  // Vision-based rendering state
+  StreamSubscription<Change>? _visionSubscription;
+  VoidCallback? _observerChangeListener;
+  int? _currentObserverId;
+  Vector2? _lastSeenPosition;
 
   Agent({
     required this.world,
@@ -58,22 +66,108 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
     add(AgentHealthBar(entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
 
+    // Set up vision-based rendering
+    _setupVisionTracking();
+
     return super.onLoad();
+  }
+
+  /// Sets up tracking of the observer entity to determine visibility and opacity.
+  void _setupVisionTracking() {
+    final game = parent?.findGame() as GameArea?;
+    if (game == null) return;
+
+    // Listen for observer changes
+    _observerChangeListener = () {
+      final newObserverId = game.observerEntityId.value;
+      if (newObserverId != _currentObserverId) {
+        _currentObserverId = newObserverId;
+        _attachToObserver(newObserverId);
+      }
+    };
+    
+    game.observerEntityId.addListener(_observerChangeListener!);
+    
+    // Initial setup
+    if (game.observerEntityId.value != null) {
+      _currentObserverId = game.observerEntityId.value;
+      _attachToObserver(_currentObserverId);
+    }
+  }
+
+  /// Attaches to a new observer entity's VisibleEntities component.
+  void _attachToObserver(int? observerId) {
+    // Cancel previous subscription
+    _visionSubscription?.cancel();
+    _visionSubscription = null;
+
+    if (observerId == null) {
+      opacity = 1.0; // Default to visible if no observer
+      return;
+    }
+
+    // Subscribe to the observer's VisibleEntities changes
+    _visionSubscription = world
+        .onEntityOnComponent<VisibleEntities>(observerId)
+        .listen((_) => _updateVisibility(observerId));
+
+    // Initial visibility update
+    _updateVisibility(observerId);
+  }
+
+  /// Updates this agent's opacity based on visibility from the observer's perspective.
+  void _updateVisibility(int observerId) {
+    final observer = world.getEntity(observerId);
+    final visibleEntities = observer.get<VisibleEntities>();
+    final visionMemory = observer.get<VisionMemory>();
+
+    // The observer itself is always fully visible
+    if (entity.id == observerId) {
+      opacity = 1.0;
+      return;
+    }
+
+    // Check if currently visible
+    if (visibleEntities?.entityIds.contains(entity.id) ?? false) {
+      opacity = 1.0;
+      // Update last-seen position
+      final localPos = entity.get<LocalPosition>();
+      if (localPos != null) {
+        _lastSeenPosition = Vector2(localPos.x * 32.0, localPos.y * 32.0);
+      }
+      return;
+    }
+
+    // Check if in vision memory (seen before but not currently visible)
+    if (visionMemory?.hasSeenEntity(entity.id) ?? false) {
+      opacity = 0.3; // Very transparent for remembered entities
+      return;
+    }
+
+    // Not visible and never seen
+    opacity = 0.0; // Invisible
   }
 
 
   @override void update(double dt) {
     super.update(dt);
 
-    var localPos = entity.get<LocalPosition>();
-    if (localPos != null) {
-      var dx = localPos.x * 32.0;
-      var dy = localPos.y * 32.0;
+    // Only update position if the entity is currently visible
+    // Entities in memory should remain frozen at their last-seen position
+    if (_shouldUpdatePosition()) {
+      var localPos = entity.get<LocalPosition>();
+      if (localPos != null) {
+        var dx = localPos.x * 32.0;
+        var dy = localPos.y * 32.0;
 
-      if (position != Vector2(dx, dy) && !children.any((c) => c is MoveToEffect)) {
-        add(MoveToEffect(Vector2(localPos.x * 32.0, localPos.y * 32.0),
-            EffectController(duration: 0.1)));
+        if (position != Vector2(dx, dy) && !children.any((c) => c is MoveToEffect)) {
+          add(MoveToEffect(Vector2(localPos.x * 32.0, localPos.y * 32.0),
+              EffectController(duration: 0.1)));
+        }
       }
+    } else if (_lastSeenPosition != null && position != _lastSeenPosition) {
+      // Freeze at last-seen position for memory-only entities
+      position = _lastSeenPosition!;
     }
 
     if (!entity.has<Renderable>()) {
@@ -86,8 +180,34 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     }
   }
 
+  /// Returns true if this entity's position should be updated from ECS.
+  /// Only entities that are currently visible should have their positions updated.
+  bool _shouldUpdatePosition() {
+    final game = parent?.findGame() as GameArea?;
+    if (game == null) return true; // Default to updating if no game context
+
+    final observerId = game.observerEntityId.value;
+    if (observerId == null) return true; // Default to updating if no observer
+
+    // The observer itself always updates
+    if (entity.id == observerId) return true;
+
+    // Check if currently visible
+    final observer = world.getEntity(observerId);
+    final visibleEntities = observer.get<VisibleEntities>();
+    
+    return visibleEntities?.entityIds.contains(entity.id) ?? true;
+  }
+
   @override
   void onRemove() {
+    // Clean up vision tracking subscriptions
+    _visionSubscription?.cancel();
+    final game = parent?.findGame() as GameArea?;
+    if (game != null && _observerChangeListener != null) {
+      game.observerEntityId.removeListener(_observerChangeListener!);
+    }
+    
     disposeAll();
     super.onRemove();
   }

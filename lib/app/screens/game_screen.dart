@@ -115,6 +115,9 @@ class GameScreen extends flame.World with Disposer {
 
     var playerId = game.currentWorld.get<PlayerControlled>().entries.first.key;
 
+    // Set the observer entity ID to the player (for vision-based rendering)
+    game.observerEntityId.value = playerId;
+
     // Add vision cone for the player (renders first = below everything)
     add(VisionConeComponent(
       world: game.currentWorld,
