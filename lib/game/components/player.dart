@@ -11,7 +11,6 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';
-import 'package:rogueverse/game/components/vision_cone_overlay.dart';
 import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/main.dart';
 

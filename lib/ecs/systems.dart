@@ -259,6 +259,7 @@ class VisionSystem extends System with VisionSystemMappable {
       final visibleEntityIds = _findEntitiesAtPositions(world, visibleTiles, observerId);
 
       // Update observer's VisibleEntities component
+      print('[VisionSystem] Upserting VisibleEntities for entity $observerId: ${visibleTiles.length} tiles, pos=${observerPos.x},${observerPos.y}');
       observer.upsert(VisibleEntities(
         entityIds: visibleEntityIds,
         visibleTiles: visibleTiles,
@@ -309,7 +310,9 @@ class VisionSystem extends System with VisionSystemMappable {
       LocalPosition origin, int angleDegrees, int distance) {
     final angleRad = angleDegrees * (3.14159265359 / 180.0);
     final endX = origin.x + (distance * cos(angleRad)).round();
-    final endY = origin.y + (distance * sin(angleRad)).round();
+    // Negate Y because screen coordinates have Y increasing downward,
+    // but sin() assumes Y increases upward (standard math coordinates)
+    final endY = origin.y - (distance * sin(angleRad)).round();
 
     return _bresenhamLine(origin.x, origin.y, endX, endY);
   }

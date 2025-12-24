@@ -11,3 +11,4 @@ export 'player.dart';
 export 'svg_component.dart';
 export 'template_entity_spawner.dart';
 export 'template_panel_toggle.dart';
+export 'vision_cone.dart';

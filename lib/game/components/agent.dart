@@ -8,15 +8,11 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent_health_bar.dart';
 import 'package:rogueverse/game/components/svg_component.dart';
-import 'package:rogueverse/game/components/vision_cone_overlay.dart';
 import 'package:rogueverse/game/game_area.dart';
-import 'package:rogueverse/game/vision_camera.dart';
 
 class Agent extends SvgTileComponent with HasVisibility, Disposer {
   final World world;
   final Entity entity;
-  
-  VoidCallback? _visionListener;
 
   Agent({
     required this.world,
@@ -62,48 +58,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
     add(AgentHealthBar(entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
 
-    // Set up vision camera listener
-    final gameArea = findParent<GameArea>();
-    if (gameArea != null) {
-      _visionListener = () {
-        _updateVisibilityFromCamera(gameArea.visionCamera);
-      };
-      
-      gameArea.visionCamera.visibleEntities.addListener(_visionListener!);
-      gameArea.visionCamera.rememberedEntities.addListener(_visionListener!);
-      
-      // Initial visibility update
-      _updateVisibilityFromCamera(gameArea.visionCamera);
-    }
-
     return super.onLoad();
-  }
-  
-  void _updateVisibilityFromCamera(VisionCamera camera) {
-    if (camera.mode == VisionMode.showAll) {
-      // Show everything mode - all entities visible
-      isVisible = true;
-      paint.colorFilter = null;
-      return;
-    }
-    
-    final entityId = entity.id;
-    
-    if (camera.visibleEntities.value.contains(entityId)) {
-      // Currently visible
-      isVisible = true;
-      paint.colorFilter = null;
-    } else if (camera.rememberedEntities.value.contains(entityId)) {
-      // Previously seen but not currently visible
-      isVisible = true;
-      paint.colorFilter = ColorFilter.mode(
-        Colors.grey.withOpacity(0.6),
-        BlendMode.modulate,
-      );
-    } else {
-      // Never seen
-      isVisible = false;
-    }
   }
 
 
@@ -121,16 +76,6 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
       }
     }
 
-    // Auto-attach vision cone overlay when entity gains VisionRadius
-    if (entity.has<VisionRadius>() && !children.any((c) => c is VisionConeOverlay)) {
-      add(VisionConeOverlay(entity));
-    }
-
-    // Remove vision cone overlay when entity loses VisionRadius
-    if (!entity.has<VisionRadius>() && children.any((c) => c is VisionConeOverlay)) {
-      children.whereType<VisionConeOverlay>().first.removeFromParent();
-    }
-
     if (!entity.has<Renderable>()) {
       removeFromParent();
     }
@@ -143,15 +88,6 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
   @override
   void onRemove() {
-    // Clean up vision listener
-    if (_visionListener != null) {
-      final gameArea = findParent<GameArea>();
-      if (gameArea != null) {
-        gameArea.visionCamera.visibleEntities.removeListener(_visionListener!);
-        gameArea.visionCamera.rememberedEntities.removeListener(_visionListener!);
-      }
-    }
-    
     disposeAll();
     super.onRemove();
   }

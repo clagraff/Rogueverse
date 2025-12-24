@@ -1,30 +1,29 @@
-import 'dart:io';
 import 'dart:math';
 import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:rogueverse/game/game_area.dart';
+
 import 'package:rogueverse/ecs/ai/behaviors/behaviors.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
-import 'package:rogueverse/main.dart';
 import 'package:rogueverse/game/components/agent.dart';
+import 'package:rogueverse/game/components/entity_drag_mover.dart';
+import 'package:rogueverse/game/components/entity_hover_tracker.dart';
 import 'package:rogueverse/game/components/entity_tap_component.dart';
 import 'package:rogueverse/game/components/focus_on_tap_component.dart';
 import 'package:rogueverse/game/components/grid_tap.dart';
 import 'package:rogueverse/game/components/opponent.dart';
-import 'package:rogueverse/game/components/entity_hover_tracker.dart';
 import 'package:rogueverse/game/components/player.dart';
-import 'package:rogueverse/game/components/template_panel_toggle.dart';
 import 'package:rogueverse/game/components/template_entity_spawner.dart';
-import 'package:rogueverse/game/components/entity_drag_mover.dart';
+import 'package:rogueverse/game/components/template_panel_toggle.dart';
+import 'package:rogueverse/game/components/vision_cone.dart';
+import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/game/hud/health_bar.dart';
 
 class GameScreen extends flame.World with Disposer {
@@ -116,6 +115,12 @@ class GameScreen extends flame.World with Disposer {
 
     var playerId = game.currentWorld.get<PlayerControlled>().entries.first.key;
 
+    // Add vision cone for the player (renders first = below everything)
+    add(VisionConeComponent(
+      world: game.currentWorld,
+      observedEntityId: playerId,
+    )..priority = -1000);
+
     var healthHud = HealthBar();
     // TODO change to component notification.
     // game.currentWorld.eventBus.on<Health>(playerId).forEach((e) {
@@ -155,7 +160,8 @@ class GameScreen extends flame.World with Disposer {
       Inventory([]),
       InventoryMaxCount(5),
       Health(4, 5),
-      VisionRadius(radius: 7),
+      VisionRadius(radius: 7, fieldOfViewDegrees: 90),
+      Direction(CompassDirection.north),
     ]);
     reg.add([
       Name(name: "Snake"),

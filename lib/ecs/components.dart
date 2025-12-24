@@ -441,4 +441,3 @@ class VisionMemory with VisionMemoryMappable implements Component {
   }
 }
 
-// VisibilityState and VisibilityLevel removed - now using VisionCamera for visibility management
