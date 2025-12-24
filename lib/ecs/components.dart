@@ -368,3 +368,77 @@ class PickedUp extends BeforeTick with PickedUpMappable implements Component{
   @override
   String get componentType => "PickedUp";
 }
+
+// ============================================================================
+// Vision System Components
+// ============================================================================
+
+/// Marker component indicating this entity blocks line-of-sight.
+/// Entities with this component will prevent vision from passing through their tile.
+@MappableClass()
+class BlocksSight with BlocksSightMappable implements Component {
+  @override
+  String get componentType => "BlocksSight";
+}
+
+/// Defines an entity's vision capabilities.
+/// Entities with this component will have vision calculated by VisionSystem.
+@MappableClass()
+class VisionRadius with VisionRadiusMappable implements Component {
+  final int radius;              // Vision range in grid tiles
+  final int fieldOfViewDegrees;  // FOV angle (360 = omnidirectional, 90 = narrow cone)
+
+  VisionRadius({
+    required this.radius,
+    this.fieldOfViewDegrees = 360,
+  });
+
+  @override
+  String get componentType => "VisionRadius";
+}
+
+/// Stores what this entity can currently see.
+/// Updated by VisionSystem each tick.
+@MappableClass()
+class VisibleEntities with VisibleEntitiesMappable implements Component {
+  final Set<int> entityIds;           // IDs of entities currently visible
+  final Set<LocalPosition> visibleTiles;  // Grid positions in FOV
+
+  VisibleEntities({
+    Set<int>? entityIds,
+    Set<LocalPosition>? visibleTiles,
+  }) : entityIds = entityIds ?? {},
+       visibleTiles = visibleTiles ?? {};
+
+  @override
+  String get componentType => "VisibleEntities";
+}
+
+/// Tracks entities that were previously seen by this observer.
+/// Memory persists permanently (no decay).
+@MappableClass()
+class VisionMemory with VisionMemoryMappable implements Component {
+  @MappableField(key: 'lastSeenPositions')
+  final Map<String, LocalPosition> lastSeenPositions;  // entityId (as string) -> last position
+
+  VisionMemory({Map<String, LocalPosition>? lastSeenPositions})
+      : lastSeenPositions = lastSeenPositions ?? {};
+
+  @override
+  String get componentType => "VisionMemory";
+  
+  // Helper methods to work with int keys
+  LocalPosition? getLastSeenPosition(int entityId) {
+    return lastSeenPositions[entityId.toString()];
+  }
+  
+  void setLastSeenPosition(int entityId, LocalPosition position) {
+    lastSeenPositions[entityId.toString()] = position;
+  }
+  
+  bool hasSeenEntity(int entityId) {
+    return lastSeenPositions.containsKey(entityId.toString());
+  }
+}
+
+// VisibilityState and VisibilityLevel removed - now using VisionCamera for visibility management

@@ -55,6 +55,10 @@ void initializeMappers() {
   p5.PickupableMapper.ensureInitialized();
   p5.PickupIntentMapper.ensureInitialized();
   p5.PickedUpMapper.ensureInitialized();
+  p5.BlocksSightMapper.ensureInitialized();
+  p5.VisionRadiusMapper.ensureInitialized();
+  p5.VisibleEntitiesMapper.ensureInitialized();
+  p5.VisionMemoryMapper.ensureInitialized();
   p5.CompassDirectionMapper.ensureInitialized();
   p6.EntityTemplateMapper.ensureInitialized();
   p7.SystemMapper.ensureInitialized();
@@ -63,6 +67,7 @@ void initializeMappers() {
   p7.InventorySystemMapper.ensureInitialized();
   p7.CombatSystemMapper.ensureInitialized();
   p7.BehaviorSystemMapper.ensureInitialized();
+  p7.VisionSystemMapper.ensureInitialized();
   p8.WorldMapper.ensureInitialized();
 }
 

@@ -3,15 +3,17 @@ import 'package:flame/effects.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart' hide Game;
 import 'package:flutter/services.dart';
-import 'package:rogueverse/game/game_area.dart';
-import 'package:rogueverse/ecs/components.dart';
-import 'package:rogueverse/ecs/query.dart';
-import 'package:rogueverse/main.dart';
+
 import 'package:rogueverse/app/widgets/overlays/overlay_helper.dart';
 import 'package:rogueverse/app/widgets/overlays/player_inventory_widget.dart';
-import 'package:rogueverse/game/components/agent.dart';
-import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/query.dart';
+import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/game/components/agent.dart';
+import 'package:rogueverse/game/components/vision_cone_overlay.dart';
+import 'package:rogueverse/game/game_area.dart';
+import 'package:rogueverse/main.dart';
 
 class KeyBindingMap<T> {
   final Map<Set<LogicalKeyboardKey>, T> _bindings = {};
@@ -193,6 +195,7 @@ class PlayerControlledAgent extends Agent with KeyboardHandler {
           toggleInventoryOverlay!();
           toggleInventoryOverlay = null;
         }
+        break;
     }
     return false;
   }

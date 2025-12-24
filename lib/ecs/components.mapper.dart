@@ -112,6 +112,10 @@ class ComponentMapper extends ClassMapperBase<Component> {
       PickupableMapper.ensureInitialized();
       PickupIntentMapper.ensureInitialized();
       PickedUpMapper.ensureInitialized();
+      BlocksSightMapper.ensureInitialized();
+      VisionRadiusMapper.ensureInitialized();
+      VisibleEntitiesMapper.ensureInitialized();
+      VisionMemoryMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -3660,5 +3664,557 @@ class _PickedUpCopyWithImpl<$R, $Out>
   PickedUpCopyWith<$R2, PickedUp, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _PickedUpCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class BlocksSightMapper extends SubClassMapperBase<BlocksSight> {
+  BlocksSightMapper._();
+
+  static BlocksSightMapper? _instance;
+  static BlocksSightMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = BlocksSightMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'BlocksSight';
+
+  @override
+  final MappableFields<BlocksSight> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'BlocksSight';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static BlocksSight _instantiate(DecodingData data) {
+    return BlocksSight();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static BlocksSight fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<BlocksSight>(map);
+  }
+
+  static BlocksSight fromJson(String json) {
+    return ensureInitialized().decodeJson<BlocksSight>(json);
+  }
+}
+
+mixin BlocksSightMappable {
+  String toJson() {
+    return BlocksSightMapper.ensureInitialized().encodeJson<BlocksSight>(
+      this as BlocksSight,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return BlocksSightMapper.ensureInitialized().encodeMap<BlocksSight>(
+      this as BlocksSight,
+    );
+  }
+
+  BlocksSightCopyWith<BlocksSight, BlocksSight, BlocksSight> get copyWith =>
+      _BlocksSightCopyWithImpl<BlocksSight, BlocksSight>(
+        this as BlocksSight,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return BlocksSightMapper.ensureInitialized().stringifyValue(
+      this as BlocksSight,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return BlocksSightMapper.ensureInitialized().equalsValue(
+      this as BlocksSight,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return BlocksSightMapper.ensureInitialized().hashValue(this as BlocksSight);
+  }
+}
+
+extension BlocksSightValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, BlocksSight, $Out> {
+  BlocksSightCopyWith<$R, BlocksSight, $Out> get $asBlocksSight =>
+      $base.as((v, t, t2) => _BlocksSightCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class BlocksSightCopyWith<$R, $In extends BlocksSight, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  BlocksSightCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _BlocksSightCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, BlocksSight, $Out>
+    implements BlocksSightCopyWith<$R, BlocksSight, $Out> {
+  _BlocksSightCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<BlocksSight> $mapper =
+      BlocksSightMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  BlocksSight $make(CopyWithData data) => BlocksSight();
+
+  @override
+  BlocksSightCopyWith<$R2, BlocksSight, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _BlocksSightCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class VisionRadiusMapper extends SubClassMapperBase<VisionRadius> {
+  VisionRadiusMapper._();
+
+  static VisionRadiusMapper? _instance;
+  static VisionRadiusMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = VisionRadiusMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'VisionRadius';
+
+  static int _$radius(VisionRadius v) => v.radius;
+  static const Field<VisionRadius, int> _f$radius = Field('radius', _$radius);
+  static int _$fieldOfViewDegrees(VisionRadius v) => v.fieldOfViewDegrees;
+  static const Field<VisionRadius, int> _f$fieldOfViewDegrees = Field(
+    'fieldOfViewDegrees',
+    _$fieldOfViewDegrees,
+    opt: true,
+    def: 360,
+  );
+
+  @override
+  final MappableFields<VisionRadius> fields = const {
+    #radius: _f$radius,
+    #fieldOfViewDegrees: _f$fieldOfViewDegrees,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'VisionRadius';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static VisionRadius _instantiate(DecodingData data) {
+    return VisionRadius(
+      radius: data.dec(_f$radius),
+      fieldOfViewDegrees: data.dec(_f$fieldOfViewDegrees),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static VisionRadius fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<VisionRadius>(map);
+  }
+
+  static VisionRadius fromJson(String json) {
+    return ensureInitialized().decodeJson<VisionRadius>(json);
+  }
+}
+
+mixin VisionRadiusMappable {
+  String toJson() {
+    return VisionRadiusMapper.ensureInitialized().encodeJson<VisionRadius>(
+      this as VisionRadius,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return VisionRadiusMapper.ensureInitialized().encodeMap<VisionRadius>(
+      this as VisionRadius,
+    );
+  }
+
+  VisionRadiusCopyWith<VisionRadius, VisionRadius, VisionRadius> get copyWith =>
+      _VisionRadiusCopyWithImpl<VisionRadius, VisionRadius>(
+        this as VisionRadius,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return VisionRadiusMapper.ensureInitialized().stringifyValue(
+      this as VisionRadius,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return VisionRadiusMapper.ensureInitialized().equalsValue(
+      this as VisionRadius,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return VisionRadiusMapper.ensureInitialized().hashValue(
+      this as VisionRadius,
+    );
+  }
+}
+
+extension VisionRadiusValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, VisionRadius, $Out> {
+  VisionRadiusCopyWith<$R, VisionRadius, $Out> get $asVisionRadius =>
+      $base.as((v, t, t2) => _VisionRadiusCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class VisionRadiusCopyWith<$R, $In extends VisionRadius, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? radius, int? fieldOfViewDegrees});
+  VisionRadiusCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _VisionRadiusCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, VisionRadius, $Out>
+    implements VisionRadiusCopyWith<$R, VisionRadius, $Out> {
+  _VisionRadiusCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<VisionRadius> $mapper =
+      VisionRadiusMapper.ensureInitialized();
+  @override
+  $R call({int? radius, int? fieldOfViewDegrees}) => $apply(
+    FieldCopyWithData({
+      if (radius != null) #radius: radius,
+      if (fieldOfViewDegrees != null) #fieldOfViewDegrees: fieldOfViewDegrees,
+    }),
+  );
+  @override
+  VisionRadius $make(CopyWithData data) => VisionRadius(
+    radius: data.get(#radius, or: $value.radius),
+    fieldOfViewDegrees: data.get(
+      #fieldOfViewDegrees,
+      or: $value.fieldOfViewDegrees,
+    ),
+  );
+
+  @override
+  VisionRadiusCopyWith<$R2, VisionRadius, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _VisionRadiusCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class VisibleEntitiesMapper extends SubClassMapperBase<VisibleEntities> {
+  VisibleEntitiesMapper._();
+
+  static VisibleEntitiesMapper? _instance;
+  static VisibleEntitiesMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = VisibleEntitiesMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      LocalPositionMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'VisibleEntities';
+
+  static Set<int> _$entityIds(VisibleEntities v) => v.entityIds;
+  static const Field<VisibleEntities, Set<int>> _f$entityIds = Field(
+    'entityIds',
+    _$entityIds,
+    opt: true,
+  );
+  static Set<LocalPosition> _$visibleTiles(VisibleEntities v) => v.visibleTiles;
+  static const Field<VisibleEntities, Set<LocalPosition>> _f$visibleTiles =
+      Field('visibleTiles', _$visibleTiles, opt: true);
+
+  @override
+  final MappableFields<VisibleEntities> fields = const {
+    #entityIds: _f$entityIds,
+    #visibleTiles: _f$visibleTiles,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'VisibleEntities';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static VisibleEntities _instantiate(DecodingData data) {
+    return VisibleEntities(
+      entityIds: data.dec(_f$entityIds),
+      visibleTiles: data.dec(_f$visibleTiles),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static VisibleEntities fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<VisibleEntities>(map);
+  }
+
+  static VisibleEntities fromJson(String json) {
+    return ensureInitialized().decodeJson<VisibleEntities>(json);
+  }
+}
+
+mixin VisibleEntitiesMappable {
+  String toJson() {
+    return VisibleEntitiesMapper.ensureInitialized()
+        .encodeJson<VisibleEntities>(this as VisibleEntities);
+  }
+
+  Map<String, dynamic> toMap() {
+    return VisibleEntitiesMapper.ensureInitialized().encodeMap<VisibleEntities>(
+      this as VisibleEntities,
+    );
+  }
+
+  VisibleEntitiesCopyWith<VisibleEntities, VisibleEntities, VisibleEntities>
+  get copyWith =>
+      _VisibleEntitiesCopyWithImpl<VisibleEntities, VisibleEntities>(
+        this as VisibleEntities,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return VisibleEntitiesMapper.ensureInitialized().stringifyValue(
+      this as VisibleEntities,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return VisibleEntitiesMapper.ensureInitialized().equalsValue(
+      this as VisibleEntities,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return VisibleEntitiesMapper.ensureInitialized().hashValue(
+      this as VisibleEntities,
+    );
+  }
+}
+
+extension VisibleEntitiesValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, VisibleEntities, $Out> {
+  VisibleEntitiesCopyWith<$R, VisibleEntities, $Out> get $asVisibleEntities =>
+      $base.as((v, t, t2) => _VisibleEntitiesCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class VisibleEntitiesCopyWith<$R, $In extends VisibleEntities, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({Set<int>? entityIds, Set<LocalPosition>? visibleTiles});
+  VisibleEntitiesCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _VisibleEntitiesCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, VisibleEntities, $Out>
+    implements VisibleEntitiesCopyWith<$R, VisibleEntities, $Out> {
+  _VisibleEntitiesCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<VisibleEntities> $mapper =
+      VisibleEntitiesMapper.ensureInitialized();
+  @override
+  $R call({Object? entityIds = $none, Object? visibleTiles = $none}) => $apply(
+    FieldCopyWithData({
+      if (entityIds != $none) #entityIds: entityIds,
+      if (visibleTiles != $none) #visibleTiles: visibleTiles,
+    }),
+  );
+  @override
+  VisibleEntities $make(CopyWithData data) => VisibleEntities(
+    entityIds: data.get(#entityIds, or: $value.entityIds),
+    visibleTiles: data.get(#visibleTiles, or: $value.visibleTiles),
+  );
+
+  @override
+  VisibleEntitiesCopyWith<$R2, VisibleEntities, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _VisibleEntitiesCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class VisionMemoryMapper extends SubClassMapperBase<VisionMemory> {
+  VisionMemoryMapper._();
+
+  static VisionMemoryMapper? _instance;
+  static VisionMemoryMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = VisionMemoryMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      LocalPositionMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'VisionMemory';
+
+  static Map<String, LocalPosition> _$lastSeenPositions(VisionMemory v) =>
+      v.lastSeenPositions;
+  static const Field<VisionMemory, Map<String, LocalPosition>>
+  _f$lastSeenPositions = Field(
+    'lastSeenPositions',
+    _$lastSeenPositions,
+    opt: true,
+  );
+
+  @override
+  final MappableFields<VisionMemory> fields = const {
+    #lastSeenPositions: _f$lastSeenPositions,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'VisionMemory';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static VisionMemory _instantiate(DecodingData data) {
+    return VisionMemory(lastSeenPositions: data.dec(_f$lastSeenPositions));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static VisionMemory fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<VisionMemory>(map);
+  }
+
+  static VisionMemory fromJson(String json) {
+    return ensureInitialized().decodeJson<VisionMemory>(json);
+  }
+}
+
+mixin VisionMemoryMappable {
+  String toJson() {
+    return VisionMemoryMapper.ensureInitialized().encodeJson<VisionMemory>(
+      this as VisionMemory,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return VisionMemoryMapper.ensureInitialized().encodeMap<VisionMemory>(
+      this as VisionMemory,
+    );
+  }
+
+  VisionMemoryCopyWith<VisionMemory, VisionMemory, VisionMemory> get copyWith =>
+      _VisionMemoryCopyWithImpl<VisionMemory, VisionMemory>(
+        this as VisionMemory,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return VisionMemoryMapper.ensureInitialized().stringifyValue(
+      this as VisionMemory,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return VisionMemoryMapper.ensureInitialized().equalsValue(
+      this as VisionMemory,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return VisionMemoryMapper.ensureInitialized().hashValue(
+      this as VisionMemory,
+    );
+  }
+}
+
+extension VisionMemoryValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, VisionMemory, $Out> {
+  VisionMemoryCopyWith<$R, VisionMemory, $Out> get $asVisionMemory =>
+      $base.as((v, t, t2) => _VisionMemoryCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class VisionMemoryCopyWith<$R, $In extends VisionMemory, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  MapCopyWith<
+    $R,
+    String,
+    LocalPosition,
+    LocalPositionCopyWith<$R, LocalPosition, LocalPosition>
+  >
+  get lastSeenPositions;
+  @override
+  $R call({Map<String, LocalPosition>? lastSeenPositions});
+  VisionMemoryCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _VisionMemoryCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, VisionMemory, $Out>
+    implements VisionMemoryCopyWith<$R, VisionMemory, $Out> {
+  _VisionMemoryCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<VisionMemory> $mapper =
+      VisionMemoryMapper.ensureInitialized();
+  @override
+  MapCopyWith<
+    $R,
+    String,
+    LocalPosition,
+    LocalPositionCopyWith<$R, LocalPosition, LocalPosition>
+  >
+  get lastSeenPositions => MapCopyWith(
+    $value.lastSeenPositions,
+    (v, t) => v.copyWith.$chain(t),
+    (v) => call(lastSeenPositions: v),
+  );
+  @override
+  $R call({Object? lastSeenPositions = $none}) => $apply(
+    FieldCopyWithData({
+      if (lastSeenPositions != $none) #lastSeenPositions: lastSeenPositions,
+    }),
+  );
+  @override
+  VisionMemory $make(CopyWithData data) => VisionMemory(
+    lastSeenPositions: data.get(
+      #lastSeenPositions,
+      or: $value.lastSeenPositions,
+    ),
+  );
+
+  @override
+  VisionMemoryCopyWith<$R2, VisionMemory, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _VisionMemoryCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

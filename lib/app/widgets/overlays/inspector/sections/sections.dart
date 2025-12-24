@@ -12,3 +12,4 @@ export 'marker_sections.dart';
 export 'name_section.dart';
 export 'position_section.dart';
 export 'renderable_section.dart';
+export 'vision_sections.dart';

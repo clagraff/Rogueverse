@@ -19,6 +19,7 @@ class SystemMapper extends ClassMapperBase<System> {
       InventorySystemMapper.ensureInitialized();
       CombatSystemMapper.ensureInitialized();
       BehaviorSystemMapper.ensureInitialized();
+      VisionSystemMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -658,5 +659,120 @@ class _BehaviorSystemCopyWithImpl<$R, $Out>
   BehaviorSystemCopyWith<$R2, BehaviorSystem, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _BehaviorSystemCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class VisionSystemMapper extends SubClassMapperBase<VisionSystem> {
+  VisionSystemMapper._();
+
+  static VisionSystemMapper? _instance;
+  static VisionSystemMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = VisionSystemMapper._());
+      SystemMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'VisionSystem';
+
+  @override
+  final MappableFields<VisionSystem> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'VisionSystem';
+  @override
+  late final ClassMapperBase superMapper = SystemMapper.ensureInitialized();
+
+  static VisionSystem _instantiate(DecodingData data) {
+    return VisionSystem();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static VisionSystem fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<VisionSystem>(map);
+  }
+
+  static VisionSystem fromJson(String json) {
+    return ensureInitialized().decodeJson<VisionSystem>(json);
+  }
+}
+
+mixin VisionSystemMappable {
+  String toJson() {
+    return VisionSystemMapper.ensureInitialized().encodeJson<VisionSystem>(
+      this as VisionSystem,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return VisionSystemMapper.ensureInitialized().encodeMap<VisionSystem>(
+      this as VisionSystem,
+    );
+  }
+
+  VisionSystemCopyWith<VisionSystem, VisionSystem, VisionSystem> get copyWith =>
+      _VisionSystemCopyWithImpl<VisionSystem, VisionSystem>(
+        this as VisionSystem,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return VisionSystemMapper.ensureInitialized().stringifyValue(
+      this as VisionSystem,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return VisionSystemMapper.ensureInitialized().equalsValue(
+      this as VisionSystem,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return VisionSystemMapper.ensureInitialized().hashValue(
+      this as VisionSystem,
+    );
+  }
+}
+
+extension VisionSystemValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, VisionSystem, $Out> {
+  VisionSystemCopyWith<$R, VisionSystem, $Out> get $asVisionSystem =>
+      $base.as((v, t, t2) => _VisionSystemCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class VisionSystemCopyWith<$R, $In extends VisionSystem, $Out>
+    implements SystemCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  VisionSystemCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _VisionSystemCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, VisionSystem, $Out>
+    implements VisionSystemCopyWith<$R, VisionSystem, $Out> {
+  _VisionSystemCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<VisionSystem> $mapper =
+      VisionSystemMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  VisionSystem $make(CopyWithData data) => VisionSystem();
+
+  @override
+  VisionSystemCopyWith<$R2, VisionSystem, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _VisionSystemCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

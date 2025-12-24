@@ -4,13 +4,15 @@ import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+
+import 'package:rogueverse/app/screens/game_screen.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/entity_template.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/ecs/world.dart';
-import 'package:rogueverse/app/screens/game_screen.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
+import 'package:rogueverse/game/vision_camera.dart';
 
 /// The main game area component that manages the ECS world, camera controls,
 /// and entity/template selection for the game editor.
@@ -40,6 +42,9 @@ class GameArea extends FlameGame
   /// The current <code>ECS</code> world instance being processed.
   late World currentWorld;
 
+  /// Vision camera that manages vision aggregation and perspective.
+  late VisionCamera visionCamera;
+
   /// Used for dispatching scroll-related events, before otherwise controlling the camera.
   late final ScrollDispatcher scrollDispatcher;
 
@@ -51,7 +56,8 @@ class GameArea extends FlameGame
   GameArea(FocusNode gameFocusNode) {
     world = GameScreen(gameFocusNode);
     var systems = [
-      BehaviorSystem(),
+      VisionSystem(),      // NEW: Runs first to calculate vision
+      BehaviorSystem(),    // AI can use vision data
       CollisionSystem(),
       MovementSystem(),
       InventorySystem(),
@@ -59,6 +65,17 @@ class GameArea extends FlameGame
     ];
 
     currentWorld = World(systems, {});
+    visionCamera = VisionCamera(currentWorld);
+    
+    // Listen to entity selection changes to update vision perspective
+    selectedEntity.addListener(() {
+      final entity = selectedEntity.value;
+      if (entity == null) {
+        visionCamera.onEntityDeselected();
+      } else {
+        visionCamera.onEntitySelected(entity.id);
+      }
+    });
   }
 
   /// Initializes the game area by setting up the camera anchor, camera controls,
@@ -114,6 +131,7 @@ class GameArea extends FlameGame
   /// This should be called each game update to advance all systems and persist changes.
   Future<void> tickEcs() async {
     currentWorld.tick();
+    visionCamera.updateVision();  // Update vision after systems run
     await WorldSaves.writeSave(currentWorld);
   }
 

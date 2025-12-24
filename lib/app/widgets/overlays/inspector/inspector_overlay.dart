@@ -60,6 +60,13 @@ class _InspectorPanelState extends State<InspectorPanel> {
       ComponentRegistry.register(PickupableMetadata());
       ComponentRegistry.register(DeadMetadata());
 
+      // Vision components
+      ComponentRegistry.register(VisionRadiusMetadata());
+      ComponentRegistry.register(VisibleEntitiesMetadata());
+      ComponentRegistry.register(VisionMemoryMetadata());
+      ComponentRegistry.register(BlocksSightMetadata());
+      // ComponentRegistry.register(VisibilityStateMetadata());
+
       // Transient event components (for debugging)
       ComponentRegistry.register(MoveByIntentMetadata());
       ComponentRegistry.register(DidMoveMetadata());

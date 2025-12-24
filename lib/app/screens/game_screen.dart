@@ -155,6 +155,7 @@ class GameScreen extends flame.World with Disposer {
       Inventory([]),
       InventoryMaxCount(5),
       Health(4, 5),
+      VisionRadius(radius: 7),
     ]);
     reg.add([
       Name(name: "Snake"),
@@ -162,13 +163,15 @@ class GameScreen extends flame.World with Disposer {
       LocalPosition(x: 1, y: 2),
       AiControlled(),
       BlocksMovement(),
-      Behavior(MoveRandomlyNode())
+      Behavior(MoveRandomlyNode()),
+      VisionRadius(radius: 5),
     ]);
     reg.add([
       Name(name: "Wall"),
       Renderable('images/wall.svg'),
       LocalPosition(x: 1, y: 0),
       BlocksMovement(),
+      BlocksSight(),
     ]);
     reg.add([
       Name(name: "Mineral"),
@@ -177,6 +180,7 @@ class GameScreen extends flame.World with Disposer {
       Name(name: 'Iron'),
       BlocksMovement(),
       Health(2, 2),
+      BlocksSight(),
       LootTable([
         Loot(components: [
           Renderable('images/item_small.svg'),
@@ -213,6 +217,7 @@ class GameScreen extends flame.World with Disposer {
         Renderable('images/item_small.svg'),
         LocalPosition(x: x, y: y),
         Pickupable(),
+        BlocksSight(),
         Name(name: names[r.nextInt(names.length)]),
       ]);
     }

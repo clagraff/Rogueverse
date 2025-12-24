@@ -232,3 +232,196 @@ class BehaviorSystem extends System with BehaviorSystemMappable {
     });
   }
 }
+
+@MappableClass()
+class VisionSystem extends System with VisionSystemMappable {
+  @override
+  void update(World world) {
+    // Only process entities with VisionRadius (explicit opt-in for performance)
+    final observers = world.get<VisionRadius>();
+
+    observers.forEach((observerId, visionRadius) {
+      final observer = world.getEntity(observerId);
+      final observerPos = observer.get<LocalPosition>();
+      if (observerPos == null) return;
+
+      final observerDirection = observer.get<Direction>();
+
+      // Calculate visible tiles using Bresenham raycasting
+      final visibleTiles = _calculateVisibleTiles(
+        world,
+        observerPos,
+        visionRadius,
+        observerDirection,
+      );
+
+      // Find entities at visible positions (excluding the observer itself)
+      final visibleEntityIds = _findEntitiesAtPositions(world, visibleTiles, observerId);
+
+      // Update observer's VisibleEntities component
+      observer.upsert(VisibleEntities(
+        entityIds: visibleEntityIds,
+        visibleTiles: visibleTiles,
+      ));
+
+      // Update memory (simple: just store last seen positions)
+      _updateMemory(observer, visibleEntityIds, world);
+    });
+  }
+
+  /// Calculate FOV using Bresenham raycasting with line-of-sight blocking
+  Set<LocalPosition> _calculateVisibleTiles(
+    World world,
+    LocalPosition origin,
+    VisionRadius visionRadius,
+    Direction? direction,
+  ) {
+    final visible = <LocalPosition>{};
+    visible.add(origin); // Observer can always see their own tile
+
+    // Cast rays in a circle around the observer (every 2 degrees for performance)
+    for (int angle = 0; angle < 360; angle += 2) {
+      // Skip angles outside FOV cone if directional
+      if (visionRadius.fieldOfViewDegrees < 360 && direction != null) {
+        final facingAngle = _directionToAngle(direction.facing);
+        final halfFOV = visionRadius.fieldOfViewDegrees / 2;
+        final angleDiff = _angleDifference(angle, facingAngle);
+
+        if (angleDiff > halfFOV) continue; // Outside FOV cone
+      }
+
+      // Cast ray using Bresenham's algorithm
+      final rayTiles = _castRay(origin, angle, visionRadius.radius);
+
+      for (final tile in rayTiles) {
+        visible.add(tile);
+
+        // Stop ray if blocked by BlocksSight
+        if (_isBlockedAtPosition(world, tile)) break;
+      }
+    }
+
+    return visible;
+  }
+
+  /// Bresenham line algorithm from origin at angle for distance
+  List<LocalPosition> _castRay(
+      LocalPosition origin, int angleDegrees, int distance) {
+    final angleRad = angleDegrees * (3.14159265359 / 180.0);
+    final endX = origin.x + (distance * cos(angleRad)).round();
+    final endY = origin.y + (distance * sin(angleRad)).round();
+
+    return _bresenhamLine(origin.x, origin.y, endX, endY);
+  }
+
+  /// Classic Bresenham line algorithm
+  List<LocalPosition> _bresenhamLine(int x0, int y0, int x1, int y1) {
+    final points = <LocalPosition>[];
+
+    int dx = (x1 - x0).abs();
+    int dy = (y1 - y0).abs();
+    int sx = x0 < x1 ? 1 : -1;
+    int sy = y0 < y1 ? 1 : -1;
+    int err = dx - dy;
+
+    int x = x0;
+    int y = y0;
+
+    while (true) {
+      points.add(LocalPosition(x: x, y: y));
+
+      if (x == x1 && y == y1) break;
+
+      int e2 = 2 * err;
+      if (e2 > -dy) {
+        err -= dy;
+        x += sx;
+      }
+      if (e2 < dx) {
+        err += dx;
+        y += sy;
+      }
+    }
+
+    return points;
+  }
+
+  /// Check if position blocks sight
+  bool _isBlockedAtPosition(World world, LocalPosition pos) {
+    final positions = world.get<LocalPosition>();
+
+    return positions.entries.any((entry) {
+      final entityPos = entry.value;
+      if (entityPos.x != pos.x || entityPos.y != pos.y) return false;
+
+      final entity = world.getEntity(entry.key);
+      return entity.has<BlocksSight>();
+    });
+  }
+
+  /// Find entities at visible positions (excluding the observer itself)
+  Set<int> _findEntitiesAtPositions(
+      World world, Set<LocalPosition> positions, int observerId) {
+    final entityIds = <int>{};
+    final allPositions = world.get<LocalPosition>();
+
+    for (final entry in allPositions.entries) {
+      final entityId = entry.key;
+      
+      // Skip the observer itself - it shouldn't see itself
+      if (entityId == observerId) continue;
+      
+      final entityPos = entry.value;
+      if (positions.any((p) => p.x == entityPos.x && p.y == entityPos.y)) {
+        entityIds.add(entityId);
+      }
+    }
+
+    return entityIds;
+  }
+
+  /// Update memory (simple: just store positions, no decay)
+  void _updateMemory(Entity observer, Set<int> visibleEntityIds, World world) {
+    var memory = observer.get<VisionMemory>() ?? VisionMemory();
+    final updated = Map<String, LocalPosition>.from(memory.lastSeenPositions);
+
+    // Add/update visible entities
+    for (final entityId in visibleEntityIds) {
+      final entity = world.getEntity(entityId);
+      final pos = entity.get<LocalPosition>();
+      if (pos != null) {
+        updated[entityId.toString()] = pos;
+      }
+    }
+
+    observer.upsert(VisionMemory(lastSeenPositions: updated));
+  }
+
+  /// Helper: Convert Direction to angle
+  int _directionToAngle(CompassDirection dir) {
+    switch (dir) {
+      case CompassDirection.east:
+        return 0;
+      case CompassDirection.northeast:
+        return 45;
+      case CompassDirection.north:
+        return 90;
+      case CompassDirection.northwest:
+        return 135;
+      case CompassDirection.west:
+        return 180;
+      case CompassDirection.southwest:
+        return 225;
+      case CompassDirection.south:
+        return 270;
+      case CompassDirection.southeast:
+        return 315;
+    }
+  }
+
+  /// Helper: Shortest angle difference
+  int _angleDifference(int a, int b) {
+    int diff = (a - b).abs() % 360;
+    return diff > 180 ? 360 - diff : diff;
+  }
+}
