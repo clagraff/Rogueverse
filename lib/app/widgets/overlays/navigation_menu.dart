@@ -1,3 +1,5 @@
+import 'dart:io' show exit;
+
 import 'package:flutter/material.dart';
 
 /// Content for the navigation drawer.
@@ -44,6 +46,15 @@ class NavigationDrawerContent extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context); // Close drawer
                     onEntityTemplatesPressed();
+                  },
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.close,
+                  label: 'Quit',
+                  onTap: () {
+                    Navigator.pop(context);
+                    exit(0);
                   },
                 ),
                 // Future navigation items can be added here
