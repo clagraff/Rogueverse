@@ -64,7 +64,8 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     //   world.remove(entity.id);
     // });
 
-    add(AgentHealthBar(entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
+    add(AgentHealthBar(
+        entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
 
     // Set up vision-based rendering
     _setupVisionTracking();
@@ -85,9 +86,9 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
         _attachToObserver(newObserverId);
       }
     };
-    
+
     game.observerEntityId.addListener(_observerChangeListener!);
-    
+
     // Initial setup
     if (game.observerEntityId.value != null) {
       _currentObserverId = game.observerEntityId.value;
@@ -103,6 +104,13 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
     if (observerId == null) {
       opacity = 1.0; // Default to visible if no observer
+      return;
+    }
+
+    // Check if observer has VisionRadius - if not, show all entities
+    final observer = world.getEntity(observerId);
+    if (!observer.has<VisionRadius>()) {
+      opacity = 1.0; // Show all entities if observer has no vision system
       return;
     }
 
@@ -148,8 +156,8 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     opacity = 0.0; // Invisible
   }
 
-
-  @override void update(double dt) {
+  @override
+  void update(double dt) {
     super.update(dt);
 
     // Only update position if the entity is currently visible
@@ -160,7 +168,8 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
         var dx = localPos.x * 32.0;
         var dy = localPos.y * 32.0;
 
-        if (position != Vector2(dx, dy) && !children.any((c) => c is MoveToEffect)) {
+        if (position != Vector2(dx, dy) &&
+            !children.any((c) => c is MoveToEffect)) {
           add(MoveToEffect(Vector2(localPos.x * 32.0, localPos.y * 32.0),
               EffectController(duration: 0.1)));
         }
@@ -195,7 +204,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     // Check if currently visible
     final observer = world.getEntity(observerId);
     final visibleEntities = observer.get<VisibleEntities>();
-    
+
     return visibleEntities?.entityIds.contains(entity.id) ?? true;
   }
 
@@ -207,7 +216,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     if (game != null && _observerChangeListener != null) {
       game.observerEntityId.removeListener(_observerChangeListener!);
     }
-    
+
     disposeAll();
     super.onRemove();
   }

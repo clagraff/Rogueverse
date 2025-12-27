@@ -8,13 +8,15 @@ import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
-import 'package:rogueverse/game/components/svg_component.dart' show SvgTileComponent;
-import 'package:rogueverse/game/utils/grid_coordinates.dart' show GridCoordinates;
-
+import 'package:rogueverse/game/components/svg_component.dart'
+    show SvgTileComponent;
+import 'package:rogueverse/game/utils/grid_coordinates.dart'
+    show GridCoordinates;
 
 /// Handles tap events on the game grid to select entities at tapped positions.
 class EntityTapComponent extends PositionComponent with TapCallbacks {
   final ValueNotifier<Entity?> notifier;
+  final ValueNotifier<int?>? observerEntityIdNotifier;
   final double gridSize;
   final World world;
 
@@ -23,7 +25,9 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   /// [gridSize] is the size of each grid cell in pixels.
   /// [notifier] updates with the selected entity or null.
   /// [world] provides access to entity data.
-  EntityTapComponent(this.gridSize, this.notifier, this.world);
+  /// [observerEntityIdNotifier] updates with the selected entity's ID for vision tracking.
+  EntityTapComponent(this.gridSize, this.notifier, this.world,
+      {this.observerEntityIdNotifier});
 
   /// Intercepts all tap events by covering the entire component area.
   @override
@@ -69,7 +73,11 @@ class EntityTapVisualizerComponent extends SvgTileComponent with HasVisibility {
   /// [notifier] provides the currently selected entity. Instead of adding a
   /// listener, we check the value each frame. This is so if the entity itself
   /// moves, we need this component to match its movements.
-  EntityTapVisualizerComponent(this.notifier) : super(svgAssetPath: 'images/border.svg', size: Vector2(32, 32), position: Vector2(0, 0)) {
+  EntityTapVisualizerComponent(this.notifier)
+      : super(
+            svgAssetPath: 'images/border.svg',
+            size: Vector2(32, 32),
+            position: Vector2(0, 0)) {
     isVisible = false;
   }
 

@@ -1,3 +1,4 @@
+export 'direction_section.dart';
 export 'event_sections.dart';
 export 'health_section.dart';
 export 'inventory_section.dart';
@@ -6,3 +7,4 @@ export 'name_section.dart';
 export 'position_section.dart';
 export 'renderable_section.dart';
 export 'sections.dart';
+export 'vision_sections.dart';

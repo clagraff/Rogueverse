@@ -30,6 +30,11 @@ class GameArea extends FlameGame
   /// Defaults to the player's entity ID. Used to determine which entities are visible.
   final ValueNotifier<int?> observerEntityId = ValueNotifier(null);
 
+  /// The parent entity ID whose children should be rendered in the game area.
+  /// null = render all entities (no filtering, default behavior)
+  /// Non-null = render only entities with HasParent(viewedParentId)
+  final ValueNotifier<int?> viewedParentId = ValueNotifier(null);
+
   /// Temporary world used for editing templates in the inspector.
   World? _templateEditingWorld;
 

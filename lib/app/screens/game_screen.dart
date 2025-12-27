@@ -11,6 +11,7 @@ import 'package:rogueverse/ecs/ai/behaviors/behaviors.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';
 import 'package:rogueverse/game/components/entity_drag_mover.dart';
@@ -30,6 +31,7 @@ class GameScreen extends flame.World with Disposer {
   late FocusNode gameFocusNode;
   final Set<int> _renderedEntities = {};
   StreamSubscription<Change>? _spawnListener;
+  StreamSubscription<int?>? _viewedParentListener;
 
   GameScreen(FocusNode focusNode) {
     gameFocusNode = focusNode;
@@ -71,7 +73,8 @@ class GameScreen extends flame.World with Disposer {
       game.overlays.remove("inspectorPanel");
     }));
 
-    add(GridTapComponent(32, gridNotifier));
+    add(GridTapComponent(32, gridNotifier,
+        observerEntityIdNotifier: game.observerEntityId));
     add(EntityTapComponent(32, entityNotifier, game.currentWorld));
     add(EntityTapVisualizerComponent(entityNotifier));
     add(GridTapVisualizerComponent(gridNotifier));
@@ -93,7 +96,8 @@ class GameScreen extends flame.World with Disposer {
       // Only react to renderable/position changes; order doesn't matter.
       if (change.componentType == Renderable('').componentType ||
           change.componentType == LocalPosition(x: 0, y: 0).componentType) {
-        Logger("game_screen").info("Entity(${change.entityId}) was given Renderable or LocalPosition");
+        Logger("game_screen").info(
+            "Entity(${change.entityId}) was given Renderable or LocalPosition");
         _spawnRenderableEntity(
           game,
           game.currentWorld.getEntity(change.entityId),
@@ -115,13 +119,44 @@ class GameScreen extends flame.World with Disposer {
 
     var playerId = game.currentWorld.get<PlayerControlled>().entries.first.key;
 
-    // Set the observer entity ID to the player (for vision-based rendering)
-    game.observerEntityId.value = playerId;
+    // Rebuild hierarchy cache after loading entities (HierarchySystem normally does this during tick)
+    game.currentWorld.hierarchyCache.rebuild(game.currentWorld);
 
-    // Add vision cone for the player (renders first = below everything)
+    // Set the default viewedParentId to the player's parent (the region they're in)
+    final playerEntity = game.currentWorld.getEntity(playerId);
+    final playerParent = playerEntity.get<HasParent>();
+    if (playerParent != null) {
+      game.viewedParentId.value = playerParent.parentEntityId;
+    }
+
+    // Don't set observerEntityId by default - let user click to select
+    // game.observerEntityId.value = null; (already null by default)
+
+    // Listen to viewedParentId changes to filter rendered entities AND clear selection
+    game.viewedParentId.addListener(() {
+      _updateRenderedEntities(game);
+      // Clear observer selection when changing viewed parent
+      game.observerEntityId.value = null;
+    });
+
+    // Listen to observerEntityId changes to immediately recalculate vision
+    game.observerEntityId.addListener(() {
+      final observerId = game.observerEntityId.value;
+      if (observerId != null) {
+        // Find the VisionSystem and trigger immediate vision update
+        final visionSystem =
+            game.currentWorld.systems.whereType<VisionSystem>().firstOrNull;
+        if (visionSystem != null) {
+          visionSystem.updateVisionForObserver(game.currentWorld, observerId);
+        }
+      }
+    });
+
+    // Add dynamic vision cone (renders first = below everything)
+    // Only shows when an entity with VisionRadius is selected
     add(VisionConeComponent(
       world: game.currentWorld,
-      observedEntityId: playerId,
+      observerIdNotifier: game.observerEntityId,
     )..priority = -1000);
 
     var healthHud = HealthBar();
@@ -154,6 +189,50 @@ class GameScreen extends flame.World with Disposer {
   void _initializeEntities(GameArea game) {
     var reg = game.currentWorld;
 
+    // Create hierarchical structure:
+    // Galaxy (abstract container)
+    //   └─ Star System Alpha (abstract container)
+    //       └─ Planet Surface (region with entities)
+    //           ├─ Player
+    //           ├─ Snake (hostile)
+    //           ├─ Minerals
+    //           └─ Items
+    //   └─ Star System Beta (abstract container)
+    //       └─ Abandoned Station (container with entities)
+    //           ├─ Wall structures
+    //           ├─ Snake (enemy)
+    //           └─ Items
+
+    // Level 1: Galaxy (abstract parent - no position/renderable)
+    final galaxy = reg.add([
+      Name(name: "Milky Way Galaxy"),
+    ]);
+
+    // Level 2: Star Systems (abstract parents - no position/renderable)
+    final starSystemAlpha = reg.add([
+      Name(name: "Star System Alpha"),
+      HasParent(galaxy.id),
+    ]);
+
+    final starSystemBeta = reg.add([
+      Name(name: "Star System Beta"),
+      HasParent(galaxy.id),
+    ]);
+
+    // Level 3: Regions within star systems
+    // Region 1: Planet Surface (in Alpha)
+    final planetSurface = reg.add([
+      Name(name: "Planet Surface - Grasslands"),
+      HasParent(starSystemAlpha.id),
+    ]);
+
+    // Region 2: Abandoned Station (in Beta)
+    final abandonedStation = reg.add([
+      Name(name: "Abandoned Space Station"),
+      HasParent(starSystemBeta.id),
+    ]);
+
+    // Level 4: Entities on Planet Surface
     reg.add([
       Name(name: "Player"),
       Renderable('images/player.svg'),
@@ -165,7 +244,9 @@ class GameScreen extends flame.World with Disposer {
       Health(4, 5),
       VisionRadius(radius: 7, fieldOfViewDegrees: 90),
       Direction(CompassDirection.north),
+      HasParent(planetSurface.id),
     ]);
+
     reg.add([
       Name(name: "Snake"),
       Renderable('images/snake.svg'),
@@ -174,68 +255,239 @@ class GameScreen extends flame.World with Disposer {
       BlocksMovement(),
       Behavior(MoveRandomlyNode()),
       VisionRadius(radius: 5),
+      HasParent(planetSurface.id),
     ]);
+
     reg.add([
-      Name(name: "Wall"),
-      Renderable('images/wall.svg'),
-      LocalPosition(x: 1, y: 0),
-      BlocksMovement(),
-      BlocksSight(),
-    ]);
-    reg.add([
-      Name(name: "Mineral"),
+      Name(name: "Mineral Deposit"),
       Renderable('images/mineral.svg'),
       LocalPosition(x: 3, y: 2),
-      Name(name: 'Iron'),
       BlocksMovement(),
       Health(2, 2),
       BlocksSight(),
+      HasParent(planetSurface.id),
       LootTable([
         Loot(components: [
           Renderable('images/item_small.svg'),
           Pickupable(),
-          Name(name: 'Loot'),
+          Name(name: 'Mineral Ore'),
         ])
       ]),
     ]);
 
-    var names = [
+    reg.add([
+      Name(name: "Mineral Deposit"),
+      Renderable('images/mineral.svg'),
+      LocalPosition(x: -2, y: 1),
+      BlocksMovement(),
+      Health(2, 2),
+      BlocksSight(),
+      HasParent(planetSurface.id),
+      LootTable([
+        Loot(components: [
+          Renderable('images/item_small.svg'),
+          Pickupable(),
+          Name(name: 'Mineral Ore'),
+        ])
+      ]),
+    ]);
+
+    // Random items on planet surface
+    var planetItems = [
       'Iron short sword',
       'Recurve bow',
-      'Copper helm',
-      'Gold',
-      'Gold',
-      'Gold',
-      'Leather gloves',
       'Health potion',
       'Stamina potion',
     ];
 
     var r = Random();
-    var next = r.nextInt(5) + 5;
-    for (var i = 0; i < next; i++) {
+    for (var i = 0; i < 3; i++) {
       var x = 0;
       var y = 0;
 
       while (x == 0 && y == 0) {
-        x = r.nextInt(8) * (r.nextBool() ? 1 : -1);
-        y = r.nextInt(8) * (r.nextBool() ? 1 : -1);
+        x = r.nextInt(5) * (r.nextBool() ? 1 : -1);
+        y = r.nextInt(5) * (r.nextBool() ? 1 : -1);
       }
 
       reg.add([
         Renderable('images/item_small.svg'),
         LocalPosition(x: x, y: y),
         Pickupable(),
-        BlocksSight(),
-        Name(name: names[r.nextInt(names.length)]),
+        Name(name: planetItems[r.nextInt(planetItems.length)]),
+        HasParent(planetSurface.id),
       ]);
     }
+
+    // Level 4: Entities in Abandoned Station
+    // Create a wall structure
+    for (var i = -2; i <= 2; i++) {
+      reg.add([
+        Name(name: "Station Wall"),
+        Renderable('images/wall.svg'),
+        LocalPosition(x: i, y: -3),
+        BlocksMovement(),
+        BlocksSight(),
+        HasParent(abandonedStation.id),
+      ]);
+    }
+
+    // Vertical walls
+    reg.add([
+      Name(name: "Station Wall"),
+      Renderable('images/wall.svg'),
+      LocalPosition(x: -2, y: -2),
+      BlocksMovement(),
+      BlocksSight(),
+      HasParent(abandonedStation.id),
+    ]);
+
+    reg.add([
+      Name(name: "Station Wall"),
+      Renderable('images/wall.svg'),
+      LocalPosition(x: 2, y: -2),
+      BlocksMovement(),
+      BlocksSight(),
+      HasParent(abandonedStation.id),
+    ]);
+
+    // Hostile snake in the station
+    reg.add([
+      Name(name: "Mutant Snake"),
+      Renderable('images/snake.svg'),
+      LocalPosition(x: 0, y: -2),
+      AiControlled(),
+      BlocksMovement(),
+      Behavior(MoveRandomlyNode()),
+      VisionRadius(radius: 5),
+      HasParent(abandonedStation.id),
+    ]);
+
+    // Valuable items in the station
+    var stationItems = [
+      'Copper helm',
+      'Leather gloves',
+      'Gold',
+      'Gold',
+      'Energy cell',
+    ];
+
+    for (var i = 0; i < 4; i++) {
+      var x = r.nextInt(3) - 1; // -1, 0, or 1
+      var y = -2;
+
+      reg.add([
+        Renderable('images/item_large.svg'),
+        LocalPosition(x: x + (i * 0.3).floor(), y: y),
+        Pickupable(),
+        Name(name: stationItems[r.nextInt(stationItems.length)]),
+        HasParent(abandonedStation.id),
+      ]);
+    }
+
+    // Create a third region for variety: Mining Outpost (also in Alpha)
+    final miningOutpost = reg.add([
+      Name(name: "Mining Outpost"),
+      HasParent(starSystemAlpha.id),
+    ]);
+
+    // Entities in mining outpost
+    reg.add([
+      Name(name: "Mining Equipment"),
+      Renderable('images/mineral.svg'),
+      LocalPosition(x: 5, y: 5),
+      BlocksMovement(),
+      HasParent(miningOutpost.id),
+    ]);
+
+    reg.add([
+      Name(name: "Storage Crate"),
+      Renderable('images/wall.svg'),
+      LocalPosition(x: 6, y: 5),
+      BlocksMovement(),
+      BlocksSight(),
+      HasParent(miningOutpost.id),
+    ]);
+
+    reg.add([
+      Name(name: "Guard Snake"),
+      Renderable('images/snake.svg'),
+      LocalPosition(x: 5, y: 6),
+      AiControlled(),
+      BlocksMovement(),
+      Behavior(MoveRandomlyNode()),
+      VisionRadius(radius: 4),
+      HasParent(miningOutpost.id),
+    ]);
   }
 
   @override
   void onRemove() {
     _spawnListener?.cancel();
+    _viewedParentListener?.cancel();
     disposeAll();
+  }
+
+  /// Determines if an entity should be rendered based on the viewed parent filter.
+  ///
+  /// Returns true if:
+  /// - viewedParentId is null (show all entities)
+  /// - Entity has HasParent component with parentEntityId matching viewedParentId
+  bool _shouldRenderEntity(Entity entity, int? viewedParentId) {
+    if (viewedParentId == null) {
+      return true; // Show all entities
+    }
+
+    final hasParent = entity.get<HasParent>();
+    if (hasParent == null) {
+      return false; // Entity has no parent, don't show when filtering
+    }
+
+    return hasParent.parentEntityId == viewedParentId;
+  }
+
+  /// Updates which entities are rendered based on the current viewedParentId filter.
+  void _updateRenderedEntities(GameArea game) {
+    final viewedParentId = game.viewedParentId.value;
+
+    // Get all entities that should be rendered
+    final entitiesToRender = game.currentWorld
+        .entities()
+        .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
+        .where((e) => _shouldRenderEntity(e, viewedParentId))
+        .toSet();
+
+    // Find Flame components that correspond to rendered entities
+    final componentsToKeep = <int>{};
+    final componentsToRemove = <flame.Component>[];
+
+    // Check all child components
+    for (final component in children) {
+      if (component is Agent) {
+        final entityId = component.entity.id;
+        if (entitiesToRender.any((e) => e.id == entityId)) {
+          componentsToKeep.add(entityId);
+        } else {
+          componentsToRemove.add(component);
+        }
+      }
+    }
+
+    // Remove components that shouldn't be visible
+    for (final component in componentsToRemove) {
+      if (component is Agent) {
+        _renderedEntities.remove(component.entity.id);
+      }
+      component.removeFromParent();
+    }
+
+    // Add components for entities that should be visible but aren't rendered yet
+    for (final entity in entitiesToRender) {
+      if (!componentsToKeep.contains(entity.id) &&
+          !_renderedEntities.contains(entity.id)) {
+        _spawnRenderableEntity(game, entity);
+      }
+    }
   }
 
   void _spawnRenderableEntity(GameArea game, Entity entity) {
@@ -243,6 +495,11 @@ class GameScreen extends flame.World with Disposer {
     final renderable = entity.get<Renderable>();
     final lp = entity.get<LocalPosition>();
     if (renderable == null || lp == null) return;
+
+    // Check if entity should be rendered based on viewedParentId filter
+    if (!_shouldRenderEntity(entity, game.viewedParentId.value)) {
+      return;
+    }
 
     final position = flame.Vector2(lp.x * 32, lp.y * 32);
     flame.Component component;

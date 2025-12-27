@@ -280,36 +280,49 @@ class VisionSystem extends System with VisionSystemMappable {
     final observers = world.get<VisionRadius>();
 
     observers.forEach((observerId, visionRadius) {
-      final observer = world.getEntity(observerId);
-      final observerPos = observer.get<LocalPosition>();
-      if (observerPos == null) return;
-
-      final observerDirection = observer.get<Direction>();
-
-      // Calculate visible tiles using Bresenham raycasting
-      final visibleTiles = _calculateVisibleTiles(
-        world,
-        observerPos,
-        visionRadius,
-        observerDirection,
-        observerId,
-      );
-
-      // Find entities at visible positions (excluding the observer itself)
-      final visibleEntityIds =
-          _findEntitiesAtPositions(world, visibleTiles, observerId);
-
-      // Update observer's VisibleEntities component
-      print(
-          '[VisionSystem] Upserting VisibleEntities for entity $observerId: ${visibleTiles.length} tiles, pos=${observerPos.x},${observerPos.y}');
-      observer.upsert(VisibleEntities(
-        entityIds: visibleEntityIds,
-        visibleTiles: visibleTiles,
-      ));
-
-      // Update memory (simple: just store last seen positions)
-      _updateMemory(observer, visibleEntityIds, world);
+      _updateVisionForObserver(world, observerId);
     });
+  }
+
+  /// Manually update vision for a specific observer entity.
+  /// Useful for immediately recalculating vision when observer changes.
+  void updateVisionForObserver(World world, int observerId) {
+    _updateVisionForObserver(world, observerId);
+  }
+
+  void _updateVisionForObserver(World world, int observerId) {
+    final observer = world.getEntity(observerId);
+    final visionRadius = observer.get<VisionRadius>();
+    if (visionRadius == null) return;
+
+    final observerPos = observer.get<LocalPosition>();
+    if (observerPos == null) return;
+
+    final observerDirection = observer.get<Direction>();
+
+    // Calculate visible tiles using Bresenham raycasting
+    final visibleTiles = _calculateVisibleTiles(
+      world,
+      observerPos,
+      visionRadius,
+      observerDirection,
+      observerId,
+    );
+
+    // Find entities at visible positions (excluding the observer itself)
+    final visibleEntityIds =
+        _findEntitiesAtPositions(world, visibleTiles, observerId);
+
+    // Update observer's VisibleEntities component
+    print(
+        '[VisionSystem] Upserting VisibleEntities for entity $observerId: ${visibleTiles.length} tiles, pos=${observerPos.x},${observerPos.y}');
+    observer.upsert(VisibleEntities(
+      entityIds: visibleEntityIds,
+      visibleTiles: visibleTiles,
+    ));
+
+    // Update memory (simple: just store last seen positions)
+    _updateMemory(observer, visibleEntityIds, world);
   }
 
   /// Calculate FOV using Bresenham raycasting with line-of-sight blocking

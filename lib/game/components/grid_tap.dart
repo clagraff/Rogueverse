@@ -7,8 +7,10 @@ import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
-import 'package:rogueverse/game/components/svg_component.dart' show SvgTileComponent;
-import 'package:rogueverse/game/utils/grid_coordinates.dart' show GridCoordinates;
+import 'package:rogueverse/game/components/svg_component.dart'
+    show SvgTileComponent;
+import 'package:rogueverse/game/utils/grid_coordinates.dart'
+    show GridCoordinates;
 
 class XY {
   final int x;
@@ -19,13 +21,14 @@ class XY {
 
 class GridTapComponent extends PositionComponent with TapCallbacks {
   final ValueNotifier<XY> notifier;
+  final ValueNotifier<int?>? observerEntityIdNotifier;
   final double gridSize;
 
-  GridTapComponent(this.gridSize, this.notifier);
+  GridTapComponent(this.gridSize, this.notifier,
+      {this.observerEntityIdNotifier});
 
   @override
   bool containsLocalPoint(Vector2 point) => true;
-
 
   @override
   void onTapDown(TapDownEvent event) {
@@ -39,13 +42,23 @@ class GridTapComponent extends PositionComponent with TapCallbacks {
     final gridPos = GridCoordinates.screenToGrid(screenPosition);
 
     notifier.value = XY(gridPos.x, gridPos.y);
+
+    // Clear observer entity selection when clicking empty space
+    // (If an entity is clicked, EntityTapComponent will set it)
+    if (observerEntityIdNotifier != null) {
+      observerEntityIdNotifier!.value = null;
+    }
   }
 }
 
 class GridTapVisualizerComponent extends SvgTileComponent with HasVisibility {
   final ValueNotifier<XY> notifier;
 
-  GridTapVisualizerComponent(this.notifier) : super(svgAssetPath: 'images/crosshair.svg', size: Vector2.all(GridCoordinates.TILE_SIZE), position: Vector2(0, 0)) {
+  GridTapVisualizerComponent(this.notifier)
+      : super(
+            svgAssetPath: 'images/crosshair.svg',
+            size: Vector2.all(GridCoordinates.TILE_SIZE),
+            position: Vector2(0, 0)) {
     notifier.addListener(onListen);
     isVisible = false;
   }

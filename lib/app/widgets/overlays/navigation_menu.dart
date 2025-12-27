@@ -10,13 +10,21 @@ import 'package:rogueverse/ecs/world.dart' show WorldSaves, World;
 class NavigationDrawerContent extends StatelessWidget {
   /// Callback when "Entity Templates" is clicked.
   final VoidCallback onEntityTemplatesPressed;
+
+  /// Callback when "Hierarchy Navigator" is clicked.
+  final VoidCallback onHierarchyNavigatorPressed;
+
+  /// Callback when "Vision Observer" is clicked.
+  final VoidCallback onVisionObserverPressed;
+
   final World world;
 
-  const NavigationDrawerContent({
-    super.key,
-    required this.onEntityTemplatesPressed,
-    required this.world
-  });
+  const NavigationDrawerContent(
+      {super.key,
+      required this.onEntityTemplatesPressed,
+      required this.onHierarchyNavigatorPressed,
+      required this.onVisionObserverPressed,
+      required this.world});
 
   @override
   Widget build(BuildContext context) {
@@ -49,6 +57,24 @@ class NavigationDrawerContent extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context); // Close drawer
                     onEntityTemplatesPressed();
+                  },
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.account_tree,
+                  label: 'Hierarchy Navigator',
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    onHierarchyNavigatorPressed();
+                  },
+                ),
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.visibility,
+                  label: 'Vision Observer',
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    onVisionObserverPressed();
                   },
                 ),
                 _buildNavItem(
@@ -93,7 +119,8 @@ class NavigationDrawerContent extends StatelessWidget {
         style: Theme.of(context).textTheme.bodyLarge,
       ),
       onTap: onTap,
-      hoverColor: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+      hoverColor:
+          Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
     );
   }
 }
