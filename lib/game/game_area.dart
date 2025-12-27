@@ -56,10 +56,11 @@ class GameArea extends FlameGame
   GameArea(FocusNode gameFocusNode) {
     world = GameScreen(gameFocusNode);
     var systems = [
-      BehaviorSystem(),    // AI decides what to do
-      CollisionSystem(),   // Check for blocked movement
-      MovementSystem(),    // Execute movement and update Direction
-      VisionSystem(),      // Calculate vision AFTER movement (sees new position/direction)
+      HierarchySystem(), // Rebuild hierarchy cache FIRST (other systems may use it)
+      BehaviorSystem(), // AI decides what to do
+      CollisionSystem(), // Check for blocked movement
+      MovementSystem(), // Execute movement and update Direction
+      VisionSystem(), // Calculate vision AFTER movement (sees new position/direction)
       InventorySystem(),
       CombatSystem(),
     ];
@@ -178,7 +179,8 @@ class GameArea extends FlameGame
   }
 
   /// Starts editing an existing template by loading it into a temp world and opening the inspector.
-  Future<void> startTemplateEditing(BuildContext context, EntityTemplate template) async {
+  Future<void> startTemplateEditing(
+      BuildContext context, EntityTemplate template) async {
     // Create temporary world and entity for editing
     _templateEditingWorld = World([], {});
     _templateEditingEntity = _templateEditingWorld!.add([]);

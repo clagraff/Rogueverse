@@ -59,9 +59,11 @@ void initializeMappers() {
   p5.VisionRadiusMapper.ensureInitialized();
   p5.VisibleEntitiesMapper.ensureInitialized();
   p5.VisionMemoryMapper.ensureInitialized();
+  p5.HasParentMapper.ensureInitialized();
   p5.CompassDirectionMapper.ensureInitialized();
   p6.EntityTemplateMapper.ensureInitialized();
   p7.SystemMapper.ensureInitialized();
+  p7.HierarchySystemMapper.ensureInitialized();
   p7.CollisionSystemMapper.ensureInitialized();
   p7.MovementSystemMapper.ensureInitialized();
   p7.InventorySystemMapper.ensureInitialized();

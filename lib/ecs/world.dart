@@ -51,6 +51,64 @@ class Change {
   }
 }
 
+/// Cache for fast parent-child relationship queries in the entity hierarchy.
+///
+/// Maintains bidirectional indices for quick lookups without scanning all entities.
+/// Rebuilt from component data each tick by HierarchySystem.
+class HierarchyCache {
+  /// Maps child entity ID to parent entity ID
+  Map<int, int> childToParent = {};
+
+  /// Maps parent entity ID to set of child entity IDs
+  Map<int, Set<int>> parentToChildren = {};
+
+  /// Flag to indicate cache needs rebuilding
+  bool isDirty = true;
+
+  /// Rebuild cache from world's HasParent components
+  void rebuild(World world) {
+    childToParent.clear();
+    parentToChildren.clear();
+
+    final parents = world.get<HasParent>();
+    for (final entry in parents.entries) {
+      final childId = entry.key;
+      final parentId = entry.value.parentEntityId;
+
+      childToParent[childId] = parentId;
+      parentToChildren.putIfAbsent(parentId, () => {}).add(childId);
+    }
+
+    isDirty = false;
+  }
+
+  /// Get all children of a parent entity
+  Set<int> getChildren(int parentId) {
+    return parentToChildren[parentId] ?? {};
+  }
+
+  /// Get parent of a child entity (null if no parent)
+  int? getParent(int childId) {
+    return childToParent[childId];
+  }
+
+  /// Get all children that have a specific component
+  List<Entity> getChildrenWith<C extends Component>(World world, int parentId) {
+    return getChildren(parentId)
+        .map((id) => world.getEntity(id))
+        .where((e) => e.has<C>())
+        .toList();
+  }
+
+  /// Get all sibling entities (entities with same parent)
+  Set<int> getSiblings(int entityId) {
+    final parentId = getParent(entityId);
+    if (parentId == null) return {};
+
+    return getChildren(parentId).where((id) => id != entityId).toSet();
+  }
+}
+
 @MappableClass()
 class World with WorldMappable {
   int tickId = 0; // TODO not de/serializing to json/map?
@@ -66,6 +124,10 @@ class World with WorldMappable {
 
   @MappableField(hook: ComponentsHook())
   Map<String, Map<int, Component>> components;
+
+  /// Cache for fast parent-child hierarchy queries
+  /// Not serialized - rebuilt from HasParent components on world load
+  final HierarchyCache hierarchyCache = HierarchyCache();
 
   World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]);
 
@@ -174,8 +236,7 @@ extension WorldChangeFilters on World {
           (componentType == null || c.componentType == componentType) &&
           (kind == null || c.kind == kind));
 
-  Stream<Change> onEntityChange(int entityId) =>
-      onChange(entityId: entityId);
+  Stream<Change> onEntityChange(int entityId) => onChange(entityId: entityId);
 
   Stream<Change> onComponentChanged<C extends Component>() =>
       onChange(componentType: C.toString());
@@ -201,8 +262,7 @@ extension WorldChangeFilters on World {
   Stream<Change> onComponentUpdatedByName(String componentType) =>
       onChange(componentType: componentType, kind: ChangeKind.updated);
 
-  Stream<Change> onEntityOnComponent<C extends Component>(
-          int entityId) =>
+  Stream<Change> onEntityOnComponent<C extends Component>(int entityId) =>
       onChange(entityId: entityId, componentType: C.toString());
 
   Stream<Change> onEntityOnComponentByName(

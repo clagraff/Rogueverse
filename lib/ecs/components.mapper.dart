@@ -116,6 +116,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
       VisionRadiusMapper.ensureInitialized();
       VisibleEntitiesMapper.ensureInitialized();
       VisionMemoryMapper.ensureInitialized();
+      HasParentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -4216,5 +4217,130 @@ class _VisionMemoryCopyWithImpl<$R, $Out>
   VisionMemoryCopyWith<$R2, VisionMemory, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _VisionMemoryCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class HasParentMapper extends SubClassMapperBase<HasParent> {
+  HasParentMapper._();
+
+  static HasParentMapper? _instance;
+  static HasParentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = HasParentMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'HasParent';
+
+  static int _$parentEntityId(HasParent v) => v.parentEntityId;
+  static const Field<HasParent, int> _f$parentEntityId = Field(
+    'parentEntityId',
+    _$parentEntityId,
+  );
+
+  @override
+  final MappableFields<HasParent> fields = const {
+    #parentEntityId: _f$parentEntityId,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'HasParent';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static HasParent _instantiate(DecodingData data) {
+    return HasParent(data.dec(_f$parentEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static HasParent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<HasParent>(map);
+  }
+
+  static HasParent fromJson(String json) {
+    return ensureInitialized().decodeJson<HasParent>(json);
+  }
+}
+
+mixin HasParentMappable {
+  String toJson() {
+    return HasParentMapper.ensureInitialized().encodeJson<HasParent>(
+      this as HasParent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return HasParentMapper.ensureInitialized().encodeMap<HasParent>(
+      this as HasParent,
+    );
+  }
+
+  HasParentCopyWith<HasParent, HasParent, HasParent> get copyWith =>
+      _HasParentCopyWithImpl<HasParent, HasParent>(
+        this as HasParent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return HasParentMapper.ensureInitialized().stringifyValue(
+      this as HasParent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return HasParentMapper.ensureInitialized().equalsValue(
+      this as HasParent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return HasParentMapper.ensureInitialized().hashValue(this as HasParent);
+  }
+}
+
+extension HasParentValueCopy<$R, $Out> on ObjectCopyWith<$R, HasParent, $Out> {
+  HasParentCopyWith<$R, HasParent, $Out> get $asHasParent =>
+      $base.as((v, t, t2) => _HasParentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class HasParentCopyWith<$R, $In extends HasParent, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? parentEntityId});
+  HasParentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _HasParentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, HasParent, $Out>
+    implements HasParentCopyWith<$R, HasParent, $Out> {
+  _HasParentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<HasParent> $mapper =
+      HasParentMapper.ensureInitialized();
+  @override
+  $R call({int? parentEntityId}) => $apply(
+    FieldCopyWithData({
+      if (parentEntityId != null) #parentEntityId: parentEntityId,
+    }),
+  );
+  @override
+  HasParent $make(CopyWithData data) =>
+      HasParent(data.get(#parentEntityId, or: $value.parentEntityId));
+
+  @override
+  HasParentCopyWith<$R2, HasParent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _HasParentCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

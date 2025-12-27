@@ -11,14 +11,14 @@ abstract class Component with ComponentMappable {
 /// Enum representing the 8 compass directions.
 @MappableEnum()
 enum CompassDirection {
-  north,      // (0, -1)
-  south,      // (0, 1)
-  east,       // (1, 0)
-  west,       // (-1, 0)
-  northeast,  // (1, -1)
-  northwest,  // (-1, -1)
-  southeast,  // (1, 1)
-  southwest   // (-1, 1)
+  north, // (0, -1)
+  south, // (0, 1)
+  east, // (1, 0)
+  west, // (-1, 0)
+  northeast, // (1, -1)
+  northwest, // (-1, -1)
+  southeast, // (1, 1)
+  southwest // (-1, 1)
 }
 
 /// Component that tracks which direction an entity is facing.
@@ -57,7 +57,6 @@ class Lifetime with LifetimeMappable implements Component {
 
   Lifetime(this.lifetime);
 
-
   /// Check if the lifetime of the current component has expired.
   /// Otherwise, decrement it by one.
   bool tick() {
@@ -75,7 +74,7 @@ class Lifetime with LifetimeMappable implements Component {
 ///
 /// Used for temporary effects that should be cleared at start of tick.
 @MappableClass()
-class BeforeTick extends Lifetime with BeforeTickMappable implements Component{
+class BeforeTick extends Lifetime with BeforeTickMappable implements Component {
   BeforeTick([super.lifetime = 0]);
 
   @override
@@ -94,9 +93,8 @@ class AfterTick extends Lifetime with AfterTickMappable implements Component {
   String get componentType => "AfterTick";
 }
 
-
 @MappableClass()
-class Cell with CellMappable implements Component  {
+class Cell with CellMappable implements Component {
   List<int> entityIds = [];
 
   @override
@@ -140,7 +138,9 @@ extension LocalPositionExtension on LocalPosition {
 // TODO and have MoveBy do the same, with the source and target and deltas?
 /// Component that signals an intent to move the entity by a relative offset.
 @MappableClass()
-class MoveByIntent extends AfterTick with MoveByIntentMappable implements Component{
+class MoveByIntent extends AfterTick
+    with MoveByIntentMappable
+    implements Component {
   final int dx, dy;
 
   MoveByIntent({required this.dx, required this.dy});
@@ -171,7 +171,9 @@ class BlocksMovement with BlocksMovementMappable implements Component {
 
 /// Component added when an entity's movement was blocked by another entity.
 @MappableClass()
-class BlockedMove extends BeforeTick with BlockedMoveMappable implements Component {
+class BlockedMove extends BeforeTick
+    with BlockedMoveMappable
+    implements Component {
   final LocalPosition attempted;
 
   BlockedMove(this.attempted);
@@ -202,7 +204,6 @@ class Behavior with BehaviorMappable implements Component {
   @override
   String get componentType => "Behavior";
 }
-
 
 /// Component that provides a visual asset path for rendering the entity.
 @MappableClass()
@@ -255,7 +256,7 @@ class AttackIntent with AttackIntentMappable implements Component {
 }
 
 @MappableClass()
-class DidAttack extends BeforeTick with DidAttackMappable implements Component{
+class DidAttack extends BeforeTick with DidAttackMappable implements Component {
   final int targetId;
   final int damage;
 
@@ -265,9 +266,10 @@ class DidAttack extends BeforeTick with DidAttackMappable implements Component{
   String get componentType => "DidAttack";
 }
 
-
 @MappableClass()
-class WasAttacked extends BeforeTick with WasAttackedMappable implements Component {
+class WasAttacked extends BeforeTick
+    with WasAttackedMappable
+    implements Component {
   final int sourceId;
   final int damage;
 
@@ -306,7 +308,6 @@ class InventoryMaxCount with InventoryMaxCountMappable implements Component {
   String get componentType => "InventoryMaxCount";
 }
 
-
 @MappableClass()
 class Loot with LootMappable implements Component {
   final List<Component> components;
@@ -334,7 +335,9 @@ class LootTable with LootTableMappable implements Component {
 }
 
 @MappableClass()
-class InventoryFullFailure extends BeforeTick with InventoryFullFailureMappable implements Component {
+class InventoryFullFailure extends BeforeTick
+    with InventoryFullFailureMappable
+    implements Component {
   final int targetEntityId;
 
   InventoryFullFailure(this.targetEntityId);
@@ -350,7 +353,9 @@ class Pickupable with PickupableMappable implements Component {
 }
 
 @MappableClass()
-class PickupIntent extends AfterTick with PickupIntentMappable implements Component{
+class PickupIntent extends AfterTick
+    with PickupIntentMappable
+    implements Component {
   final int targetEntityId;
 
   PickupIntent(this.targetEntityId);
@@ -360,7 +365,7 @@ class PickupIntent extends AfterTick with PickupIntentMappable implements Compon
 }
 
 @MappableClass()
-class PickedUp extends BeforeTick with PickedUpMappable implements Component{
+class PickedUp extends BeforeTick with PickedUpMappable implements Component {
   final int targetEntityId;
 
   PickedUp(this.targetEntityId);
@@ -385,8 +390,9 @@ class BlocksSight with BlocksSightMappable implements Component {
 /// Entities with this component will have vision calculated by VisionSystem.
 @MappableClass()
 class VisionRadius with VisionRadiusMappable implements Component {
-  final int radius;              // Vision range in grid tiles
-  final int fieldOfViewDegrees;  // FOV angle (360 = omnidirectional, 90 = narrow cone)
+  final int radius; // Vision range in grid tiles
+  final int
+      fieldOfViewDegrees; // FOV angle (360 = omnidirectional, 90 = narrow cone)
 
   VisionRadius({
     required this.radius,
@@ -401,14 +407,14 @@ class VisionRadius with VisionRadiusMappable implements Component {
 /// Updated by VisionSystem each tick.
 @MappableClass()
 class VisibleEntities with VisibleEntitiesMappable implements Component {
-  final Set<int> entityIds;           // IDs of entities currently visible
-  final Set<LocalPosition> visibleTiles;  // Grid positions in FOV
+  final Set<int> entityIds; // IDs of entities currently visible
+  final Set<LocalPosition> visibleTiles; // Grid positions in FOV
 
   VisibleEntities({
     Set<int>? entityIds,
     Set<LocalPosition>? visibleTiles,
-  }) : entityIds = entityIds ?? {},
-       visibleTiles = visibleTiles ?? {};
+  })  : entityIds = entityIds ?? {},
+        visibleTiles = visibleTiles ?? {};
 
   @override
   String get componentType => "VisibleEntities";
@@ -419,25 +425,50 @@ class VisibleEntities with VisibleEntitiesMappable implements Component {
 @MappableClass()
 class VisionMemory with VisionMemoryMappable implements Component {
   @MappableField(key: 'lastSeenPositions')
-  final Map<String, LocalPosition> lastSeenPositions;  // entityId (as string) -> last position
+  final Map<String, LocalPosition>
+      lastSeenPositions; // entityId (as string) -> last position
 
   VisionMemory({Map<String, LocalPosition>? lastSeenPositions})
       : lastSeenPositions = lastSeenPositions ?? {};
 
   @override
   String get componentType => "VisionMemory";
-  
+
   // Helper methods to work with int keys
   LocalPosition? getLastSeenPosition(int entityId) {
     return lastSeenPositions[entityId.toString()];
   }
-  
+
   void setLastSeenPosition(int entityId, LocalPosition position) {
     lastSeenPositions[entityId.toString()] = position;
   }
-  
+
   bool hasSeenEntity(int entityId) {
     return lastSeenPositions.containsKey(entityId.toString());
   }
 }
 
+// ============================================================================
+// Hierarchy System Components
+// ============================================================================
+
+/// Component that marks an entity as having a parent in the entity hierarchy.
+///
+/// Every entity (except root entities like Universe) should have a parent.
+/// This creates a natural tree structure for organization and spatial partitioning.
+///
+/// Examples:
+/// - NPC has HasParent(roomId) - NPC is in a room
+/// - Room has HasParent(buildingId) - Room is in a building
+/// - Building has HasParent(regionId) - Building is in a region
+/// - Region has HasParent(planetId) - Region is on a planet
+/// - Planet has HasParent(starSystemId) - Planet is in a star system
+@MappableClass()
+class HasParent with HasParentMappable implements Component {
+  final int parentEntityId;
+
+  HasParent(this.parentEntityId);
+
+  @override
+  String get componentType => "HasParent";
+}

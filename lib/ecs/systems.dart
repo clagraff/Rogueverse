@@ -7,7 +7,6 @@ import 'package:rogueverse/ecs/entity.dart';
 
 part 'systems.mapper.dart';
 
-
 // TODO: Example of a potentially better way to do Systems
 // abstract class ProcessingSystem extends System {
 //   // Define a filter method that returns true for entities this system should process
@@ -31,9 +30,22 @@ abstract class System with SystemMappable {
   void update(World world);
 }
 
+/// System that maintains the hierarchy cache for fast parent-child queries.
+///
+/// This system rebuilds the World's hierarchyCache each tick from HasParent components.
+/// Should run first in the system execution order to ensure cache is fresh for other systems.
+@MappableClass()
+class HierarchySystem extends System with HierarchySystemMappable {
+  @override
+  void update(World world) {
+    world.hierarchyCache.rebuild(world);
+  }
+}
+
 /// A system that handles collision detection by checking for blocked movement.
 ///
 /// If an entity attempts to move into an occupied tile, its move is cancelled.
+/// Uses hierarchy-scoped queries: only checks collisions with sibling entities (same parent).
 @MappableClass()
 class CollisionSystem extends System with CollisionSystemMappable {
   @override
@@ -56,13 +68,37 @@ class CollisionSystem extends System with CollisionSystemMappable {
       final dest = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
       var blocked = false;
 
-      positions.forEach((key, value) {
-        if (value.x == dest.x &&
-            value.y == dest.y &&
-            world.getEntity(key).has<BlocksMovement>()) {
-          blocked = true;
+      // Get entities to check for collisions
+      // If entity has parent, only check siblings (same parent)
+      // Otherwise, check all entities (backward compatibility)
+      final parentId = e.get<HasParent>()?.parentEntityId;
+
+      if (parentId != null) {
+        // Hierarchy-scoped: check only siblings
+        final siblings = world.hierarchyCache.getSiblings(id);
+
+        for (final siblingId in siblings) {
+          final sibling = world.getEntity(siblingId);
+          if (!sibling.has<BlocksMovement>()) continue;
+
+          final siblingPos = sibling.get<LocalPosition>();
+          if (siblingPos != null &&
+              siblingPos.x == dest.x &&
+              siblingPos.y == dest.y) {
+            blocked = true;
+            break;
+          }
         }
-      });
+      } else {
+        // No parent: check all entities (old behavior)
+        positions.forEach((key, value) {
+          if (value.x == dest.x &&
+              value.y == dest.y &&
+              world.getEntity(key).has<BlocksMovement>()) {
+            blocked = true;
+          }
+        });
+      }
 
       if (blocked) {
         // Update direction even when movement is blocked
@@ -191,16 +227,20 @@ class CombatSystem extends System with CombatSystemMappable {
         var r = Random();
         var lootTable = target.get<LootTable>();
         if (lootTable != null) {
-          for(var lootable in lootTable.lootables) {
+          for (var lootable in lootTable.lootables) {
             var prob = r.nextDouble() * (1 + double.minPositive);
             if (prob <= lootable.probability) {
-              var inv = target.get<Inventory>(Inventory([]))!; // Create inventory comp if it doesnt exist. Otherwise we cannot do anything from the LootTable
+              var inv = target.get<Inventory>(Inventory(
+                  []))!; // Create inventory comp if it doesnt exist. Otherwise we cannot do anything from the LootTable
               for (var i = 0; i < lootable.quantity; i++) {
                 var item = world.add([]);
 
                 for (var c in lootable.components) {
                   // Have to do things the hard way to avoid `dynamic` component types in the components map.
-                  var comp = world.components.putIfAbsent(c.componentType, () => {}); // TODO must never update `world.components` directly as it side-steps our notifications.
+                  var comp = world.components.putIfAbsent(
+                      c.componentType,
+                      () =>
+                          {}); // TODO must never update `world.components` directly as it side-steps our notifications.
                   comp[item.id] = c;
                 }
 
@@ -219,8 +259,6 @@ class CombatSystem extends System with CombatSystemMappable {
   }
 }
 
-
-
 @MappableClass()
 class BehaviorSystem extends System with BehaviorSystemMappable {
   @override
@@ -228,7 +266,8 @@ class BehaviorSystem extends System with BehaviorSystemMappable {
     final behaviors = world.get<Behavior>();
     behaviors.forEach((e, b) {
       var entity = world.getEntity(e);
-      var result = b.behavior.tick(entity); // TODO i dont know what to do with the result....
+      var result = b.behavior
+          .tick(entity); // TODO i dont know what to do with the result....
     });
   }
 }
@@ -253,13 +292,16 @@ class VisionSystem extends System with VisionSystemMappable {
         observerPos,
         visionRadius,
         observerDirection,
+        observerId,
       );
 
       // Find entities at visible positions (excluding the observer itself)
-      final visibleEntityIds = _findEntitiesAtPositions(world, visibleTiles, observerId);
+      final visibleEntityIds =
+          _findEntitiesAtPositions(world, visibleTiles, observerId);
 
       // Update observer's VisibleEntities component
-      print('[VisionSystem] Upserting VisibleEntities for entity $observerId: ${visibleTiles.length} tiles, pos=${observerPos.x},${observerPos.y}');
+      print(
+          '[VisionSystem] Upserting VisibleEntities for entity $observerId: ${visibleTiles.length} tiles, pos=${observerPos.x},${observerPos.y}');
       observer.upsert(VisibleEntities(
         entityIds: visibleEntityIds,
         visibleTiles: visibleTiles,
@@ -276,6 +318,7 @@ class VisionSystem extends System with VisionSystemMappable {
     LocalPosition origin,
     VisionRadius visionRadius,
     Direction? direction,
+    int observerId,
   ) {
     final visible = <LocalPosition>{};
     visible.add(origin); // Observer can always see their own tile
@@ -298,7 +341,7 @@ class VisionSystem extends System with VisionSystemMappable {
         visible.add(tile);
 
         // Stop ray if blocked by BlocksSight
-        if (_isBlockedAtPosition(world, tile)) break;
+        if (_isBlockedAtPosition(world, tile, observerId: observerId)) break;
       }
     }
 
@@ -350,9 +393,31 @@ class VisionSystem extends System with VisionSystemMappable {
   }
 
   /// Check if position blocks sight
-  bool _isBlockedAtPosition(World world, LocalPosition pos) {
+  /// If observerId has a parent, only check siblings. Otherwise check all entities.
+  bool _isBlockedAtPosition(World world, LocalPosition pos, {int? observerId}) {
     final positions = world.get<LocalPosition>();
 
+    // If observer has parent, only check siblings for blocking sight
+    if (observerId != null) {
+      final observer = world.getEntity(observerId);
+      final parentId = observer.get<HasParent>()?.parentEntityId;
+
+      if (parentId != null) {
+        final siblings = world.hierarchyCache.getSiblings(observerId);
+
+        return siblings.any((siblingId) {
+          final sibling = world.getEntity(siblingId);
+          if (!sibling.has<BlocksSight>()) return false;
+
+          final siblingPos = sibling.get<LocalPosition>();
+          return siblingPos != null &&
+              siblingPos.x == pos.x &&
+              siblingPos.y == pos.y;
+        });
+      }
+    }
+
+    // No parent or no observerId: check all entities (old behavior)
     return positions.entries.any((entry) {
       final entityPos = entry.value;
       if (entityPos.x != pos.x || entityPos.y != pos.y) return false;
@@ -363,20 +428,41 @@ class VisionSystem extends System with VisionSystemMappable {
   }
 
   /// Find entities at visible positions (excluding the observer itself)
+  /// If observer has parent, only finds sibling entities. Otherwise finds all entities.
   Set<int> _findEntitiesAtPositions(
       World world, Set<LocalPosition> positions, int observerId) {
     final entityIds = <int>{};
-    final allPositions = world.get<LocalPosition>();
 
-    for (final entry in allPositions.entries) {
-      final entityId = entry.key;
-      
-      // Skip the observer itself - it shouldn't see itself
-      if (entityId == observerId) continue;
-      
-      final entityPos = entry.value;
-      if (positions.any((p) => p.x == entityPos.x && p.y == entityPos.y)) {
-        entityIds.add(entityId);
+    final observer = world.getEntity(observerId);
+    final parentId = observer.get<HasParent>()?.parentEntityId;
+
+    if (parentId != null) {
+      // Hierarchy-scoped: only find siblings
+      final siblings = world.hierarchyCache.getSiblings(observerId);
+
+      for (final siblingId in siblings) {
+        final sibling = world.getEntity(siblingId);
+        final siblingPos = sibling.get<LocalPosition>();
+
+        if (siblingPos != null &&
+            positions.any((p) => p.x == siblingPos.x && p.y == siblingPos.y)) {
+          entityIds.add(siblingId);
+        }
+      }
+    } else {
+      // No parent: check all entities (old behavior)
+      final allPositions = world.get<LocalPosition>();
+
+      for (final entry in allPositions.entries) {
+        final entityId = entry.key;
+
+        // Skip the observer itself - it shouldn't see itself
+        if (entityId == observerId) continue;
+
+        final entityPos = entry.value;
+        if (positions.any((p) => p.x == entityPos.x && p.y == entityPos.y)) {
+          entityIds.add(entityId);
+        }
       }
     }
 
