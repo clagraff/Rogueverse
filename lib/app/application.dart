@@ -92,6 +92,15 @@ class _ApplicationState extends State<Application> {
             _game.overlays.clear();
             _game.overlays.add('visionObserverPanel');
           },
+          onEntityInspectorPressed: () {
+            // Toggle inspector panel
+            if (_game.overlays.isActive('inspectorPanel')) {
+              _game.overlays.remove('inspectorPanel');
+            } else {
+              _game.overlays.add('inspectorPanel');
+            }
+          },
+          selectedEntityNotifier: _game.selectedEntity,
           world: _game.currentWorld,
         ),
         body: Stack(

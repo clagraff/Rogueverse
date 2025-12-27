@@ -5,7 +5,7 @@ import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dar
 
 /// Base class for marker component metadata.
 ///
-/// Marker components are tags with no data fields (e.g., PlayerControlled, Dead).
+/// Marker components are tags with no data fields (e.g., Dead, AiControlled).
 /// This base class provides the common display logic for all marker components.
 abstract class MarkerComponentMetadata extends ComponentMetadata {
   @override
@@ -26,21 +26,6 @@ abstract class MarkerComponentMetadata extends ComponentMetadata {
       },
     );
   }
-}
-
-/// Metadata for the PlayerControlled marker component.
-class PlayerControlledMetadata extends MarkerComponentMetadata {
-  @override
-  String get componentName => 'PlayerControlled';
-
-  @override
-  bool hasComponent(Entity entity) => entity.has<PlayerControlled>();
-
-  @override
-  Component createDefault() => PlayerControlled();
-
-  @override
-  void removeComponent(Entity entity) => entity.remove<PlayerControlled>();
 }
 
 /// Metadata for the AiControlled marker component.

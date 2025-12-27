@@ -1,6 +1,7 @@
 import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
+import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart' show WorldSaves, World;
 
 /// Content for the navigation drawer.
@@ -17,6 +18,12 @@ class NavigationDrawerContent extends StatelessWidget {
   /// Callback when "Vision Observer" is clicked.
   final VoidCallback onVisionObserverPressed;
 
+  /// Callback when "Entity Inspector" is clicked.
+  final VoidCallback onEntityInspectorPressed;
+
+  /// Notifier for the currently selected entity (to enable/disable inspector).
+  final ValueNotifier<Entity?> selectedEntityNotifier;
+
   final World world;
 
   const NavigationDrawerContent(
@@ -24,6 +31,8 @@ class NavigationDrawerContent extends StatelessWidget {
       required this.onEntityTemplatesPressed,
       required this.onHierarchyNavigatorPressed,
       required this.onVisionObserverPressed,
+      required this.onEntityInspectorPressed,
+      required this.selectedEntityNotifier,
       required this.world});
 
   @override
@@ -53,7 +62,7 @@ class NavigationDrawerContent extends StatelessWidget {
                 _buildNavItem(
                   context: context,
                   icon: Icons.inventory_2_outlined,
-                  label: 'Entity Templates',
+                  label: 'Entity Templates (Ctrl+T)',
                   onTap: () {
                     Navigator.pop(context); // Close drawer
                     onEntityTemplatesPressed();
@@ -75,6 +84,23 @@ class NavigationDrawerContent extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context); // Close drawer
                     onVisionObserverPressed();
+                  },
+                ),
+                ValueListenableBuilder<Entity?>(
+                  valueListenable: selectedEntityNotifier,
+                  builder: (context, selectedEntity, _) {
+                    return _buildNavItem(
+                      context: context,
+                      icon: Icons.edit,
+                      label: 'Entity Inspector (Ctrl+E)',
+                      enabled: selectedEntity != null,
+                      onTap: selectedEntity != null
+                          ? () {
+                              Navigator.pop(context); // Close drawer
+                              onEntityInspectorPressed();
+                            }
+                          : () {}, // No-op when disabled
+                    );
                   },
                 ),
                 _buildNavItem(
@@ -111,16 +137,34 @@ class NavigationDrawerContent extends StatelessWidget {
     required IconData icon,
     required String label,
     required VoidCallback onTap,
+    bool enabled = true,
   }) {
     return ListTile(
-      leading: Icon(icon, color: Theme.of(context).colorScheme.primary),
+      leading: Icon(
+        icon,
+        color: enabled
+            ? Theme.of(context).colorScheme.primary
+            : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+      ),
       title: Text(
         label,
-        style: Theme.of(context).textTheme.bodyLarge,
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: enabled
+                  ? null
+                  : Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.38),
+            ),
       ),
-      onTap: onTap,
-      hoverColor:
-          Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+      enabled: enabled,
+      onTap: enabled ? onTap : null,
+      hoverColor: enabled
+          ? Theme.of(context)
+              .colorScheme
+              .primaryContainer
+              .withValues(alpha: 0.3)
+          : null,
     );
   }
 }

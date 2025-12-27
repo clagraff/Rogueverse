@@ -54,7 +54,6 @@ class _InspectorPanelState extends State<InspectorPanel> {
       ComponentRegistry.register(InventoryMaxCountMetadata());
 
       // Marker components (tags with no data)
-      ComponentRegistry.register(PlayerControlledMetadata());
       ComponentRegistry.register(AiControlledMetadata());
       ComponentRegistry.register(BlocksMovementMetadata());
       ComponentRegistry.register(PickupableMetadata());
@@ -238,8 +237,10 @@ class _AddComponentButton extends StatelessWidget {
             .map(
               (metadata) => PopupMenuItem<ComponentMetadata>(
                 value: metadata,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                child: Text(metadata.componentName, style: const TextStyle(fontSize: 12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Text(metadata.componentName,
+                    style: const TextStyle(fontSize: 12)),
               ),
             )
             .toList(),

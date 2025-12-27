@@ -182,13 +182,6 @@ class BlockedMove extends BeforeTick
   String get componentType => "BlockedMove";
 }
 
-/// Marker component indicating the entity is controlled by the player.
-@MappableClass()
-class PlayerControlled with PlayerControlledMappable implements Component {
-  @override
-  String get componentType => "PlayerControlled";
-}
-
 @MappableClass()
 class AiControlled with AiControlledMappable implements Component {
   @override

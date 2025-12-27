@@ -95,7 +95,6 @@ class ComponentMapper extends ClassMapperBase<Component> {
       DidMoveMapper.ensureInitialized();
       BlocksMovementMapper.ensureInitialized();
       BlockedMoveMapper.ensureInitialized();
-      PlayerControlledMapper.ensureInitialized();
       AiControlledMapper.ensureInitialized();
       BehaviorMapper.ensureInitialized();
       RenderableMapper.ensureInitialized();
@@ -1507,123 +1506,6 @@ class _BlockedMoveCopyWithImpl<$R, $Out>
   BlockedMoveCopyWith<$R2, BlockedMove, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _BlockedMoveCopyWithImpl<$R2, $Out2>($value, $cast, t);
-}
-
-class PlayerControlledMapper extends SubClassMapperBase<PlayerControlled> {
-  PlayerControlledMapper._();
-
-  static PlayerControlledMapper? _instance;
-  static PlayerControlledMapper ensureInitialized() {
-    if (_instance == null) {
-      MapperContainer.globals.use(_instance = PlayerControlledMapper._());
-      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
-    }
-    return _instance!;
-  }
-
-  @override
-  final String id = 'PlayerControlled';
-
-  @override
-  final MappableFields<PlayerControlled> fields = const {};
-
-  @override
-  final String discriminatorKey = '__type';
-  @override
-  final dynamic discriminatorValue = 'PlayerControlled';
-  @override
-  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
-
-  static PlayerControlled _instantiate(DecodingData data) {
-    return PlayerControlled();
-  }
-
-  @override
-  final Function instantiate = _instantiate;
-
-  static PlayerControlled fromMap(Map<String, dynamic> map) {
-    return ensureInitialized().decodeMap<PlayerControlled>(map);
-  }
-
-  static PlayerControlled fromJson(String json) {
-    return ensureInitialized().decodeJson<PlayerControlled>(json);
-  }
-}
-
-mixin PlayerControlledMappable {
-  String toJson() {
-    return PlayerControlledMapper.ensureInitialized()
-        .encodeJson<PlayerControlled>(this as PlayerControlled);
-  }
-
-  Map<String, dynamic> toMap() {
-    return PlayerControlledMapper.ensureInitialized()
-        .encodeMap<PlayerControlled>(this as PlayerControlled);
-  }
-
-  PlayerControlledCopyWith<PlayerControlled, PlayerControlled, PlayerControlled>
-  get copyWith =>
-      _PlayerControlledCopyWithImpl<PlayerControlled, PlayerControlled>(
-        this as PlayerControlled,
-        $identity,
-        $identity,
-      );
-  @override
-  String toString() {
-    return PlayerControlledMapper.ensureInitialized().stringifyValue(
-      this as PlayerControlled,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return PlayerControlledMapper.ensureInitialized().equalsValue(
-      this as PlayerControlled,
-      other,
-    );
-  }
-
-  @override
-  int get hashCode {
-    return PlayerControlledMapper.ensureInitialized().hashValue(
-      this as PlayerControlled,
-    );
-  }
-}
-
-extension PlayerControlledValueCopy<$R, $Out>
-    on ObjectCopyWith<$R, PlayerControlled, $Out> {
-  PlayerControlledCopyWith<$R, PlayerControlled, $Out>
-  get $asPlayerControlled =>
-      $base.as((v, t, t2) => _PlayerControlledCopyWithImpl<$R, $Out>(v, t, t2));
-}
-
-abstract class PlayerControlledCopyWith<$R, $In extends PlayerControlled, $Out>
-    implements ComponentCopyWith<$R, $In, $Out> {
-  @override
-  $R call();
-  PlayerControlledCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
-    Then<$Out2, $R2> t,
-  );
-}
-
-class _PlayerControlledCopyWithImpl<$R, $Out>
-    extends ClassCopyWithBase<$R, PlayerControlled, $Out>
-    implements PlayerControlledCopyWith<$R, PlayerControlled, $Out> {
-  _PlayerControlledCopyWithImpl(super.value, super.then, super.then2);
-
-  @override
-  late final ClassMapperBase<PlayerControlled> $mapper =
-      PlayerControlledMapper.ensureInitialized();
-  @override
-  $R call() => $apply(FieldCopyWithData({}));
-  @override
-  PlayerControlled $make(CopyWithData data) => PlayerControlled();
-
-  @override
-  PlayerControlledCopyWith<$R2, PlayerControlled, $Out2> $chain<$R2, $Out2>(
-    Then<$Out2, $R2> t,
-  ) => _PlayerControlledCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class AiControlledMapper extends SubClassMapperBase<AiControlled> {

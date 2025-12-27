@@ -38,7 +38,6 @@ void initializeMappers() {
   p5.DidMoveMapper.ensureInitialized();
   p5.BlocksMovementMapper.ensureInitialized();
   p5.BlockedMoveMapper.ensureInitialized();
-  p5.PlayerControlledMapper.ensureInitialized();
   p5.AiControlledMapper.ensureInitialized();
   p5.BehaviorMapper.ensureInitialized();
   p5.RenderableMapper.ensureInitialized();

@@ -1,12 +1,9 @@
 import 'package:flame/components.dart' hide World;
-import 'package:flame/effects.dart' show OpacityEffect, EffectController;
 import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
-import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/svg_component.dart'
     show SvgTileComponent;
@@ -53,6 +50,9 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
       if (x == localPos.x && y == localPos.y) {
         Logger("EntityTap").info("Tapped $entityId");
         notifier.value = world.getEntity(entityId);
+        // Update observer entity ID for vision tracking
+        Logger("EntityTap").info("Setting observerEntityId to $entityId");
+        observerEntityIdNotifier?.value = entityId;
         matched = true;
       }
     });
@@ -60,6 +60,9 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
     if (!matched && notifier.value != null) {
       Logger("EntityTap").info("untapped ${notifier.value!.id}");
       notifier.value = null;
+      // Clear observer entity ID when deselecting
+      Logger("EntityTap").info("Clearing observerEntityId");
+      observerEntityIdNotifier?.value = null;
     }
   }
 }

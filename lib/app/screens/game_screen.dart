@@ -14,13 +14,16 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';
+import 'package:rogueverse/game/components/debug_info_overlay.dart';
 import 'package:rogueverse/game/components/entity_drag_mover.dart';
 import 'package:rogueverse/game/components/entity_hover_tracker.dart';
 import 'package:rogueverse/game/components/entity_tap_component.dart';
 import 'package:rogueverse/game/components/focus_on_tap_component.dart';
+import 'package:rogueverse/game/components/global_control_handler.dart';
 import 'package:rogueverse/game/components/grid_tap.dart';
+import 'package:rogueverse/game/components/inventory_control_handler.dart';
 import 'package:rogueverse/game/components/opponent.dart';
-import 'package:rogueverse/game/components/player.dart';
+import 'package:rogueverse/game/components/positional_control_handler.dart';
 import 'package:rogueverse/game/components/template_entity_spawner.dart';
 import 'package:rogueverse/game/components/template_panel_toggle.dart';
 import 'package:rogueverse/game/components/vision_cone.dart';
@@ -75,7 +78,8 @@ class GameScreen extends flame.World with Disposer {
 
     add(GridTapComponent(32, gridNotifier,
         observerEntityIdNotifier: game.observerEntityId));
-    add(EntityTapComponent(32, entityNotifier, game.currentWorld));
+    add(EntityTapComponent(32, entityNotifier, game.currentWorld,
+        observerEntityIdNotifier: game.observerEntityId));
     add(EntityTapVisualizerComponent(entityNotifier));
     add(GridTapVisualizerComponent(gridNotifier));
 
@@ -87,6 +91,24 @@ class GameScreen extends flame.World with Disposer {
       world: game.currentWorld,
       titleNotifier: game.title,
     ));
+
+    // Add debug overlay
+    add(DebugInfoOverlay(
+      selectedEntityNotifier: game.selectedEntity,
+      observerEntityIdNotifier: game.observerEntityId,
+      game: game,
+    ));
+
+    // Add control handlers
+    add(PositionalControlHandler(
+      selectedEntityNotifier: game.selectedEntity,
+      world: game.currentWorld,
+    ));
+    add(InventoryControlHandler(
+      selectedEntityNotifier: game.selectedEntity,
+      world: game.currentWorld,
+    ));
+    add(GlobalControlHandler(selectedEntityNotifier: game.selectedEntity));
 
     // Setup a listener for when Renderable or LocalPosition are being added
     // to an entity for the first time and _both_ are present on the entity,
@@ -109,21 +131,19 @@ class GameScreen extends flame.World with Disposer {
       var entities = game.currentWorld.get<LocalPosition>();
       entities.forEach((id, comp) {
         if (comp.x == gridNotifier.value.x && comp.y == gridNotifier.value.y) {
-          var overlayName = "inspectorPanel";
-          game.overlays.remove(overlayName);
           entityNotifier.value = game.currentWorld.getEntity(id);
-          game.overlays.add(overlayName);
         }
       });
     });
 
-    var playerId = game.currentWorld.get<PlayerControlled>().entries.first.key;
-
     // Rebuild hierarchy cache after loading entities (HierarchySystem normally does this during tick)
     game.currentWorld.hierarchyCache.rebuild(game.currentWorld);
 
-    // Set the default viewedParentId to the player's parent (the region they're in)
-    final playerEntity = game.currentWorld.getEntity(playerId);
+    // Find an entity named "Player" to set default viewedParentId
+    final playerEntity = game.currentWorld.entities().firstWhere(
+          (e) => e.get<Name>()?.name == "Player",
+          orElse: () => game.currentWorld.entities().first,
+        );
     final playerParent = playerEntity.get<HasParent>();
     if (playerParent != null) {
       game.viewedParentId.value = playerParent.parentEntityId;
@@ -142,11 +162,16 @@ class GameScreen extends flame.World with Disposer {
     // Listen to observerEntityId changes to immediately recalculate vision
     game.observerEntityId.addListener(() {
       final observerId = game.observerEntityId.value;
+      Logger("game_screen").info("Observer entity ID changed to: $observerId");
       if (observerId != null) {
         // Find the VisionSystem and trigger immediate vision update
         final visionSystem =
             game.currentWorld.systems.whereType<VisionSystem>().firstOrNull;
+        Logger("game_screen")
+            .info("Vision system found: ${visionSystem != null}");
         if (visionSystem != null) {
+          Logger("game_screen")
+              .info("Updating vision for observer $observerId");
           visionSystem.updateVisionForObserver(game.currentWorld, observerId);
         }
       }
@@ -171,17 +196,6 @@ class GameScreen extends flame.World with Disposer {
         .entities()
         .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
         .forEach((entity) {
-      var pos = entity.get<LocalPosition>()!;
-      if (entity.has<PlayerControlled>()) {
-        _spawnRenderableEntity(game, game.currentWorld.getEntity(playerId));
-        game.selectedEntity.value = entity;
-        return;
-      }
-      if (entity.has<AiControlled>()) {
-        _spawnRenderableEntity(game, game.currentWorld.getEntity(entity.id));
-        return;
-      }
-
       _spawnRenderableEntity(game, game.currentWorld.getEntity(entity.id));
     });
   }
@@ -237,7 +251,6 @@ class GameScreen extends flame.World with Disposer {
       Name(name: "Player"),
       Renderable('images/player.svg'),
       LocalPosition(x: 0, y: 0),
-      PlayerControlled(),
       BlocksMovement(),
       Inventory([]),
       InventoryMaxCount(5),
@@ -504,14 +517,7 @@ class GameScreen extends flame.World with Disposer {
     final position = flame.Vector2(lp.x * 32, lp.y * 32);
     flame.Component component;
 
-    if (entity.has<PlayerControlled>()) {
-      component = PlayerControlledAgent(
-        world: game.currentWorld,
-        entity: game.currentWorld.getEntity(entity.id),
-        svgAssetPath: renderable.svgAssetPath,
-        position: position,
-      );
-    } else if (entity.has<AiControlled>()) {
+    if (entity.has<AiControlled>()) {
       component = Opponent(
         world: game.currentWorld,
         entity: game.currentWorld.getEntity(entity.id),

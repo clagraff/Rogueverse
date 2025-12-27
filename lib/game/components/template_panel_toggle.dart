@@ -1,8 +1,8 @@
 import 'package:flame/components.dart';
-import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
+import 'package:logging/logging.dart';
 
-/// A Flame component that listens for Ctrl+E to toggle the template panel overlay.
+/// A Flame component that listens for Ctrl+T to toggle the template panel overlay.
 ///
 /// This allows users to open/close the entity template panel from the game world.
 class TemplatePanelToggle extends Component with KeyboardHandler {
@@ -10,11 +10,17 @@ class TemplatePanelToggle extends Component with KeyboardHandler {
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    // Check for Ctrl+E key combination
+    if (event is KeyDownEvent) {
+      Logger("TemplatePanelToggle")
+          .info("Key event: ${event.logicalKey}, pressed: $keysPressed");
+    }
+
+    // Check for Ctrl+T key combination
     if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.keyE &&
-        keysPressed.contains(LogicalKeyboardKey.controlLeft) ||
-        keysPressed.contains(LogicalKeyboardKey.controlRight)) {
+        event.logicalKey == LogicalKeyboardKey.keyT &&
+        (keysPressed.contains(LogicalKeyboardKey.controlLeft) ||
+            keysPressed.contains(LogicalKeyboardKey.controlRight))) {
+      Logger("TemplatePanelToggle").info("Handling Ctrl+T");
       final game = findGame();
       if (game != null) {
         // Toggle the template panel overlay

@@ -1,13 +1,16 @@
 export 'agent.dart';
 export 'agent_health_bar.dart';
+export 'debug_info_overlay.dart';
 export 'entity_drag_mover.dart';
 export 'entity_hover_tracker.dart';
 export 'entity_tap_component.dart';
 export 'focus_on_tap_component.dart';
+export 'global_control_handler.dart';
 export 'grid_tap.dart';
+export 'inventory_control_handler.dart';
 export 'opponent.dart';
 export 'placement_preview.dart';
-export 'player.dart';
+export 'positional_control_handler.dart';
 export 'svg_component.dart';
 export 'template_entity_spawner.dart';
 export 'template_panel_toggle.dart';
