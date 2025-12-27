@@ -81,6 +81,7 @@ class _ApplicationState extends State<Application> {
             _game.overlays.clear();
             _game.overlays.add('templatePanel');
           },
+          world: _game.currentWorld
         ),
         body: Stack(
           children: [

@@ -1,6 +1,7 @@
 import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
+import 'package:rogueverse/ecs/world.dart' show WorldSaves, World;
 
 /// Content for the navigation drawer.
 ///
@@ -9,10 +10,12 @@ import 'package:flutter/material.dart';
 class NavigationDrawerContent extends StatelessWidget {
   /// Callback when "Entity Templates" is clicked.
   final VoidCallback onEntityTemplatesPressed;
+  final World world;
 
   const NavigationDrawerContent({
     super.key,
     required this.onEntityTemplatesPressed,
+    required this.world
   });
 
   @override
@@ -50,9 +53,19 @@ class NavigationDrawerContent extends StatelessWidget {
                 ),
                 _buildNavItem(
                   context: context,
+                  icon: Icons.save,
+                  label: 'Save & Quit',
+                  onTap: () async {
+                    Navigator.pop(context);
+                    await WorldSaves.writeSave(world);
+                    exit(0);
+                  },
+                ),
+                _buildNavItem(
+                  context: context,
                   icon: Icons.close,
                   label: 'Quit',
-                  onTap: () {
+                  onTap: () async {
                     Navigator.pop(context);
                     exit(0);
                   },
