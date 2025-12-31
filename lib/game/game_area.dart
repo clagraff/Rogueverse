@@ -1,11 +1,14 @@
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart' show Logger;
 
 import 'package:rogueverse/app/screens/game_screen.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/entity_template.dart';
 import 'package:rogueverse/ecs/events.dart';
@@ -18,6 +21,9 @@ import 'package:rogueverse/game/mixins/scroll_callback.dart';
 /// and entity/template selection for the game editor.
 class GameArea extends FlameGame
     with HasKeyboardHandlerComponents, ScrollDetector {
+  static final _logger = Logger('GameArea');
+
+
   /// The currently selected entity for inspection/editing in the inspector panel.
   final ValueNotifier<Entity?> selectedEntity = ValueNotifier(null);
 
@@ -92,6 +98,41 @@ class GameArea extends FlameGame
     return super.onLoad();
   }
 
+  final Stopwatch updateSw = Stopwatch();
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    final systemTimings = <String, Duration>{};
+
+    var budgetedSystems = currentWorld
+        .systems
+        .whereType<BudgetedSystem>()
+        .toList();
+
+    var allDone = true;
+    for (var system in budgetedSystems) {
+      var s = Stopwatch()..start();
+      var needsMoreProcessing = system.budget(currentWorld, Duration(milliseconds: 2));
+      if (needsMoreProcessing) {
+        allDone = false;
+      }
+      s.stop();
+      systemTimings[system.runtimeType.toString()] = s.elapsed;
+    }
+
+    if (allDone && updateSw.isRunning) {
+      updateSw.stop();
+      updateSw.reset();
+      final systemTimingsStr = systemTimings.entries.sorted((e1, e2) {
+        return e2.value.inMicroseconds.compareTo(e1.value.inMicroseconds);
+      })
+          .map((e) => '${e.key}=${e.value.toHumanReadableString()}')
+          .join(' ');
+      _logger.fine('update complete: duration=${updateSw.elapsed.toHumanReadableString()} $systemTimingsStr');
+    }
+  }
+
   /// Handles scroll events by delegating to the scroll dispatcher first,
   /// then zooming the camera if the event is not handled.
   ///
@@ -128,6 +169,7 @@ class GameArea extends FlameGame
   Future<void> tickEcs() async {
     currentWorld.tick();
     await WorldSaves.writeSave(currentWorld);
+    updateSw.start();
   }
 
   /// Starts creating a new template by showing a name dialog and setting up temp world.

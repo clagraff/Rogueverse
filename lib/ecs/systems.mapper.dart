@@ -14,13 +14,12 @@ class SystemMapper extends ClassMapperBase<System> {
   static SystemMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = SystemMapper._());
+      BudgetedSystemMapper.ensureInitialized();
       HierarchySystemMapper.ensureInitialized();
       CollisionSystemMapper.ensureInitialized();
       MovementSystemMapper.ensureInitialized();
       InventorySystemMapper.ensureInitialized();
       CombatSystemMapper.ensureInitialized();
-      BehaviorSystemMapper.ensureInitialized();
-      VisionSystemMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -61,6 +60,69 @@ abstract class SystemCopyWith<$R, $In extends System, $Out>
     implements ClassCopyWith<$R, $In, $Out> {
   $R call();
   SystemCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class BudgetedSystemMapper extends SubClassMapperBase<BudgetedSystem> {
+  BudgetedSystemMapper._();
+
+  static BudgetedSystemMapper? _instance;
+  static BudgetedSystemMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = BudgetedSystemMapper._());
+      SystemMapper.ensureInitialized().addSubMapper(_instance!);
+      BehaviorSystemMapper.ensureInitialized();
+      VisionSystemMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'BudgetedSystem';
+
+  @override
+  final MappableFields<BudgetedSystem> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'BudgetedSystem';
+  @override
+  late final ClassMapperBase superMapper = SystemMapper.ensureInitialized();
+
+  static BudgetedSystem _instantiate(DecodingData data) {
+    throw MapperException.missingSubclass(
+      'BudgetedSystem',
+      '__type',
+      '${data.value['__type']}',
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static BudgetedSystem fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<BudgetedSystem>(map);
+  }
+
+  static BudgetedSystem fromJson(String json) {
+    return ensureInitialized().decodeJson<BudgetedSystem>(json);
+  }
+}
+
+mixin BudgetedSystemMappable {
+  String toJson();
+  Map<String, dynamic> toMap();
+  BudgetedSystemCopyWith<BudgetedSystem, BudgetedSystem, BudgetedSystem>
+  get copyWith;
+}
+
+abstract class BudgetedSystemCopyWith<$R, $In extends BudgetedSystem, $Out>
+    implements SystemCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  BudgetedSystemCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
 }
 
 class HierarchySystemMapper extends SubClassMapperBase<HierarchySystem> {
@@ -669,7 +731,7 @@ class BehaviorSystemMapper extends SubClassMapperBase<BehaviorSystem> {
   static BehaviorSystemMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = BehaviorSystemMapper._());
-      SystemMapper.ensureInitialized().addSubMapper(_instance!);
+      BudgetedSystemMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -677,15 +739,20 @@ class BehaviorSystemMapper extends SubClassMapperBase<BehaviorSystem> {
   @override
   final String id = 'BehaviorSystem';
 
+  static Queue<(Entity, Behavior)> _$queue(BehaviorSystem v) => v.queue;
+  static const Field<BehaviorSystem, Queue<(Entity, Behavior)>> _f$queue =
+      Field('queue', _$queue, mode: FieldMode.member);
+
   @override
-  final MappableFields<BehaviorSystem> fields = const {};
+  final MappableFields<BehaviorSystem> fields = const {#queue: _f$queue};
 
   @override
   final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'BehaviorSystem';
   @override
-  late final ClassMapperBase superMapper = SystemMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      BudgetedSystemMapper.ensureInitialized();
 
   static BehaviorSystem _instantiate(DecodingData data) {
     return BehaviorSystem();
@@ -752,7 +819,7 @@ extension BehaviorSystemValueCopy<$R, $Out>
 }
 
 abstract class BehaviorSystemCopyWith<$R, $In extends BehaviorSystem, $Out>
-    implements SystemCopyWith<$R, $In, $Out> {
+    implements BudgetedSystemCopyWith<$R, $In, $Out> {
   @override
   $R call();
   BehaviorSystemCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
@@ -786,7 +853,7 @@ class VisionSystemMapper extends SubClassMapperBase<VisionSystem> {
   static VisionSystemMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = VisionSystemMapper._());
-      SystemMapper.ensureInitialized().addSubMapper(_instance!);
+      BudgetedSystemMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -794,15 +861,23 @@ class VisionSystemMapper extends SubClassMapperBase<VisionSystem> {
   @override
   final String id = 'VisionSystem';
 
+  static Queue<Entity> _$queue(VisionSystem v) => v.queue;
+  static const Field<VisionSystem, Queue<Entity>> _f$queue = Field(
+    'queue',
+    _$queue,
+    mode: FieldMode.member,
+  );
+
   @override
-  final MappableFields<VisionSystem> fields = const {};
+  final MappableFields<VisionSystem> fields = const {#queue: _f$queue};
 
   @override
   final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'VisionSystem';
   @override
-  late final ClassMapperBase superMapper = SystemMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      BudgetedSystemMapper.ensureInitialized();
 
   static VisionSystem _instantiate(DecodingData data) {
     return VisionSystem();
@@ -869,7 +944,7 @@ extension VisionSystemValueCopy<$R, $Out>
 }
 
 abstract class VisionSystemCopyWith<$R, $In extends VisionSystem, $Out>
-    implements SystemCopyWith<$R, $In, $Out> {
+    implements BudgetedSystemCopyWith<$R, $In, $Out> {
   @override
   $R call();
   VisionSystemCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);

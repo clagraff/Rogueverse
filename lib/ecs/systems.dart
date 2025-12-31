@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:math';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -32,6 +34,14 @@ part 'systems.mapper.dart';
 @MappableClass()
 abstract class System with SystemMappable {
   void update(World world);
+
+}
+
+/// A base class for all systems which can operate with a time budget, outside
+/// of normal ECS ticks.
+@MappableClass()
+abstract class BudgetedSystem extends System with BudgetedSystemMappable {
+  bool budget(World world, Duration budget); // TODO return boolean to indicate if more processing is needed between game ticks?
 }
 
 /// System that maintains the hierarchy cache for fast parent-child queries.
@@ -285,25 +295,53 @@ class CombatSystem extends System with CombatSystemMappable {
   }
 }
 
+
 @MappableClass()
-class BehaviorSystem extends System with BehaviorSystemMappable {
+class BehaviorSystem extends BudgetedSystem with BehaviorSystemMappable {
   static final _logger = Logger('BehaviorSystem');
-  
+  final Queue<(Entity entity, Behavior behavior)> queue = Queue<(Entity entity, Behavior behavior)>();
+
   @override
   void update(World world) {
     final behaviors = world.get<Behavior>();
     behaviors.forEach((e, b) {
       var entity = world.getEntity(e);
-      var result = b.behavior
-          .tick(entity); // TODO i dont know what to do with the result....
-      
-      _logger.fine('behavior_tick: entity=$e node=${b.behavior.runtimeType} result=$result');
+      queue.addLast((entity, b));
+
+      // var result = b.behavior
+      //     .tick(entity); // TODO i dont know what to do with the result....
+      //
+      // _logger.fine('behavior_tick: entity=$e node=${b.behavior.runtimeType} result=$result');
     });
+  }
+
+  @override
+  bool budget(World world, Duration budget) {
+    final sw = Stopwatch()..start();
+    if (queue.isEmpty) {
+      return false;
+    }
+
+    while (sw.elapsed < budget && queue.isNotEmpty) {
+      var entry = queue.removeFirst();
+      var entity =  entry.$1;
+      var behaviorComponent = entry.$2;
+
+      var result = behaviorComponent.behavior.tick(entity);
+      _logger.fine('behavior system ticked: entity=${entity.id} node=${behaviorComponent.behavior.runtimeType} result=$result');
+
+      if (queue.isEmpty) {
+        _logger.fine('behavior system emptied queue');
+        return false;
+      }
+    }
+
+    return true;
   }
 }
 
 @MappableClass()
-class VisionSystem extends System with VisionSystemMappable, Disposer {
+class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
   static final _logger = Logger('VisionSystem');
   
   /// Spatial index: parentId -> (x, y) -> Set of entityId
@@ -319,7 +357,9 @@ class VisionSystem extends System with VisionSystemMappable, Disposer {
   
   /// Flag to ensure initialization happens only once
   bool _initialized = false;
-  
+
+  final Queue<Entity> queue = Queue<Entity>();
+
   @override
   void update(World world) {
     _ensureInitialized(world);
@@ -332,12 +372,34 @@ class VisionSystem extends System with VisionSystemMappable, Disposer {
       
       if (_dirtyObservers.contains(observerId) || 
           observer.get<VisibleEntities>() == null) {
-        _updateVisionForObserver(world, observerId);
+        queue.addLast(observer);
+        //_updateVisionForObserver(world, observerId);
       }
     }
     
     // Clear dirty set for next tick
     _dirtyObservers.clear();
+  }
+
+  @override
+  bool budget(World world, Duration budget) {
+    final sw = Stopwatch()..start();
+
+    if (queue.isEmpty) {
+      return false;
+    }
+
+    while (sw.elapsed < budget && queue.isNotEmpty) {
+      var entity = queue.removeFirst();
+      _updateVisionForObserver(world, entity.id);
+
+      if (queue.isEmpty) {
+        _logger.fine('vision system emptied queue');
+        return false;
+      }
+    }
+
+    return true;
   }
 
   /// Manually update vision for a specific observer entity.

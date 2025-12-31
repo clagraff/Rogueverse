@@ -6,6 +6,7 @@ import 'package:collection/collection.dart';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/components.dart';
@@ -207,35 +208,11 @@ class World with WorldMappable implements IWorldView {
     // TODO notify on deletion of an entity, separate from the component notifications?
   }
 
-  /// Formats a duration with 3 significant figures and appropriate unit.
-  String _formatDuration(Duration d) {
-    final micros = d.inMicroseconds;
-    
-    if (micros < 1000) {
-      // < 1ms: show in microseconds (e.g., "123µs", "45.6µs", "1.23µs")
-      if (micros >= 100) return '$microsµs';
-      if (micros >= 10) return '${micros.toStringAsFixed(1)}µs';
-      return '${micros.toStringAsFixed(2)}µs';
-    } else if (micros < 1000000) {
-      // < 1s: show in milliseconds (e.g., "123ms", "45.6ms", "1.23ms")
-      final ms = micros / 1000;
-      if (ms >= 100) return '${ms.toStringAsFixed(0)}ms';
-      if (ms >= 10) return '${ms.toStringAsFixed(1)}ms';
-      return '${ms.toStringAsFixed(2)}ms';
-    } else {
-      // >= 1s: show in seconds (e.g., "12.3s", "1.23s")
-      final s = micros / 1000000;
-      if (s >= 100) return '${s.toStringAsFixed(1)}s';
-      if (s >= 10) return '${s.toStringAsFixed(2)}s';
-      return '${s.toStringAsFixed(3)}s';
-    }
-  }
-
   /// Executes a single ECS update tick.
   void tick() {
     final tickStopwatch = Stopwatch()..start();
     final systemTimings = <String, Duration>{};
-    
+
     // TODO pre-tick notification???
     clearLifetimeComponents<
         BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
@@ -258,9 +235,9 @@ class World with WorldMappable implements IWorldView {
     final systemTimingsStr = systemTimings.entries.sorted((e1, e2) {
           return e2.value.inMicroseconds.compareTo(e1.value.inMicroseconds);
         })
-        .map((e) => '${e.key}=${_formatDuration(e.value)}')
+        .map((e) => '${e.key}=${e.value.toHumanReadableString()}')
         .join(' ');
-    _logger.info('tick complete: tickId=$tickId duration=${_formatDuration(tickStopwatch.elapsed)}, $systemTimingsStr');
+    _logger.info('tick complete: tickId=$tickId duration=${tickStopwatch.elapsed.toHumanReadableString()}, $systemTimingsStr');
 
     tickId++; // TODO: wrap around to avoid out of bounds type error?
   }
