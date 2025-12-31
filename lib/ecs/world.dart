@@ -132,11 +132,18 @@ class World with WorldMappable implements IWorldView {
   /// Not serialized - rebuilt from HasParent components on world load
   final HierarchyCache hierarchyCache = HierarchyCache();
 
+  /// Cache for Entity wrapper objects to avoid creating new instances on every getEntity() call
+  /// Not serialized - Entity objects are lightweight wrappers around data
+  final Map<int, Entity> _entityCache = {};
+
   World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]);
 
   @override
   Entity getEntity(int entityId) {
-    return Entity(parentCell: this, id: entityId);
+    return _entityCache.putIfAbsent(
+      entityId, 
+      () => Entity(parentCell: this, id: entityId, isNewCreation: true),
+    );
   }
 
   @override
@@ -193,6 +200,9 @@ class World with WorldMappable implements IWorldView {
             newValue: null));
       }
     }
+
+    // Clear entity from cache when destroyed
+    _entityCache.remove(entityId);
 
     // TODO notify on deletion of an entity, separate from the component notifications?
   }

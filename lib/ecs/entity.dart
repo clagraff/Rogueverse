@@ -11,8 +11,11 @@ class Entity {
   final World parentCell;
   final int id;
 
-  Entity({required this.parentCell, required this.id}) {
-    _logger.fine('entity_created: id=$id');
+  Entity({required this.parentCell, required this.id, bool isNewCreation = false}) {
+    // Only log when entity is actually created (not fetched from cache)
+    if (isNewCreation) {
+      _logger.fine('entity_created: id=$id');
+    }
   }
 
   /// Stream of component changes for this specific entity.
@@ -76,9 +79,9 @@ class Entity {
 
     entitiesWithComponent[id] = c;
 
-    // Log important component changes
+    // Log important component changes (only at FINEST to reduce overhead)
     if (c is Health || c is LocalPosition || c is VisionRadius || c is Inventory) {
-      _logger.finer('component_upserted: entity=$id, component=${c.componentType}, was_update=${existing != null}');
+      _logger.finest('component_upserted: entity=$id, component=${c.componentType}, was_update=${existing != null}');
     }
 
     parentCell.notifyChange(Change(entityId: id, componentType: C.toString(), oldValue: existing?.value, newValue: c));
