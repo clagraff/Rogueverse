@@ -2,6 +2,7 @@ import 'package:flame/components.dart' hide World;
 import 'package:flame/effects.dart' show OpacityEffect, EffectController;
 import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:logging/logging.dart' show Logger;
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -21,11 +22,9 @@ class XY {
 
 class GridTapComponent extends PositionComponent with TapCallbacks {
   final ValueNotifier<XY> notifier;
-  final ValueNotifier<int?>? observerEntityIdNotifier;
   final double gridSize;
 
-  GridTapComponent(this.gridSize, this.notifier,
-      {this.observerEntityIdNotifier});
+  GridTapComponent(this.gridSize, this.notifier);
 
   @override
   bool containsLocalPoint(Vector2 point) => true;
@@ -40,14 +39,7 @@ class GridTapComponent extends PositionComponent with TapCallbacks {
     event.continuePropagation = true;
     var screenPosition = event.localPosition;
     final gridPos = GridCoordinates.screenToGrid(screenPosition);
-
     notifier.value = XY(gridPos.x, gridPos.y);
-
-    // Clear observer entity selection when clicking empty space
-    // (If an entity is clicked, EntityTapComponent will set it)
-    if (observerEntityIdNotifier != null) {
-      observerEntityIdNotifier!.value = null;
-    }
   }
 }
 

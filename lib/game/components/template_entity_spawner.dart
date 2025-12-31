@@ -34,6 +34,7 @@ class TemplateEntitySpawner extends PositionComponent
 
   final World world;
   final ValueNotifier<EntityTemplate?> templateNotifier;
+  final ValueNotifier<int?> viewedParentNotifier;
 
   final _logger = Logger('TemplateEntitySpawner');
 
@@ -46,6 +47,7 @@ class TemplateEntitySpawner extends PositionComponent
   TemplateEntitySpawner({
     required this.world,
     required this.templateNotifier,
+    required this.viewedParentNotifier,
   }) {
     priority = 100; // Before camera controls!
   }
@@ -284,10 +286,10 @@ class TemplateEntitySpawner extends PositionComponent
     for (final pos in positions) {
       if (template == null) {
         // Removal mode - delete entities at position
-        EntityManipulator.removeEntitiesAt(world, pos);
+        EntityManipulator.removeEntitiesAt(world, pos, viewedParentNotifier.value);
       } else {
         // Placement mode - place/replace entities
-        EntityManipulator.placeEntity(world, template, pos);
+        EntityManipulator.placeEntity(world, template, pos, viewedParentNotifier.value);
       }
     }
 

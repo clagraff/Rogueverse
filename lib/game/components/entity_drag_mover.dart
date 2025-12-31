@@ -3,7 +3,7 @@ import 'package:flame/events.dart' show DragCallbacks, DragStartEvent, DragUpdat
 import 'package:flame/game.dart' show FlameGame;
 import 'package:flutter/material.dart' show Colors, ValueNotifier;
 import 'package:logging/logging.dart' show Logger;
-import 'package:rogueverse/ecs/components.dart' show LocalPosition, Renderable;
+import 'package:rogueverse/ecs/components.dart' show LocalPosition, Renderable, HasParent;
 import 'package:rogueverse/ecs/entity.dart' show Entity;
 import 'package:rogueverse/ecs/entity_template.dart' show EntityTemplate;
 import 'package:rogueverse/ecs/query.dart' show Query;
@@ -28,6 +28,7 @@ import 'package:rogueverse/game/utils/grid_coordinates.dart' show GridCoordinate
 class EntityDragMover extends PositionComponent with DragCallbacks {
   final World world;
   final ValueNotifier<EntityTemplate?> templateNotifier;
+  final ValueNotifier<int?> viewedParentNotifier;
   final FlameGame game;
 
   final _logger = Logger('EntityDragMover');
@@ -41,6 +42,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
     required this.world,
     required this.templateNotifier,
     required this.game,
+    required this.viewedParentNotifier,
   }) {
     priority = 99; // Just before TemplateEntitySpawner (100)
   }
@@ -62,9 +64,17 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
     final gridPos = GridCoordinates.screenToGrid(event.localPosition);
     
     // Find entity at this position
-    final entities = Query()
+    var query = Query()
         .require<LocalPosition>((lp) => lp.x == gridPos.x && lp.y == gridPos.y)
-        .require<Renderable>()
+        .require<Renderable>();
+
+    if (viewedParentNotifier.value != null) {
+      query = query.require<HasParent>((p) => p.parentEntityId == viewedParentNotifier.value!);
+    } else {
+      query = query.exclude<HasParent>();
+    }
+
+    final entities = query
         .find(world)
         .toList();
 

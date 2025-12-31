@@ -3,6 +3,7 @@ import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/svg_component.dart'
@@ -14,6 +15,7 @@ import 'package:rogueverse/game/utils/grid_coordinates.dart'
 class EntityTapComponent extends PositionComponent with TapCallbacks {
   final ValueNotifier<Entity?> notifier;
   final ValueNotifier<int?>? observerEntityIdNotifier;
+  final ValueNotifier<int?> viewedParentNotifier;
   final double gridSize;
   final World world;
 
@@ -24,7 +26,7 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   /// [world] provides access to entity data.
   /// [observerEntityIdNotifier] updates with the selected entity's ID for vision tracking.
   EntityTapComponent(this.gridSize, this.notifier, this.world,
-      {this.observerEntityIdNotifier});
+      {this.observerEntityIdNotifier, required this.viewedParentNotifier});
 
   /// Intercepts all tap events by covering the entire component area.
   @override
@@ -46,16 +48,22 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
     var y = gridPos.y;
 
     var matched = false;
-    world.get<LocalPosition>().forEach((entityId, localPos) {
-      if (x == localPos.x && y == localPos.y) {
-        Logger("EntityTap").info("Tapped $entityId");
-        notifier.value = world.getEntity(entityId);
-        // Update observer entity ID for vision tracking
-        Logger("EntityTap").info("Setting observerEntityId to $entityId");
-        observerEntityIdNotifier?.value = entityId;
-        matched = true;
-      }
-    });
+    var query = Query().require<LocalPosition>((lp) => lp.x == x && lp.y == y);
+    if (viewedParentNotifier.value != null) {
+      query = query.require<HasParent>((hp) => hp.parentEntityId == viewedParentNotifier.value);
+    } else {
+      query = query.exclude<HasParent>();
+    }
+
+    var tappedEntity = query.find(world).firstOrNull;
+    if (tappedEntity != null) {
+      Logger("EntityTap").info("Tapped ${tappedEntity.id}");
+      notifier.value = tappedEntity;
+      Logger("EntityTap").info("Setting observerEntityId to ${tappedEntity.id}");
+      observerEntityIdNotifier?.value = tappedEntity.id;
+      matched = true;
+
+    }
 
     if (!matched && notifier.value != null) {
       Logger("EntityTap").info("untapped ${notifier.value!.id}");

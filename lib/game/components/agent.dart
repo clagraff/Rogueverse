@@ -15,6 +15,7 @@ import 'package:rogueverse/game/game_area.dart';
 class Agent extends SvgTileComponent with HasVisibility, Disposer {
   final World world;
   final Entity entity;
+  AgentHealthBar? healthBar;
 
   // Vision-based rendering state
   StreamSubscription<Change>? _visionSubscription;
@@ -64,8 +65,10 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     //   world.remove(entity.id);
     // });
 
-    add(AgentHealthBar(
-        entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3)));
+    healthBar = AgentHealthBar(
+        entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3));
+    add(healthBar!);
+
 
     // Set up vision-based rendering
     _setupVisionTracking();
@@ -104,6 +107,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
 
     if (observerId == null) {
       opacity = 1.0; // Default to visible if no observer
+      healthBar?.isVisible = true;
       return;
     }
 
@@ -111,6 +115,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     final observer = world.getEntity(observerId);
     if (!observer.has<VisionRadius>()) {
       opacity = 1.0; // Show all entities if observer has no vision system
+      healthBar?.isVisible = true;
       return;
     }
 
@@ -132,12 +137,14 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     // The observer itself is always fully visible
     if (entity.id == observerId) {
       opacity = 1.0;
+      healthBar?.isVisible = true;
       return;
     }
 
     // Check if currently visible
     if (visibleEntities?.entityIds.contains(entity.id) ?? false) {
       opacity = 1.0;
+      healthBar?.isVisible = true;
       // Update last-seen position
       final localPos = entity.get<LocalPosition>();
       if (localPos != null) {
@@ -145,6 +152,8 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
       }
       return;
     }
+
+    healthBar?.isVisible = false;
 
     // Check if in vision memory (seen before but not currently visible)
     if (visionMemory?.hasSeenEntity(entity.id) ?? false) {

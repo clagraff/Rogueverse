@@ -12,7 +12,7 @@ import 'package:rogueverse/ecs/entity.dart';
 /// A component that displays and updates a health bar for game entities.
 /// The health bar consists of a background bar, foreground bar showing current health,
 /// and numerical health value display.
-class AgentHealthBar extends PositionComponent with Disposer {
+class AgentHealthBar extends PositionComponent with HasVisibility, Disposer {
   final Entity entity;
   late RectangleComponent background;
   late RectangleComponent foreground;

@@ -12,6 +12,7 @@ import 'package:rogueverse/ecs/world.dart';
 class EntityHoverTracker extends PositionComponent with HoverCallbacks {
   final World world;
   final ValueNotifier<String> titleNotifier;
+  final ValueNotifier<int?> viewedParentNotifier;
   final double tileSize;
   final String defaultTitle;
 
@@ -19,7 +20,7 @@ class EntityHoverTracker extends PositionComponent with HoverCallbacks {
     required this.world,
     required this.titleNotifier,
     this.tileSize = 32.0,
-    this.defaultTitle = '',
+    this.defaultTitle = '', required this.viewedParentNotifier,
   });
 
   @override
@@ -41,9 +42,17 @@ class EntityHoverTracker extends PositionComponent with HoverCallbacks {
   /// Updates the title based on what entity is at the given grid position.
   void _updateHoveredEntity(LocalPosition gridPos) {
     // Find all entities at this position with a Name component
-    final entities = Query()
+    var query = Query()
         .require<LocalPosition>((lp) => lp.x == gridPos.x && lp.y == gridPos.y)
-        .require<Name>()
+        .require<Name>();
+
+    if (viewedParentNotifier.value != null) {
+      query = query.require<HasParent>((hp) => hp.parentEntityId == viewedParentNotifier.value);
+    } else {
+      query = query.exclude<HasParent>();
+    }
+
+    final entities = query
         .find(world)
         .toList();
 

@@ -60,6 +60,7 @@ class GameScreen extends flame.World with Disposer {
     add(TemplateEntitySpawner(
       world: game.currentWorld,
       templateNotifier: game.selectedTemplate,
+      viewedParentNotifier: game.viewedParentId,
     ));
 
     // Create entity drag mover (allows dragging entities when no template selected)
@@ -67,6 +68,7 @@ class GameScreen extends flame.World with Disposer {
       world: game.currentWorld,
       templateNotifier: game.selectedTemplate,
       game: game,
+      viewedParentNotifier: game.viewedParentId,
     ));
 
     var gridNotifier = ValueNotifier<XY>(XY(0, 0));
@@ -76,10 +78,9 @@ class GameScreen extends flame.World with Disposer {
       game.overlays.remove("inspectorPanel");
     }));
 
-    add(GridTapComponent(32, gridNotifier,
-        observerEntityIdNotifier: game.observerEntityId));
+    add(GridTapComponent(32, gridNotifier));
     add(EntityTapComponent(32, entityNotifier, game.currentWorld,
-        observerEntityIdNotifier: game.observerEntityId));
+        observerEntityIdNotifier: game.observerEntityId, viewedParentNotifier: game.viewedParentId));
     add(EntityTapVisualizerComponent(entityNotifier));
     add(GridTapVisualizerComponent(gridNotifier));
 
@@ -90,14 +91,15 @@ class GameScreen extends flame.World with Disposer {
     add(EntityHoverTracker(
       world: game.currentWorld,
       titleNotifier: game.title,
+      viewedParentNotifier: game.viewedParentId,
     ));
 
     // Add debug overlay
-    add(DebugInfoOverlay(
-      selectedEntityNotifier: game.selectedEntity,
-      observerEntityIdNotifier: game.observerEntityId,
-      game: game,
-    ));
+    // add(DebugInfoOverlay(
+    //   selectedEntityNotifier: game.selectedEntity,
+    //   observerEntityIdNotifier: game.observerEntityId,
+    //   game: game,
+    // ));
 
     // Add control handlers
     add(PositionalControlHandler(
@@ -116,6 +118,9 @@ class GameScreen extends flame.World with Disposer {
     _spawnListener = game.currentWorld.componentChanges.listen((change) {
       if (change.kind != ChangeKind.added) return;
       // Only react to renderable/position changes; order doesn't matter.
+
+      // TODO: need to tweak this so we only spawn renderable entities if they belong to the same
+      // parent we are currently watching.
       if (change.componentType == Renderable('').componentType ||
           change.componentType == LocalPosition(x: 0, y: 0).componentType) {
         Logger("game_screen").info(
@@ -127,6 +132,7 @@ class GameScreen extends flame.World with Disposer {
       }
     });
 
+    // TODO: why do we have this? Is this necessary? Dont we have a component that already does this?
     gridNotifier.addListener(() {
       var entities = game.currentWorld.get<LocalPosition>();
       entities.forEach((id, comp) {
@@ -154,7 +160,9 @@ class GameScreen extends flame.World with Disposer {
 
     // Listen to viewedParentId changes to filter rendered entities AND clear selection
     game.viewedParentId.addListener(() {
+      Logger("game_screen").info("viewedParentId changed to ${game.viewedParentId}");
       _updateRenderedEntities(game);
+
       // Clear observer selection when changing viewed parent
       game.observerEntityId.value = null;
     });
