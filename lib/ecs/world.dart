@@ -197,20 +197,44 @@ class World with WorldMappable implements IWorldView {
     // TODO notify on deletion of an entity, separate from the component notifications?
   }
 
+  /// Formats a duration with 3 significant figures and appropriate unit.
+  String _formatDuration(Duration d) {
+    final micros = d.inMicroseconds;
+    
+    if (micros < 1000) {
+      // < 1ms: show in microseconds (e.g., "123µs", "45.6µs", "1.23µs")
+      if (micros >= 100) return '$microsµs';
+      if (micros >= 10) return '${micros.toStringAsFixed(1)}µs';
+      return '${micros.toStringAsFixed(2)}µs';
+    } else if (micros < 1000000) {
+      // < 1s: show in milliseconds (e.g., "123ms", "45.6ms", "1.23ms")
+      final ms = micros / 1000;
+      if (ms >= 100) return '${ms.toStringAsFixed(0)}ms';
+      if (ms >= 10) return '${ms.toStringAsFixed(1)}ms';
+      return '${ms.toStringAsFixed(2)}ms';
+    } else {
+      // >= 1s: show in seconds (e.g., "12.3s", "1.23s")
+      final s = micros / 1000000;
+      if (s >= 100) return '${s.toStringAsFixed(1)}s';
+      if (s >= 10) return '${s.toStringAsFixed(2)}s';
+      return '${s.toStringAsFixed(3)}s';
+    }
+  }
+
   /// Executes a single ECS update tick.
   void tick() {
-    final tickStart = DateTime.now();
-    final systemTimings = <String, int>{};
+    final tickStopwatch = Stopwatch()..start();
+    final systemTimings = <String, Duration>{};
     
     // TODO pre-tick notification???
     clearLifetimeComponents<
         BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
     for (var s in systems) {
-      final systemStart = DateTime.now();
+      final systemStopwatch = Stopwatch()..start();
       s.update(this);
-      final systemDuration = DateTime.now().difference(systemStart);
-      systemTimings[s.runtimeType.toString()] = systemDuration.inMicroseconds;
+      systemStopwatch.stop();
+      systemTimings[s.runtimeType.toString()] = systemStopwatch.elapsed;
     }
 
     clearLifetimeComponents<
@@ -218,15 +242,15 @@ class World with WorldMappable implements IWorldView {
 
     // TODO post-tick notification???
 
-    final totalDuration = DateTime.now().difference(tickStart);
+    tickStopwatch.stop();
     
     // Log tick performance with per-system timing
     final systemTimingsStr = systemTimings.entries.sorted((e1, e2) {
-          return e2.value.compareTo(e1.value);
+          return e2.value.inMicroseconds.compareTo(e1.value.inMicroseconds);
         })
-        .map((e) => '${e.key}=${(e.value / 1000).toStringAsFixed(2)}ms')
-        .join(', ');
-    _logger.info('tick_complete: tickId=$tickId, duration=${(totalDuration.inMicroseconds / 1000).toStringAsFixed(2)}ms, systems=[$systemTimingsStr]');
+        .map((e) => '${e.key}=${_formatDuration(e.value)}')
+        .join(' ');
+    _logger.info('tick complete: tickId=$tickId duration=${_formatDuration(tickStopwatch.elapsed)}, $systemTimingsStr');
 
     tickId++; // TODO: wrap around to avoid out of bounds type error?
   }
