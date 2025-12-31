@@ -1,6 +1,9 @@
+import 'dart:async' show StreamController;
+
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// A reusable filter that can be built ahead of time to select
 /// entities with specific component requirements.
@@ -116,6 +119,119 @@ class Query {
     q._excluded.addAll(_excluded);
     return q;
   }
+}
+
+/// A filtered view of a World based on a Query.
+/// Provides the same interface as World but only operates on entities matching the query.
+/// Write operations (add/remove) affect the underlying World and may create entities
+/// that don't match the view's query.
+class View implements IWorldView {
+  final World world;
+  final Query query;
+
+  /// Cached set of entity IDs currently matching the query
+  final Set<int> _matchingEntities = {};
+  
+  /// Stream controller for view membership changes (entities entering/leaving)
+  final _membershipChanges = StreamController<ViewMembershipChange>.broadcast(sync: true);
+  
+  /// Stream of entities entering or leaving this view
+  Stream<ViewMembershipChange> get viewMembershipChanges => _membershipChanges.stream;
+
+  View({required this.world, required this.query}) {
+    _initializeCache();
+    _setupChangeListener();
+  }
+
+  void _initializeCache() {
+    _matchingEntities.clear();
+    for (final entity in query.find(world)) {
+      _matchingEntities.add(entity.id);
+    }
+  }
+
+  void _setupChangeListener() {
+    world.componentChanges.listen((change) {
+      final wasMatching = _matchingEntities.contains(change.entityId);
+      final isMatching = query.isMatching(world, change.entityId);
+
+      if (isMatching && !wasMatching) {
+        // Entity entered the view
+        _matchingEntities.add(change.entityId);
+        _membershipChanges.add(ViewMembershipChange(
+          entityId: change.entityId,
+          kind: ViewMembershipKind.entered,
+        ));
+      } else if (!isMatching && wasMatching) {
+        // Entity left the view
+        _matchingEntities.remove(change.entityId);
+        _membershipChanges.add(ViewMembershipChange(
+          entityId: change.entityId,
+          kind: ViewMembershipKind.exited,
+        ));
+      }
+    });
+  }
+
+  // Read operations - filtered by query
+  
+  @override
+  Entity getEntity(int entityId) {
+    return world.getEntity(entityId);
+  }
+
+  @override
+  List<Entity> entities() {
+    return _matchingEntities.map((id) => world.getEntity(id)).toList();
+  }
+
+  @override
+  Map<int, C> get<C extends Component>() {
+    final worldComponents = world.get<C>();
+    return Map.fromEntries(
+      worldComponents.entries.where((e) => _matchingEntities.contains(e.key))
+    );
+  }
+
+  @override
+  Map<int, Component> getByName(String componentType) {
+    final worldComponents = world.getByName(componentType);
+    return Map.fromEntries(
+      worldComponents.entries.where((e) => _matchingEntities.contains(e.key))
+    );
+  }
+
+  // Write operations - delegate to underlying world
+  
+  @override
+  Entity add(List<Component> comps) {
+    return world.add(comps);
+  }
+
+  @override
+  void remove(int entityId) {
+    world.remove(entityId);
+  }
+
+  // Notifications - filtered to only entities in the view
+  // Use ChangeStreamFilters extension methods for additional filtering
+  
+  @override
+  Stream<Change> get componentChanges {
+    return world.componentChanges.where((c) => _matchingEntities.contains(c.entityId));
+  }
+}
+
+enum ViewMembershipKind { entered, exited }
+
+class ViewMembershipChange {
+  final int entityId;
+  final ViewMembershipKind kind;
+
+  const ViewMembershipChange({
+    required this.entityId,
+    required this.kind,
+  });
 }
 
 // class CachedQuery {

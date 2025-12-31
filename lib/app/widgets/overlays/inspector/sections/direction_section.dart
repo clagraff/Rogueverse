@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the Direction component, which stores the direction an entity is facing.
 class DirectionMetadata extends ComponentMetadata {
@@ -18,7 +19,7 @@ class DirectionMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<Direction>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<Direction>(entity.id),
       builder: (context, snapshot) {
         final direction = entity.get<Direction>();
         if (direction == null) return const SizedBox.shrink();

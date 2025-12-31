@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the Renderable component, which specifies the visual appearance of an entity.
 class RenderableMetadata extends ComponentMetadata {
@@ -17,7 +18,7 @@ class RenderableMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<Renderable>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<Renderable>(entity.id),
       builder: (context, snapshot) {
         final renderable = entity.get<Renderable>();
         if (renderable == null) return const SizedBox.shrink();

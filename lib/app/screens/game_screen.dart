@@ -11,6 +11,7 @@ import 'package:rogueverse/ecs/ai/behaviors/behaviors.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';

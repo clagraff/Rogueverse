@@ -5,6 +5,7 @@ import 'package:flame/components.dart' hide World;
 import 'package:flutter/material.dart';
 
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
 
 /// Renders a vision cone overlay showing which tiles an entity can see.
@@ -72,7 +73,7 @@ class VisionConeComponent extends PositionComponent with HasPaint {
     // Subscribe ONLY to VisibleEntities changes (which already includes position/direction)
     // VisionSystem updates VisibleEntities AFTER MovementSystem runs, so we always get
     // vision data that reflects the current position and direction.
-    _visionSubscription = world
+    _visionSubscription = world.componentChanges
         .onEntityOnComponent<VisibleEntities>(observedEntityId)
         .listen(_onVisionChanged);
 

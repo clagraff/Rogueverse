@@ -4,6 +4,7 @@ import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_section.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/sections/sections.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Inspector overlay that displays and allows editing of entity component properties.
 ///
@@ -148,7 +149,7 @@ class _InspectorPanel extends StatelessWidget {
           // Component sections list - rebuilds whenever any component is added, removed, or modified
           Expanded(
             child: StreamBuilder<Change>(
-              stream: entity.parentCell.onEntityChange(entity.id),
+              stream: entity.parentCell.componentChanges.onEntityChange(entity.id),
               builder: (context, snapshot) {
                 final presentComponents = ComponentRegistry.getPresent(entity);
 

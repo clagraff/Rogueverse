@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the Inventory component, which stores a list of item entity IDs.
 class InventoryMetadata extends ComponentMetadata {
@@ -17,7 +18,7 @@ class InventoryMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<Inventory>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<Inventory>(entity.id),
       builder: (context, snapshot) {
         final inventory = entity.get<Inventory>();
         if (inventory == null) return const SizedBox.shrink();
@@ -69,7 +70,7 @@ class InventoryMaxCountMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<InventoryMaxCount>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<InventoryMaxCount>(entity.id),
       builder: (context, snapshot) {
         final maxCount = entity.get<InventoryMaxCount>();
         if (maxCount == null) return const SizedBox.shrink();

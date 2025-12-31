@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the Health component, which tracks an entity's current and max health.
 class HealthMetadata extends ComponentMetadata {
@@ -17,7 +18,7 @@ class HealthMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<Health>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<Health>(entity.id),
       builder: (context, snapshot) {
         final health = entity.get<Health>();
         if (health == null) return const SizedBox.shrink();

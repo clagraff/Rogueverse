@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the LocalPosition component, which stores an entity's X/Y coordinates.
 class LocalPositionMetadata extends ComponentMetadata {
@@ -18,7 +19,7 @@ class LocalPositionMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<LocalPosition>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<LocalPosition>(entity.id),
       builder: (context, snapshot) {
         final localPosition = entity.get<LocalPosition>();
         if (localPosition == null) return const SizedBox.shrink();

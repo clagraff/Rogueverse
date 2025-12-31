@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/app/screens/game_screen.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/entity_template.dart';
+import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/ecs/world.dart';
@@ -169,6 +170,7 @@ class GameArea extends FlameGame
 
     // Listen to all component changes on the temp entity
     _templateEditingWorld!
+        .componentChanges
         .onEntityChange(_templateEditingEntity!.id)
         .listen((change) async {
       // Extract current components and save to template

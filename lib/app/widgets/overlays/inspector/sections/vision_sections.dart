@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Inspector section for VisionRadius component.
 class VisionRadiusMetadata extends ComponentMetadata {
@@ -17,7 +18,7 @@ class VisionRadiusMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<VisionRadius>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<VisionRadius>(entity.id),
       builder: (context, snapshot) {
         final vision = entity.get<VisionRadius>();
         if (vision == null) return const SizedBox.shrink();
@@ -74,7 +75,7 @@ class VisibleEntitiesMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<VisibleEntities>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<VisibleEntities>(entity.id),
       builder: (context, snapshot) {
         final visible = entity.get<VisibleEntities>();
         if (visible == null) return const SizedBox.shrink();
@@ -113,7 +114,7 @@ class VisionMemoryMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<VisionMemory>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<VisionMemory>(entity.id),
       builder: (context, snapshot) {
         final memory = entity.get<VisionMemory>();
         if (memory == null) return const SizedBox.shrink();

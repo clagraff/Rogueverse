@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent_health_bar.dart';
 import 'package:rogueverse/game/components/svg_component.dart';
@@ -120,7 +121,7 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     }
 
     // Subscribe to the observer's VisibleEntities changes
-    _visionSubscription = world
+    _visionSubscription = world.componentChanges
         .onEntityOnComponent<VisibleEntities>(observerId)
         .listen((_) => _updateVisibility(observerId));
 

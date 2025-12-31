@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the MoveByIntent component, a transient event used during movement processing.
 ///
@@ -20,7 +21,7 @@ class MoveByIntentMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<MoveByIntent>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<MoveByIntent>(entity.id),
       builder: (context, snapshot) {
         final intent = entity.get<MoveByIntent>();
         if (intent == null) return const SizedBox.shrink();
@@ -73,7 +74,7 @@ class DidMoveMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<DidMove>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<DidMove>(entity.id),
       builder: (context, snapshot) {
         final didMove = entity.get<DidMove>();
         if (didMove == null) return const SizedBox.shrink();
@@ -129,7 +130,7 @@ class BlockedMoveMetadata extends ComponentMetadata {
   @override
   Widget buildContent(Entity entity) {
     return StreamBuilder<Change>(
-      stream: entity.parentCell.onEntityOnComponent<BlockedMove>(entity.id),
+      stream: entity.parentCell.componentChanges.onEntityOnComponent<BlockedMove>(entity.id),
       builder: (context, snapshot) {
         final blockedMove = entity.get<BlockedMove>();
         if (blockedMove == null) return const SizedBox.shrink();

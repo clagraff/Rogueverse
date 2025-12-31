@@ -1,13 +1,18 @@
 import 'package:collection/collection.dart';
-import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 class Entity {
   final World parentCell;
   final int id;
 
   Entity({required this.parentCell, required this.id});
+
+  /// Stream of component changes for this specific entity.
+  /// Use [ChangeStreamFilters] extension methods for filtered subscriptions.
+  Stream<Change> get changes => 
+      parentCell.componentChanges.where((c) => c.entityId == id);
 
   bool has<C extends Component>() {
     var entitiesWithComponent = parentCell.components[C.toString()] ?? {};
@@ -62,7 +67,6 @@ class Entity {
   void upsert<C extends Component>(C c) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(c.componentType, () => {});
     var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
-    var alreadyExisted = existing != null;
 
     entitiesWithComponent[id] = c;
 
@@ -72,7 +76,6 @@ class Entity {
   void upsertByName(Component c) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(c.componentType, () => {});
     var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
-    var alreadyExisted = existing != null;
 
     entitiesWithComponent[id] = c;
 
@@ -82,10 +85,8 @@ class Entity {
   void remove<C>() {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
     var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
-    var componentExists = existing != null;
 
-    if (componentExists) {
-      var oldComponent = entitiesWithComponent[id] as C;
+    if (existing != null) {
       entitiesWithComponent.remove(id);
 
       parentCell.notifyChange(Change(entityId: id, componentType: C.toString(), oldValue: existing.value, newValue: null));
@@ -95,10 +96,8 @@ class Entity {
   void removeByName(String componentType) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(componentType, () => {});
     var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
-    var componentExists = existing != null;
 
-    if (componentExists) {
-      var oldComponent = entitiesWithComponent[id] as Component;
+    if (existing != null) {
       entitiesWithComponent.remove(id);
 
       parentCell.notifyChange(Change(entityId: id, componentType: componentType, oldValue: existing.value, newValue: null));

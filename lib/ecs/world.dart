@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/events.dart';
 
 part 'world.mapper.dart';
 
@@ -29,26 +30,24 @@ class PostTickEvent {
   PostTickEvent(this.tickId);
 }
 
-enum ChangeKind { added, removed, updated }
-
-class Change {
-  final int entityId;
-  final String componentType;
-  final Component? oldValue;
-  final Component? newValue;
-
-  const Change({
-    required this.entityId,
-    required this.componentType,
-    required this.oldValue,
-    required this.newValue,
-  });
-
-  ChangeKind get kind {
-    if (oldValue == null && newValue != null) return ChangeKind.added;
-    if (oldValue != null && newValue == null) return ChangeKind.removed;
-    return ChangeKind.updated;
-  }
+/// Interface for World and View classes to ensure consistent API.
+/// Provides core entity and component operations with change notifications.
+/// 
+/// The base [componentChanges] stream provides all component change events.
+/// Use the [ChangeStreamFilters] extension methods for filtered subscriptions.
+abstract interface class IWorldView {
+  // Read operations
+  Entity getEntity(int entityId);
+  List<Entity> entities();
+  Map<int, C> get<C extends Component>();
+  Map<int, Component> getByName(String componentType);
+  
+  // Write operations  
+  Entity add(List<Component> comps);
+  void remove(int entityId);
+  
+  // Notifications - base stream only, use extension methods for filtering
+  Stream<Change> get componentChanges;
 }
 
 /// Cache for fast parent-child relationship queries in the entity hierarchy.
@@ -110,12 +109,14 @@ class HierarchyCache {
 }
 
 @MappableClass()
-class World with WorldMappable {
+class World with WorldMappable implements IWorldView {
   int tickId = 0; // TODO not de/serializing to json/map?
   int lastId = 0; // TODO not de/serializing to json/map?
   final List<System> systems;
 
   final _componentChanges = StreamController<Change>.broadcast(sync: true);
+  
+  @override
   Stream<Change> get componentChanges => _componentChanges.stream;
 
   void notifyChange(Change change) {
@@ -131,10 +132,12 @@ class World with WorldMappable {
 
   World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]);
 
+  @override
   Entity getEntity(int entityId) {
     return Entity(parentCell: this, id: entityId);
   }
 
+  @override
   List<Entity> entities() {
     var entityIds = <int>{};
 
@@ -144,16 +147,19 @@ class World with WorldMappable {
     return entityIds.map((id) => getEntity(id)).toList();
   }
 
+  @override
   Map<int, C> get<C extends Component>() {
     return components.putIfAbsent(C.toString(), () => {}).cast<int, C>();
   }
 
+  @override
   Map<int, Component> getByName(String componentType) {
     return components
         .putIfAbsent(componentType, () => {})
         .cast<int, Component>();
   }
 
+  @override
   Entity add(List<Component> comps) {
     var entityId = lastId++;
     for (var c in comps) {
@@ -171,6 +177,7 @@ class World with WorldMappable {
     return getEntity(entityId);
   }
 
+  @override
   void remove(int entityId) {
     for (var entityComponentMap in components.entries) {
       var entry = entityComponentMap.value.entries
@@ -228,47 +235,7 @@ class World with WorldMappable {
   }
 }
 
-extension WorldChangeFilters on World {
-  Stream<Change> onChange(
-          {int? entityId, String? componentType, ChangeKind? kind}) =>
-      componentChanges.where((c) =>
-          (entityId == null || c.entityId == entityId) &&
-          (componentType == null || c.componentType == componentType) &&
-          (kind == null || c.kind == kind));
 
-  Stream<Change> onEntityChange(int entityId) => onChange(entityId: entityId);
-
-  Stream<Change> onComponentChanged<C extends Component>() =>
-      onChange(componentType: C.toString());
-
-  Stream<Change> onComponentChangedByName(String componentType) =>
-      onChange(componentType: componentType);
-
-  Stream<Change> onComponentAdded<C extends Component>() =>
-      onChange(componentType: C.toString(), kind: ChangeKind.added);
-
-  Stream<Change> onComponentAddedByName(String componentType) =>
-      onChange(componentType: componentType, kind: ChangeKind.added);
-
-  Stream<Change> onComponentRemoved<C extends Component>() =>
-      onChange(componentType: C.toString(), kind: ChangeKind.removed);
-
-  Stream<Change> onComponentRemovedByName(String componentType) =>
-      onChange(componentType: componentType, kind: ChangeKind.removed);
-
-  Stream<Change> onComponentUpdated<C extends Component>() =>
-      onChange(componentType: C.toString(), kind: ChangeKind.updated);
-
-  Stream<Change> onComponentUpdatedByName(String componentType) =>
-      onChange(componentType: componentType, kind: ChangeKind.updated);
-
-  Stream<Change> onEntityOnComponent<C extends Component>(int entityId) =>
-      onChange(entityId: entityId, componentType: C.toString());
-
-  Stream<Change> onEntityOnComponentByName(
-          int entityId, String componentType) =>
-      onChange(entityId: entityId, componentType: componentType);
-}
 
 /// A dart_mappable hook to handle de/serializing the complex map (for JSON).
 /// Necessary as we cannot use integers as JSON keys, so we convert to/from strings instead.
@@ -281,7 +248,6 @@ class ComponentsHook extends MappingHook {
     //var comps = value as Map<String, Map<int, Component>>;
     var comps = value as Map<String, dynamic>;
     return comps.map((type, entityMap) {
-      var idMap = entityMap as Map<String, dynamic>;
       return MapEntry(
           type,
           entityMap.map((id, comp) =>
