@@ -1,7 +1,6 @@
 import 'dart:math';
 
 import 'package:flame/effects.dart';
-import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';
 
 var random = Random();

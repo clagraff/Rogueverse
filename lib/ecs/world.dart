@@ -110,6 +110,8 @@ class HierarchyCache {
 
 @MappableClass()
 class World with WorldMappable implements IWorldView {
+  static final _logger = Logger('World');
+  
   int tickId = 0; // TODO not de/serializing to json/map?
   int lastId = 0; // TODO not de/serializing to json/map?
   final List<System> systems;
@@ -197,18 +199,34 @@ class World with WorldMappable implements IWorldView {
 
   /// Executes a single ECS update tick.
   void tick() {
+    final tickStart = DateTime.now();
+    final systemTimings = <String, int>{};
+    
     // TODO pre-tick notification???
     clearLifetimeComponents<
         BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
     for (var s in systems) {
+      final systemStart = DateTime.now();
       s.update(this);
+      final systemDuration = DateTime.now().difference(systemStart);
+      systemTimings[s.runtimeType.toString()] = systemDuration.inMicroseconds;
     }
 
     clearLifetimeComponents<
         AfterTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
     // TODO post-tick notification???
+
+    final totalDuration = DateTime.now().difference(tickStart);
+    
+    // Log tick performance with per-system timing
+    final systemTimingsStr = systemTimings.entries.sorted((e1, e2) {
+          return e2.value.compareTo(e1.value);
+        })
+        .map((e) => '${e.key}=${(e.value / 1000).toStringAsFixed(2)}ms')
+        .join(', ');
+    _logger.info('tick_complete: tickId=$tickId, duration=${(totalDuration.inMicroseconds / 1000).toStringAsFixed(2)}ms, systems=[$systemTimingsStr]');
 
     tickId++; // TODO: wrap around to avoid out of bounds type error?
   }

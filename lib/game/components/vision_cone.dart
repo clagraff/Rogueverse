@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flame/components.dart' hide World;
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/events.dart';
@@ -14,6 +15,8 @@ import 'package:rogueverse/ecs/world.dart';
 /// Tiles farther from the observer have less prominent fill color (gradient fade).
 /// Now dynamically updates based on GameArea.observerEntityId.
 class VisionConeComponent extends PositionComponent with HasPaint {
+  static final _logger = Logger('VisionCone');
+
   final World world;
   final ValueNotifier<int?> observerIdNotifier;
 
@@ -82,7 +85,7 @@ class VisionConeComponent extends PositionComponent with HasPaint {
   }
 
   void _onVisionChanged(Change change) {
-    print('[VisionCone] _onVisionChanged fired: kind=${change.kind}');
+    _logger.fine('vision_changed: entity=$_currentObserverId, kind=${change.kind}');
     if (change.kind == ChangeKind.removed) {
       // Entity lost vision - clear the cone
       _visibleTiles = {};
@@ -103,8 +106,8 @@ class VisionConeComponent extends PositionComponent with HasPaint {
     final visibleEntities = entity.get<VisibleEntities>();
     final position = entity.get<LocalPosition>();
 
-    print(
-        '[VisionCone] _regenerateVisionCone: tiles=${visibleEntities?.visibleTiles.length}, pos=${position?.x},${position?.y}');
+    _logger.fine(
+        'vision_regenerated: entity=$_currentObserverId, tiles=${visibleEntities?.visibleTiles.length ?? 0}, position=(${position?.x},${position?.y})');
 
     if (visibleEntities == null || position == null) {
       _visibleTiles = {};

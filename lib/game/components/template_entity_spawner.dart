@@ -236,22 +236,22 @@ class TemplateEntitySpawner extends PositionComponent
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    _logger.info('[ESC] onKeyEvent called - event type: ${event.runtimeType}, key: ${event.logicalKey}, _isActive: $_isActive');
+    _logger.info('onKeyEvent triggered: event_type=${event.runtimeType} key=${event.logicalKey} _isActive=$_isActive');
 
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      _logger.info('[ESC] ESC key detected, _isActive: $_isActive, _preview: ${_preview != null}, _template: ${_template != null}');
+      _logger.info('esc key detected: _isActive=$_isActive _preview=${_preview != null} _template=${_template != null}');
 
       if (_isActive) {
-        _logger.info('[ESC] Exiting editor mode');
+        _logger.info('exiting editor');
 
         // Exit placement mode and clear template
         exitPlacementMode();
         templateNotifier.value = null;
 
-        _logger.info('[ESC] Editor mode exited successfully');
+        _logger.info('exited editor successfully');
         return false; // Consumed ESC
       } else {
-        _logger.info('[ESC] Not active, letting other handlers process ESC');
+        _logger.info('Escape key not active');
       }
     }
     return true; // Let others handle

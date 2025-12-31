@@ -1,13 +1,19 @@
 import 'package:collection/collection.dart';
+import 'package:logging/logging.dart';
+
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/events.dart';
 
 class Entity {
+  static final _logger = Logger('Entity');
+
   final World parentCell;
   final int id;
 
-  Entity({required this.parentCell, required this.id});
+  Entity({required this.parentCell, required this.id}) {
+    _logger.fine('entity_created: id=$id');
+  }
 
   /// Stream of component changes for this specific entity.
   /// Use [ChangeStreamFilters] extension methods for filtered subscriptions.
@@ -70,6 +76,11 @@ class Entity {
 
     entitiesWithComponent[id] = c;
 
+    // Log important component changes
+    if (c is Health || c is LocalPosition || c is VisionRadius || c is Inventory) {
+      _logger.finer('component_upserted: entity=$id, component=${c.componentType}, was_update=${existing != null}');
+    }
+
     parentCell.notifyChange(Change(entityId: id, componentType: C.toString(), oldValue: existing?.value, newValue: c));
   }
 
@@ -105,6 +116,7 @@ class Entity {
   }
 
   void destroy() {
+    _logger.fine('entity_destroyed: id=$id');
     parentCell.remove(id);
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:dart_mappable/dart_mappable.dart';
+import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/query.dart';
@@ -48,6 +49,8 @@ class HierarchySystem extends System with HierarchySystemMappable {
 /// Uses hierarchy-scoped queries: only checks collisions with sibling entities (same parent).
 @MappableClass()
 class CollisionSystem extends System with CollisionSystemMappable {
+  static final _logger = Logger('CollisionSystem');
+  
   @override
   void update(World world) {
     final positions = world.get<LocalPosition>();
@@ -105,6 +108,8 @@ class CollisionSystem extends System with CollisionSystemMappable {
         e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
         e.upsert(BlockedMove(dest));
         e.remove<MoveByIntent>();
+        
+        _logger.finest('collision_blocked: entity=$id, from=(${pos.x},${pos.y}), to=(${dest.x},${dest.y})');
       }
     }
   }
@@ -115,6 +120,8 @@ class CollisionSystem extends System with CollisionSystemMappable {
 /// Updates positions and adds [DidMove] to track movement history.
 @MappableClass()
 class MovementSystem extends System with MovementSystemMappable {
+  static final _logger = Logger('MovementSystem');
+  
   @override
   void update(World world) {
     final moveIntents = world.get<MoveByIntent>();
@@ -138,12 +145,17 @@ class MovementSystem extends System with MovementSystemMappable {
 
       e.upsert(DidMove(from: from, to: to));
       e.remove<MoveByIntent>();
+      
+      final direction = e.get<Direction>();
+      _logger.finest('entity_moved: id=$id, from=(${from.x},${from.y}), to=(${to.x},${to.y}), direction=${direction?.facing}');
     }
   }
 }
 
 @MappableClass()
 class InventorySystem extends System with InventorySystemMappable {
+  static final _logger = Logger('InventorySystem');
+  
   final Query canPickup = Query().require<Inventory>().require<LocalPosition>();
 
   final Query canBePickedUp =
@@ -197,12 +209,17 @@ class InventorySystem extends System with InventorySystemMappable {
       ])); // Update inventory to include latest object
       source.upsert<PickedUp>(PickedUp(
           pickupIntent.targetEntityId)); // Allow for notifying of new item
+      
+      final targetPos = source.get<LocalPosition>();
+      _logger.info('item_pickup: entity=$sourceId, item=${pickupIntent.targetEntityId}, position=(${targetPos?.x},${targetPos?.y})');
     });
   }
 }
 
 @MappableClass()
 class CombatSystem extends System with CombatSystemMappable {
+  static final _logger = Logger('CombatSystem');
+  
   @override
   void update(World world) {
     final attackIntents = world.get<AttackIntent>();
@@ -215,7 +232,11 @@ class CombatSystem extends System with CombatSystemMappable {
 
       var health = target.get<Health>(Health(0, 0))!;
       // TODO change how damage is calculated
-      health.current -= 1;
+      const damage = 1;
+      health.current -= damage;
+      
+      _logger.info('combat_damage: attacker=$sourceId, target=${attackIntent.targetId}, damage=$damage, remaining_health=${health.current}');
+      
       if (health.current <= 0) {
         health.current = 0;
 
@@ -223,6 +244,8 @@ class CombatSystem extends System with CombatSystemMappable {
         // this now-dead entity.
         target.upsert(Dead());
         target.remove<BlocksMovement>();
+        
+        _logger.info('combat_defeat: attacker=$sourceId, target=${attackIntent.targetId}');
 
         var r = Random();
         var lootTable = target.get<LootTable>();
@@ -261,6 +284,8 @@ class CombatSystem extends System with CombatSystemMappable {
 
 @MappableClass()
 class BehaviorSystem extends System with BehaviorSystemMappable {
+  static final _logger = Logger('BehaviorSystem');
+  
   @override
   void update(World world) {
     final behaviors = world.get<Behavior>();
@@ -268,12 +293,16 @@ class BehaviorSystem extends System with BehaviorSystemMappable {
       var entity = world.getEntity(e);
       var result = b.behavior
           .tick(entity); // TODO i dont know what to do with the result....
+      
+      _logger.fine('behavior_tick: entity=$e, node=${b.behavior.runtimeType}, result=$result');
     });
   }
 }
 
 @MappableClass()
 class VisionSystem extends System with VisionSystemMappable {
+  static final _logger = Logger('VisionSystem');
+  
   @override
   void update(World world) {
     // Only process entities with VisionRadius (explicit opt-in for performance)
@@ -314,8 +343,7 @@ class VisionSystem extends System with VisionSystemMappable {
         _findEntitiesAtPositions(world, visibleTiles, observerId);
 
     // Update observer's VisibleEntities component
-    print(
-        '[VisionSystem] Upserting VisibleEntities for entity $observerId: ${visibleTiles.length} tiles, pos=${observerPos.x},${observerPos.y}');
+    _logger.fine('vision_update: entity=$observerId, visible_tiles=${visibleTiles.length}, visible_entities=${visibleEntityIds.length}, position=(${observerPos.x},${observerPos.y})');
     observer.upsert(VisibleEntities(
       entityIds: visibleEntityIds,
       visibleTiles: visibleTiles,

@@ -428,7 +428,7 @@ class _PropertySectionState extends State<PropertySection> {
           child: Container(
             height: 26,
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            color: scheme.surfaceVariant.withOpacity(0.6),
+            color: scheme.surfaceContainerHighest.withOpacity(0.6),
             child: Row(
               children: [
                 Icon(

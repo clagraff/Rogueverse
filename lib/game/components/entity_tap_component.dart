@@ -2,10 +2,7 @@ import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
-import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
-import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/svg_component.dart'
     show SvgTileComponent;
 import 'package:rogueverse/game/utils/grid_coordinates.dart'

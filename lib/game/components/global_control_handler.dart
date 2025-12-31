@@ -23,18 +23,18 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
     final isCtrlPressed = HardwareKeyboard.instance.isControlPressed;
 
     Logger("GlobalControlHandler")
-        .info("Key event: ${event.logicalKey}, isCtrl: $isCtrlPressed");
+        .info("key event: logicalKey=${event.logicalKey} isCtrl=$isCtrlPressed");
 
     // Space - advance tick
     if (event.logicalKey == LogicalKeyboardKey.space && !isCtrlPressed) {
-      Logger("GlobalControlHandler").info("Advancing tick");
+      Logger("GlobalControlHandler").info("advancing tick");
       game.tickEcs();
       return false;
     }
 
     // Ctrl+E - toggle inspector
     if (event.logicalKey == LogicalKeyboardKey.keyE && isCtrlPressed) {
-      Logger("GlobalControlHandler").info("Toggling inspector");
+      Logger("GlobalControlHandler").info("toggling inspector");
       if (selectedEntityNotifier.value != null) {
         if (game.overlays.isActive('inspectorPanel')) {
           game.overlays.remove('inspectorPanel');
@@ -47,7 +47,7 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
 
     // Esc - deselect entity
     if (event.logicalKey == LogicalKeyboardKey.escape) {
-      Logger("GlobalControlHandler").info("Deselecting entity");
+      Logger("GlobalControlHandler").info("deselecting entity");
       if (selectedEntityNotifier.value != null) {
         selectedEntityNotifier.value = null;
         game.observerEntityId.value = null;

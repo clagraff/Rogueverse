@@ -15,7 +15,6 @@ import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';
-import 'package:rogueverse/game/components/debug_info_overlay.dart';
 import 'package:rogueverse/game/components/entity_drag_mover.dart';
 import 'package:rogueverse/game/components/entity_hover_tracker.dart';
 import 'package:rogueverse/game/components/entity_tap_component.dart';
