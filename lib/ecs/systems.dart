@@ -127,7 +127,7 @@ class CollisionSystem extends System with CollisionSystemMappable {
           e.upsert(BlockedMove(dest));
           e.remove<MoveByIntent>();
 
-          _logger.finest('collision_blocked: entity=$id, from=(${pos.x},${pos.y}), to=(${dest.x},${dest.y})');
+          _logger.finest("collision blocked", {"entity": e, "from": pos, "to": dest});
         }
       }
     });
@@ -149,12 +149,12 @@ class MovementSystem extends System with MovementSystemMappable {
 
       for (final id in ids) {
         final e = world.getEntity(id);
-        _logger.finest("moving entity=$e");
+        _logger.finest("moving entity", {"entity": e});
 
         final pos = e.get<LocalPosition>();
         final intent = e.get<MoveByIntent>();
         if (pos == null || intent == null) {
-          _logger.warning("cannot move entity=$id due to missing position or intent: pos=$pos intent=$intent");
+          _logger.warning("cannot move due to missing position or intent", {"entity": e, "pos": pos, "intent": intent});
           continue;
         }
 
@@ -171,7 +171,7 @@ class MovementSystem extends System with MovementSystemMappable {
         e.remove<MoveByIntent>();
 
         final direction = e.get<Direction>();
-        _logger.finest('moved entity=$e from=$from to=$to with direction=${direction?.facing}');
+        _logger.finest("moved entity", {"entity": e, "from": from, "to": to, "direction": direction?.facing});
       }
     });
   }
@@ -238,7 +238,7 @@ class InventorySystem extends System with InventorySystemMappable {
             pickupIntent.targetEntityId)); // Allow for notifying of new item
 
         final targetPos = source.get<LocalPosition>();
-        _logger.info('item_pickup: entity=$sourceId, item=${pickupIntent.targetEntityId}, position=(${targetPos?.x},${targetPos?.y})');
+        _logger.finest("picked up item", {"entity": source, "item": target, "pos": targetPos});
       });
     });
   }
@@ -264,7 +264,7 @@ class CombatSystem extends System with CombatSystemMappable {
         const damage = 1;
         health.current -= damage;
 
-        _logger.info('combat_damage: attacker=$sourceId, target=${attackIntent.targetId}, damage=$damage, remaining_health=${health.current}');
+        _logger.finest("target damanged", {"attacker": source, "target": target, "damage": damage, "remainingHealth": health.current});
 
         if (health.current <= 0) {
           health.current = 0;
@@ -274,11 +274,11 @@ class CombatSystem extends System with CombatSystemMappable {
           target.upsert(Dead());
           target.remove<BlocksMovement>();
 
-          _logger.info('combat_defeat: attacker=$sourceId, target=${attackIntent.targetId}');
+          _logger.finer("target killed", {"attacker": source, "target":target});
 
           var r = Random();
           var lootTable = target.get<LootTable>();
-          if (lootTable != null) {
+          if (lootTable != null) { // TODO: jesus christ, maybe this should be its own system that runs after Combat? This look horrible.
             for (var lootable in lootTable.lootables) {
               var prob = r.nextDouble() * (1 + double.minPositive);
               if (prob <= lootable.probability) {
@@ -318,6 +318,7 @@ class BehaviorSystem extends BudgetedSystem with BehaviorSystemMappable {
   static final _logger = Logger('BehaviorSystem');
   final Queue<(Entity entity, Behavior behavior)> queue = Queue<(Entity entity, Behavior behavior)>();
 
+  /// Schedule AI behaviors to be processed during the budget run.
   @override
   void update(World world) {
     Timeline.timeSync("BehaviorSystem: update", () {
@@ -325,15 +326,11 @@ class BehaviorSystem extends BudgetedSystem with BehaviorSystemMappable {
       behaviors.forEach((e, b) {
         var entity = world.getEntity(e);
         queue.addLast((entity, b));
-
-        // var result = b.behavior
-        //     .tick(entity); // TODO i dont know what to do with the result....
-        //
-        // _logger.fine('behavior_tick: entity=$e node=${b.behavior.runtimeType} result=$result');
       });
     });
   }
 
+  /// Process AI behavior trees within the given duration. May exceed duration.
   @override
   bool budget(World world, Duration budget) {
     return Timeline.timeSync("BehaviorSystem: budget", () {
@@ -348,10 +345,10 @@ class BehaviorSystem extends BudgetedSystem with BehaviorSystemMappable {
         var behaviorComponent = entry.$2;
 
         var result = behaviorComponent.behavior.tick(entity);
-        _logger.fine('behavior system ticked: entity=${entity.id} node=${behaviorComponent.behavior.runtimeType} result=$result');
+        _logger.finest("ran behavior tree", {"entity": entity, "node": behaviorComponent.behavior.runtimeType, "result": result});
 
         if (queue.isEmpty) {
-          _logger.fine('behavior system emptied queue');
+          _logger.finest('behavior queue is empty');
           return false;
         }
       }
@@ -462,7 +459,7 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
     toDispose(_changeSubscription!.cancel.asDisposable());
     
     _initialized = true;
-    _logger.fine('vision system initialized: indexed_positions=${positions.length}');
+    _logger.fine('vision system initialized', {"indexPositionsCount": positions.length});
   }
   
   /// Handle component changes and mark observers dirty as needed
@@ -486,14 +483,14 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
           change.componentType == 'Direction' ||
           change.componentType == 'VisionRadius') {
         _markObserverDirty(change.entityId);
-        _logger.finest('marked observer dirty: observer=${change.entityId} reason=${change.componentType}');
+        _logger.finest("marked observer dirty", {"observer": entity, "componentType": change.componentType, "reason": change.kind});
       }
     }
     
     // 4. VisionRadius added (new observer)
     if (change.componentType == 'VisionRadius' && change.kind == ChangeKind.added) {
       _markObserverDirty(change.entityId);
-      _logger.finest('marked observer dirty: observer=${change.entityId} reason=new_observer');
+      _logger.finest("marked observer dirty", {"observer": entity, "componentType": change.componentType, "reason": change.kind});
     }
     
     // 5. Blocker moved or BlocksSight changed
@@ -519,7 +516,7 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       
       if (pos != null) {
         _markObserversInRange(world, pos, parentId);
-        _logger.finest('marked observer dirty: reason=blocker_changed position=(${pos.x},${pos.y})');
+        _logger.finest("marked observer dirty", {"observer": entity, "componentType": change.componentType, "reason": change.kind});
       }
     }
   }
@@ -567,7 +564,7 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       // Mark observers dirty in both old and new parent scopes
       _markObserversInRange(world, pos, oldParentId);
       _markObserversInRange(world, pos, newParentId);
-      
+
       _logger.finest('vision_dirty_marked: reason=parent_change, entity=${change.entityId}');
     }
     
@@ -662,7 +659,7 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
         _findEntitiesAtPositions(world, visibleTiles, observerId);
 
     // Update observer's VisibleEntities component
-    _logger.fine('vision_update: entity=$observerId, visible_tiles=${visibleTiles.length}, visible_entities=${visibleEntityIds.length}, position=(${observerPos.x},${observerPos.y})');
+    _logger.finest('vision_update: entity=$observerId, visible_tiles=${visibleTiles.length}, visible_entities=${visibleEntityIds.length}, position=(${observerPos.x},${observerPos.y})');
     observer.upsert(VisibleEntities(
       entityIds: visibleEntityIds,
       visibleTiles: visibleTiles,
@@ -876,14 +873,14 @@ class PortalSystem extends System with PortalSystemMappable {
 
   void _processPortalIntent(
       World world, Entity traveler, UsePortalIntent intent) {
-    _logger.finest("processing entity=$traveler with intent=$intent");
+    _logger.finest("processing portal intent", {"traveler": traveler, "intent": intent});
 
     final portal = world.getEntity(intent.portalEntityId);
     final travelerPos = traveler.get<LocalPosition>();
 
     // Validation: Check if traveler has required components
     if (travelerPos == null) {
-      _logger.warning("entity=$traveler is missing local position");
+      _logger.warning("traveler missing local position", {"traveler": traveler});
       _fail(traveler, intent.portalEntityId,
           PortalFailureReason.missingComponents);
       return;
@@ -894,7 +891,7 @@ class PortalSystem extends System with PortalSystemMappable {
     final portalParentId = portal.get<HasParent>()?.parentEntityId;
 
     if (travelerParentId != portalParentId) {
-      _logger.warning("traveler's parentId=$travelerParentId does not match portal parent parentId=$portalParentId");
+      _logger.warning("mismatched parentId between traveler and portal", {"traveler": traveler, "travelerParentId": travelerParentId, "portalParentId": portalParentId});
       _fail(traveler, intent.portalEntityId, PortalFailureReason.notSameParent);
       return;
     }
@@ -909,7 +906,7 @@ class PortalSystem extends System with PortalSystemMappable {
       _handlePortalToAnchor(world, traveler, portal, toAnchor, travelerPos,
           intent.specificAnchorId);
     } else {
-      _logger.warning("portal=$portal must have either a PortalToPosition or PortalToAnchor component");
+      _logger.warning("portal missing PortalToPosition/PortalToAnchor component", {"portal": portal});
       _fail(traveler, intent.portalEntityId, PortalFailureReason.portalNotFound);
     }
   }
@@ -921,13 +918,13 @@ class PortalSystem extends System with PortalSystemMappable {
     PortalToPosition portalConfig,
     LocalPosition travelerPos,
   ) {
-    _logger.finest("portaling entity=$traveler to parentId=${portalConfig.destParentId} at localPosition=${portalConfig.destLocation}");
+    _logger.finest("portaling traveler", {"traveler": traveler, "destParentId": portalConfig.destParentId, "destLocalPosition": portalConfig.destLocation});
     final portalPos = portal.get<LocalPosition>();
 
     // Validation: Check interaction range
     if (!_isWithinRange(
         travelerPos, portalPos, portalConfig.interactionRange, traveler, portal, world)) {
-      _logger.warning("traveler=$traveler is not within range of portal=$portal");
+      _logger.warning("traveler not in portal range", {"traveler": traveler, "portal": portal});
       _fail(traveler, portal.id, PortalFailureReason.outOfRange);
       return;
     }
@@ -936,7 +933,7 @@ class PortalSystem extends System with PortalSystemMappable {
     final destParentExists = world.components.values.any((componentMap) => 
         componentMap.containsKey(portalConfig.destParentId));
     if (!destParentExists) {
-      _logger.warning("portal parentId=${portalConfig.destParentId} does not exist");
+      _logger.warning("portal parent missing", {"portal": portal, "destParentId": portalConfig.destParentId});
       _fail(
           traveler, portal.id, PortalFailureReason.destinationParentNotFound);
       return;
@@ -946,7 +943,7 @@ class PortalSystem extends System with PortalSystemMappable {
     // TODO: double-check this logic.
     if (_isDestinationBlocked(
         world, portalConfig.destParentId, portalConfig.destLocation, traveler.id)) {
-      _logger.warning("destintation is blocked for entity=$traveler in parentId=${portalConfig.destParentId} at localPosition=${portalConfig.destLocation}");
+      _logger.warning("portal destination blocked", {"traveler": traveler, "portal": portal, "portalConfig": portalConfig});
       _fail(traveler, portal.id, PortalFailureReason.destinationBlocked);
       return;
     }
@@ -1123,7 +1120,7 @@ class PortalSystem extends System with PortalSystemMappable {
     if (fromParentId != toParentId) {
       traveler.upsert(HasParent(toParentId));
     } else {
-      _logger.finest("entity=$traveler already has matching toParentId=$toParentId");
+      _logger.finest("traveler already in same parent", {"traveler": traveler, "destParentId": toParentId});
     }
 
     // Add success component
@@ -1136,10 +1133,15 @@ class PortalSystem extends System with PortalSystemMappable {
       usedAnchorId: usedAnchorId,
     ));
 
-    _logger.info('portalled entity=${traveler} via portal=$portalId '
-        'from_parent=$fromParentId to_parent=$toParentId '
-        'from=$fromPos to=$toPos '
-        '${usedAnchorId != null ? ', anchor=$usedAnchorId' : ''}');
+    _logger.finest("portaled traveler", {
+      "traveler": traveler,
+      "portalId": portalId,
+      "fromParentId": fromParentId,
+      "toParentId": toParentId,
+      "fromPos": fromPos,
+      "toPos": toPos,
+      "usedAnchorId": usedAnchorId != null
+    });
   }
 
   // TODO: uh do we need this? we already have log statements for most of the failure conditions at the place they happened.

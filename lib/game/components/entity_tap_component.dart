@@ -16,6 +16,8 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   final double gridSize;
   final World world;
 
+  final Logger _logger = Logger("EntityTapComponent");
+
   /// Creates a tap handler for entity selection.
   ///
   /// [gridSize] is the size of each grid cell in pixels.
@@ -54,18 +56,18 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
 
     var tappedEntity = query.find(world).firstOrNull;
     if (tappedEntity != null) {
-      Logger("EntityTap").info("Tapped $tappedEntity");
+      _logger.info("entity tapped", {"entity": tappedEntity});
       notifier.value = tappedEntity;
-      Logger("EntityTap").info("Setting observerEntityId to $tappedEntity");
+      _logger.info("setting observed entity", {"entity": tappedEntity});
       observerEntityIdNotifier?.value = tappedEntity.id;
       matched = true;
     }
 
     if (!matched && notifier.value != null) {
-      Logger("EntityTap").info("untapped ${notifier.value!.id}");
+      _logger.info("entity untapped", {"entityId": notifier.value!.id});
       notifier.value = null;
       // Clear observer entity ID when deselecting
-      Logger("EntityTap").info("Clearing observerEntityId");
+      _logger.info("clearing observed entity");
       observerEntityIdNotifier?.value = null;
     }
   }

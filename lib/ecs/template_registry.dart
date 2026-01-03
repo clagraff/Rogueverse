@@ -72,7 +72,7 @@ class TemplateRegistry {
     _templates[template.id] = template;
     _notifyChange();
     await _persist();
-    _logger.info('Saved template: ${template.displayName} (${template.id})');
+    _logger.fine("saved template", {"template": template.displayName, "id": template.id});
   }
 
   /// Deletes a template by its ID.
@@ -84,7 +84,7 @@ class TemplateRegistry {
     if (removed != null) {
       _notifyChange();
       await _persist();
-      _logger.info('Deleted template: ${removed.displayName} ($id)');
+      _logger.fine("deleted template", {"template": removed.displayName, "id": id});
       return true;
     }
     return false;
@@ -103,7 +103,7 @@ class TemplateRegistry {
     try {
       final file = await _getTemplateFile();
       if (!file.existsSync()) {
-        _logger.info('No template file found, starting with empty registry');
+        _logger.fine('no template file found');
         return;
       }
 
@@ -124,9 +124,9 @@ class TemplateRegistry {
       _nextId = maxId + 1;
 
       _notifyChange();
-      _logger.info('Loaded ${_templates.length} templates from disk');
+      _logger.fine('loaded templates from disk', {"templateCount": _templates.length});
     } catch (e, stackTrace) {
-      _logger.severe('Failed to load templates', e, stackTrace);
+      _logger.severe('failed to load templates', e, stackTrace);
     }
   }
 

@@ -143,8 +143,11 @@ class World with WorldMappable implements IWorldView {
   @override
   Entity getEntity(int entityId) {
     return _entityCache.putIfAbsent(
-      entityId, 
-      () => Entity(parentCell: this, id: entityId, isNewCreation: true),
+      entityId,
+      () {
+        _logger.finest("entity not in cache", {"entityId": entityId});
+        return Entity(parentCell: this, id: entityId);
+      },
     );
   }
 
@@ -212,7 +215,7 @@ class World with WorldMappable implements IWorldView {
   /// Executes a single ECS update tick.
     void tick() {
       Timeline.timeSync("World: tick", () {
-        _logger.fine("processing tickId=$tickId");
+        _logger.fine("processing tick", {tickId=tickId});
 
         // TODO pre-tick notification???
         clearLifetimeComponents<
@@ -221,7 +224,7 @@ class World with WorldMappable implements IWorldView {
         Timeline.timeSync("World: process systems", () {
           for (var s in systems) {
             Timeline.timeSync("World: process ${s.runtimeType}", () {
-              _logger.fine("processing system=${s.runtimeType}");
+              _logger.fine("processing system", {"system": s.runtimeType.toString()});
               s.update(this);
             });
           }
@@ -230,7 +233,7 @@ class World with WorldMappable implements IWorldView {
         clearLifetimeComponents<
             AfterTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
-        _logger.fine("processed tickId=$tickId");
+        _logger.fine("processed tick", {"tickId": tickId});
         tickId++; // TODO: wrap around to avoid out of bounds type error?
       });
     }
@@ -301,7 +304,7 @@ class WorldSaves {
       var supportDir = await getApplicationSupportDirectory();
       var saveGame = File("${supportDir.path}/save.json");
       if (saveGame.existsSync()) {
-        _logger.info("loading save from path=${supportDir.path}/save.json");
+        _logger.info("loading save", {"path": "${supportDir.path}/save.json"});
         var jsonContents = saveGame.readAsStringSync();
         return WorldMapper.fromJson(jsonContents);
       }
@@ -321,7 +324,7 @@ class WorldSaves {
       var supportDir = await getApplicationSupportDirectory();
       var saveFile = File("${supportDir.path}/save.json");
 
-      _logger.info("writing save at path=${supportDir.path}/save.json");
+      _logger.info("writing save", {"path": "${supportDir.path}/save.json"});
 
       var writer = saveFile.openWrite();
       writer.write(saveState);

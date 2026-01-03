@@ -153,7 +153,7 @@ class GameScreen extends flame.World with Disposer {
 
     // TODO: why do we have this? Is this necessary? Dont we have a component that already does this?
     gridNotifier.addListener(() {
-      _logger.info("grid tapped: xy=${gridNotifier.value}");
+      _logger.info("gridNotifier triggered", {"xy": gridNotifier.value});
 
       // var entities = game.currentWorld.get<LocalPosition>();
       // entities.forEach((id, comp) {

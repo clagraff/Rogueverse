@@ -79,7 +79,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
         .toList();
 
     if (entities.isEmpty) {
-      _logger.info('No entity at ${gridPos.x}, ${gridPos.y}');
+      _logger.info('no entity at ${gridPos.x}, ${gridPos.y}');
       return;
     }
 
@@ -88,7 +88,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
     _originalPosition = _draggedEntity!.get<LocalPosition>()!;
     _currentDragPosition = _originalPosition;
 
-    _logger.info('Started dragging entity ${_draggedEntity!.id} from (${_originalPosition!.x}, ${_originalPosition!.y})');
+    _logger.info('started dragging entity', {"entityId": _draggedEntity!.id, "fromX": _originalPosition!.x, "fromY": _originalPosition!.y});
 
     // Create preview component
     final renderable = _draggedEntity!.get<Renderable>();
@@ -123,7 +123,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
       _previewComponent!.position = GridCoordinates.gridToScreen(gridPos);
     }
 
-    _logger.fine('Dragging to (${gridPos.x}, ${gridPos.y})');
+    _logger.finer('dragging to (${gridPos.x}, ${gridPos.y})');
 
     event.handled = true;
   }
@@ -136,7 +136,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
     // Use the last drag position since DragEndEvent doesn't have localPosition
     final finalPos = _currentDragPosition ?? _originalPosition!;
 
-    _logger.info('Dropped entity ${_draggedEntity!.id} at (${finalPos.x}, ${finalPos.y})');
+    _logger.info("dragged entity",  {"entity": _draggedEntity, "finalPos": finalPos});
 
     // Update entity's position
     _draggedEntity!.upsert<LocalPosition>(finalPos);

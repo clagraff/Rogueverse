@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
@@ -27,12 +28,37 @@ void main() async {
 
 /// Hardcode log level, setup log sinking.
 void loggerSetup() {
-  Logger.root.level = Level.INFO;
+  // Map of log levels (as int) to ANSI color codes
+  final levelColors = <Level, String>{
+    Level.FINEST: '\x1B[96m', // Bright cyan (basic color)
+    Level.FINER: '\x1B[36m', // Cyan (basic color)
+    Level.FINE: '\x1B[94m', // Bright blue (basic color)
+    Level.CONFIG: '\x1B[35m', // Magenta (basic color)
+    Level.INFO: '\x1B[38;5;255m', // White
+    Level.WARNING: '\x1B[38;5;221m', // Yellow
+    Level.SEVERE: '\x1B[38;5;196m', // Red
+    Level.SHOUT: '\x1B[38;5;201m', // Bright magenta
+  };
+  const resetCode = '\x1B[0m';
+
+  String getColorForLevel(Level level) {
+    return levelColors[level] ?? '';
+  }
+
+  final supportsColors = !kIsWeb;
+
+  Logger.root.level = Level.FINER;
   Logger.root.onRecord.listen((record) {
-    var message = "[${record.level}: ${record.loggerName}] ${record.message}";
+    var message = "[${record.level}:${record.loggerName}] ${record.message}";
     if (record.error != null) {
       message += " ${record.error!.toString()}";
     }
+
+    if (supportsColors) {
+      final color = getColorForLevel(record.level);
+      message = '$color$message$resetCode';
+    }
+
     if (kDebugMode) {
       print(message);
     }
