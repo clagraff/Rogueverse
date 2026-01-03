@@ -212,6 +212,7 @@ class World with WorldMappable implements IWorldView {
   void tick() {
     final tickStopwatch = Stopwatch()..start();
     final systemTimings = <String, Duration>{};
+    _logger.finest("processing tickId=$tickId");
 
     // TODO pre-tick notification???
     clearLifetimeComponents<
@@ -219,6 +220,7 @@ class World with WorldMappable implements IWorldView {
 
     for (var s in systems) {
       final systemStopwatch = Stopwatch()..start();
+      _logger.finest("processing system=${s.runtimeType}");
       s.update(this);
       systemStopwatch.stop();
       systemTimings[s.runtimeType.toString()] = systemStopwatch.elapsed;
@@ -296,11 +298,13 @@ class ComponentsHook extends MappingHook {
 }
 
 class WorldSaves {
+  static final Logger _logger = Logger("WorldSaves");
+
   static Future<World?> loadSave() async {
     var supportDir = await getApplicationSupportDirectory();
     var saveGame = File("${supportDir.path}/save.json");
     if (saveGame.existsSync()) {
-      Logger("WorldSaves").info("loading save: ${supportDir.path}/save.json");
+      _logger.info("loading save from path=${supportDir.path}/save.json");
       var jsonContents = saveGame.readAsStringSync();
       return WorldMapper.fromJson(jsonContents);
     }
@@ -314,7 +318,7 @@ class WorldSaves {
     var supportDir = await getApplicationSupportDirectory();
     var saveFile = File("${supportDir.path}/save.json");
 
-    Logger("WorldSaves").info("writing save: ${supportDir.path}/save.json");
+    _logger.info("writing save at path=${supportDir.path}/save.json");
 
     saveFile.open(mode: FileMode.write);
     var writer = saveFile.openWrite();

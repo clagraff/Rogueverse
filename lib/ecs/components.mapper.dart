@@ -77,6 +77,76 @@ extension CompassDirectionMapperExtension on CompassDirection {
   }
 }
 
+class PortalFailureReasonMapper extends EnumMapper<PortalFailureReason> {
+  PortalFailureReasonMapper._();
+
+  static PortalFailureReasonMapper? _instance;
+  static PortalFailureReasonMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = PortalFailureReasonMapper._());
+    }
+    return _instance!;
+  }
+
+  static PortalFailureReason fromValue(dynamic value) {
+    ensureInitialized();
+    return MapperContainer.globals.fromValue(value);
+  }
+
+  @override
+  PortalFailureReason decode(dynamic value) {
+    switch (value) {
+      case r'portalNotFound':
+        return PortalFailureReason.portalNotFound;
+      case r'notSameParent':
+        return PortalFailureReason.notSameParent;
+      case r'outOfRange':
+        return PortalFailureReason.outOfRange;
+      case r'destinationBlocked':
+        return PortalFailureReason.destinationBlocked;
+      case r'destinationParentNotFound':
+        return PortalFailureReason.destinationParentNotFound;
+      case r'anchorNotFound':
+        return PortalFailureReason.anchorNotFound;
+      case r'noValidAnchors':
+        return PortalFailureReason.noValidAnchors;
+      case r'missingComponents':
+        return PortalFailureReason.missingComponents;
+      default:
+        throw MapperException.unknownEnumValue(value);
+    }
+  }
+
+  @override
+  dynamic encode(PortalFailureReason self) {
+    switch (self) {
+      case PortalFailureReason.portalNotFound:
+        return r'portalNotFound';
+      case PortalFailureReason.notSameParent:
+        return r'notSameParent';
+      case PortalFailureReason.outOfRange:
+        return r'outOfRange';
+      case PortalFailureReason.destinationBlocked:
+        return r'destinationBlocked';
+      case PortalFailureReason.destinationParentNotFound:
+        return r'destinationParentNotFound';
+      case PortalFailureReason.anchorNotFound:
+        return r'anchorNotFound';
+      case PortalFailureReason.noValidAnchors:
+        return r'noValidAnchors';
+      case PortalFailureReason.missingComponents:
+        return r'missingComponents';
+    }
+  }
+}
+
+extension PortalFailureReasonMapperExtension on PortalFailureReason {
+  String toValue() {
+    PortalFailureReasonMapper.ensureInitialized();
+    return MapperContainer.globals.toValue<PortalFailureReason>(this) as String;
+  }
+}
+
 class ComponentMapper extends ClassMapperBase<Component> {
   ComponentMapper._();
 
@@ -116,6 +186,12 @@ class ComponentMapper extends ClassMapperBase<Component> {
       VisibleEntitiesMapper.ensureInitialized();
       VisionMemoryMapper.ensureInitialized();
       HasParentMapper.ensureInitialized();
+      PortalToPositionMapper.ensureInitialized();
+      PortalToAnchorMapper.ensureInitialized();
+      PortalAnchorMapper.ensureInitialized();
+      UsePortalIntentMapper.ensureInitialized();
+      DidPortalMapper.ensureInitialized();
+      FailedToPortalMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -409,6 +485,8 @@ class BeforeTickMapper extends SubClassMapperBase<BeforeTick> {
       WasAttackedMapper.ensureInitialized();
       InventoryFullFailureMapper.ensureInitialized();
       PickedUpMapper.ensureInitialized();
+      DidPortalMapper.ensureInitialized();
+      FailedToPortalMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -535,6 +613,7 @@ class AfterTickMapper extends SubClassMapperBase<AfterTick> {
       LifetimeMapper.ensureInitialized().addSubMapper(_instance!);
       MoveByIntentMapper.ensureInitialized();
       PickupIntentMapper.ensureInitialized();
+      UsePortalIntentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -4224,5 +4303,997 @@ class _HasParentCopyWithImpl<$R, $Out>
   HasParentCopyWith<$R2, HasParent, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _HasParentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class PortalToPositionMapper extends SubClassMapperBase<PortalToPosition> {
+  PortalToPositionMapper._();
+
+  static PortalToPositionMapper? _instance;
+  static PortalToPositionMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = PortalToPositionMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      LocalPositionMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'PortalToPosition';
+
+  static int _$destParentId(PortalToPosition v) => v.destParentId;
+  static const Field<PortalToPosition, int> _f$destParentId = Field(
+    'destParentId',
+    _$destParentId,
+  );
+  static LocalPosition _$destLocation(PortalToPosition v) => v.destLocation;
+  static const Field<PortalToPosition, LocalPosition> _f$destLocation = Field(
+    'destLocation',
+    _$destLocation,
+  );
+  static int _$interactionRange(PortalToPosition v) => v.interactionRange;
+  static const Field<PortalToPosition, int> _f$interactionRange = Field(
+    'interactionRange',
+    _$interactionRange,
+    opt: true,
+    def: 0,
+  );
+
+  @override
+  final MappableFields<PortalToPosition> fields = const {
+    #destParentId: _f$destParentId,
+    #destLocation: _f$destLocation,
+    #interactionRange: _f$interactionRange,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'PortalToPosition';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static PortalToPosition _instantiate(DecodingData data) {
+    return PortalToPosition(
+      destParentId: data.dec(_f$destParentId),
+      destLocation: data.dec(_f$destLocation),
+      interactionRange: data.dec(_f$interactionRange),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static PortalToPosition fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<PortalToPosition>(map);
+  }
+
+  static PortalToPosition fromJson(String json) {
+    return ensureInitialized().decodeJson<PortalToPosition>(json);
+  }
+}
+
+mixin PortalToPositionMappable {
+  String toJson() {
+    return PortalToPositionMapper.ensureInitialized()
+        .encodeJson<PortalToPosition>(this as PortalToPosition);
+  }
+
+  Map<String, dynamic> toMap() {
+    return PortalToPositionMapper.ensureInitialized()
+        .encodeMap<PortalToPosition>(this as PortalToPosition);
+  }
+
+  PortalToPositionCopyWith<PortalToPosition, PortalToPosition, PortalToPosition>
+  get copyWith =>
+      _PortalToPositionCopyWithImpl<PortalToPosition, PortalToPosition>(
+        this as PortalToPosition,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return PortalToPositionMapper.ensureInitialized().stringifyValue(
+      this as PortalToPosition,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return PortalToPositionMapper.ensureInitialized().equalsValue(
+      this as PortalToPosition,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return PortalToPositionMapper.ensureInitialized().hashValue(
+      this as PortalToPosition,
+    );
+  }
+}
+
+extension PortalToPositionValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, PortalToPosition, $Out> {
+  PortalToPositionCopyWith<$R, PortalToPosition, $Out>
+  get $asPortalToPosition =>
+      $base.as((v, t, t2) => _PortalToPositionCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class PortalToPositionCopyWith<$R, $In extends PortalToPosition, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get destLocation;
+  @override
+  $R call({
+    int? destParentId,
+    LocalPosition? destLocation,
+    int? interactionRange,
+  });
+  PortalToPositionCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _PortalToPositionCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, PortalToPosition, $Out>
+    implements PortalToPositionCopyWith<$R, PortalToPosition, $Out> {
+  _PortalToPositionCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<PortalToPosition> $mapper =
+      PortalToPositionMapper.ensureInitialized();
+  @override
+  LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get destLocation =>
+      $value.destLocation.copyWith.$chain((v) => call(destLocation: v));
+  @override
+  $R call({
+    int? destParentId,
+    LocalPosition? destLocation,
+    int? interactionRange,
+  }) => $apply(
+    FieldCopyWithData({
+      if (destParentId != null) #destParentId: destParentId,
+      if (destLocation != null) #destLocation: destLocation,
+      if (interactionRange != null) #interactionRange: interactionRange,
+    }),
+  );
+  @override
+  PortalToPosition $make(CopyWithData data) => PortalToPosition(
+    destParentId: data.get(#destParentId, or: $value.destParentId),
+    destLocation: data.get(#destLocation, or: $value.destLocation),
+    interactionRange: data.get(#interactionRange, or: $value.interactionRange),
+  );
+
+  @override
+  PortalToPositionCopyWith<$R2, PortalToPosition, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _PortalToPositionCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class PortalToAnchorMapper extends SubClassMapperBase<PortalToAnchor> {
+  PortalToAnchorMapper._();
+
+  static PortalToAnchorMapper? _instance;
+  static PortalToAnchorMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = PortalToAnchorMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'PortalToAnchor';
+
+  static List<int> _$destAnchorEntityIds(PortalToAnchor v) =>
+      v.destAnchorEntityIds;
+  static const Field<PortalToAnchor, List<int>> _f$destAnchorEntityIds = Field(
+    'destAnchorEntityIds',
+    _$destAnchorEntityIds,
+  );
+  static int _$offsetX(PortalToAnchor v) => v.offsetX;
+  static const Field<PortalToAnchor, int> _f$offsetX = Field(
+    'offsetX',
+    _$offsetX,
+    opt: true,
+    def: 0,
+  );
+  static int _$offsetY(PortalToAnchor v) => v.offsetY;
+  static const Field<PortalToAnchor, int> _f$offsetY = Field(
+    'offsetY',
+    _$offsetY,
+    opt: true,
+    def: 0,
+  );
+  static int _$interactionRange(PortalToAnchor v) => v.interactionRange;
+  static const Field<PortalToAnchor, int> _f$interactionRange = Field(
+    'interactionRange',
+    _$interactionRange,
+    opt: true,
+    def: 0,
+  );
+
+  @override
+  final MappableFields<PortalToAnchor> fields = const {
+    #destAnchorEntityIds: _f$destAnchorEntityIds,
+    #offsetX: _f$offsetX,
+    #offsetY: _f$offsetY,
+    #interactionRange: _f$interactionRange,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'PortalToAnchor';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static PortalToAnchor _instantiate(DecodingData data) {
+    return PortalToAnchor(
+      destAnchorEntityIds: data.dec(_f$destAnchorEntityIds),
+      offsetX: data.dec(_f$offsetX),
+      offsetY: data.dec(_f$offsetY),
+      interactionRange: data.dec(_f$interactionRange),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static PortalToAnchor fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<PortalToAnchor>(map);
+  }
+
+  static PortalToAnchor fromJson(String json) {
+    return ensureInitialized().decodeJson<PortalToAnchor>(json);
+  }
+}
+
+mixin PortalToAnchorMappable {
+  String toJson() {
+    return PortalToAnchorMapper.ensureInitialized().encodeJson<PortalToAnchor>(
+      this as PortalToAnchor,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return PortalToAnchorMapper.ensureInitialized().encodeMap<PortalToAnchor>(
+      this as PortalToAnchor,
+    );
+  }
+
+  PortalToAnchorCopyWith<PortalToAnchor, PortalToAnchor, PortalToAnchor>
+  get copyWith => _PortalToAnchorCopyWithImpl<PortalToAnchor, PortalToAnchor>(
+    this as PortalToAnchor,
+    $identity,
+    $identity,
+  );
+  @override
+  String toString() {
+    return PortalToAnchorMapper.ensureInitialized().stringifyValue(
+      this as PortalToAnchor,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return PortalToAnchorMapper.ensureInitialized().equalsValue(
+      this as PortalToAnchor,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return PortalToAnchorMapper.ensureInitialized().hashValue(
+      this as PortalToAnchor,
+    );
+  }
+}
+
+extension PortalToAnchorValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, PortalToAnchor, $Out> {
+  PortalToAnchorCopyWith<$R, PortalToAnchor, $Out> get $asPortalToAnchor =>
+      $base.as((v, t, t2) => _PortalToAnchorCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class PortalToAnchorCopyWith<$R, $In extends PortalToAnchor, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  ListCopyWith<$R, int, ObjectCopyWith<$R, int, int>> get destAnchorEntityIds;
+  @override
+  $R call({
+    List<int>? destAnchorEntityIds,
+    int? offsetX,
+    int? offsetY,
+    int? interactionRange,
+  });
+  PortalToAnchorCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _PortalToAnchorCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, PortalToAnchor, $Out>
+    implements PortalToAnchorCopyWith<$R, PortalToAnchor, $Out> {
+  _PortalToAnchorCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<PortalToAnchor> $mapper =
+      PortalToAnchorMapper.ensureInitialized();
+  @override
+  ListCopyWith<$R, int, ObjectCopyWith<$R, int, int>> get destAnchorEntityIds =>
+      ListCopyWith(
+        $value.destAnchorEntityIds,
+        (v, t) => ObjectCopyWith(v, $identity, t),
+        (v) => call(destAnchorEntityIds: v),
+      );
+  @override
+  $R call({
+    List<int>? destAnchorEntityIds,
+    int? offsetX,
+    int? offsetY,
+    int? interactionRange,
+  }) => $apply(
+    FieldCopyWithData({
+      if (destAnchorEntityIds != null)
+        #destAnchorEntityIds: destAnchorEntityIds,
+      if (offsetX != null) #offsetX: offsetX,
+      if (offsetY != null) #offsetY: offsetY,
+      if (interactionRange != null) #interactionRange: interactionRange,
+    }),
+  );
+  @override
+  PortalToAnchor $make(CopyWithData data) => PortalToAnchor(
+    destAnchorEntityIds: data.get(
+      #destAnchorEntityIds,
+      or: $value.destAnchorEntityIds,
+    ),
+    offsetX: data.get(#offsetX, or: $value.offsetX),
+    offsetY: data.get(#offsetY, or: $value.offsetY),
+    interactionRange: data.get(#interactionRange, or: $value.interactionRange),
+  );
+
+  @override
+  PortalToAnchorCopyWith<$R2, PortalToAnchor, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _PortalToAnchorCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class PortalAnchorMapper extends SubClassMapperBase<PortalAnchor> {
+  PortalAnchorMapper._();
+
+  static PortalAnchorMapper? _instance;
+  static PortalAnchorMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = PortalAnchorMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'PortalAnchor';
+
+  static String? _$anchorName(PortalAnchor v) => v.anchorName;
+  static const Field<PortalAnchor, String> _f$anchorName = Field(
+    'anchorName',
+    _$anchorName,
+    opt: true,
+  );
+
+  @override
+  final MappableFields<PortalAnchor> fields = const {
+    #anchorName: _f$anchorName,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'PortalAnchor';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static PortalAnchor _instantiate(DecodingData data) {
+    return PortalAnchor(anchorName: data.dec(_f$anchorName));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static PortalAnchor fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<PortalAnchor>(map);
+  }
+
+  static PortalAnchor fromJson(String json) {
+    return ensureInitialized().decodeJson<PortalAnchor>(json);
+  }
+}
+
+mixin PortalAnchorMappable {
+  String toJson() {
+    return PortalAnchorMapper.ensureInitialized().encodeJson<PortalAnchor>(
+      this as PortalAnchor,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return PortalAnchorMapper.ensureInitialized().encodeMap<PortalAnchor>(
+      this as PortalAnchor,
+    );
+  }
+
+  PortalAnchorCopyWith<PortalAnchor, PortalAnchor, PortalAnchor> get copyWith =>
+      _PortalAnchorCopyWithImpl<PortalAnchor, PortalAnchor>(
+        this as PortalAnchor,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return PortalAnchorMapper.ensureInitialized().stringifyValue(
+      this as PortalAnchor,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return PortalAnchorMapper.ensureInitialized().equalsValue(
+      this as PortalAnchor,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return PortalAnchorMapper.ensureInitialized().hashValue(
+      this as PortalAnchor,
+    );
+  }
+}
+
+extension PortalAnchorValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, PortalAnchor, $Out> {
+  PortalAnchorCopyWith<$R, PortalAnchor, $Out> get $asPortalAnchor =>
+      $base.as((v, t, t2) => _PortalAnchorCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class PortalAnchorCopyWith<$R, $In extends PortalAnchor, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({String? anchorName});
+  PortalAnchorCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _PortalAnchorCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, PortalAnchor, $Out>
+    implements PortalAnchorCopyWith<$R, PortalAnchor, $Out> {
+  _PortalAnchorCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<PortalAnchor> $mapper =
+      PortalAnchorMapper.ensureInitialized();
+  @override
+  $R call({Object? anchorName = $none}) => $apply(
+    FieldCopyWithData({if (anchorName != $none) #anchorName: anchorName}),
+  );
+  @override
+  PortalAnchor $make(CopyWithData data) =>
+      PortalAnchor(anchorName: data.get(#anchorName, or: $value.anchorName));
+
+  @override
+  PortalAnchorCopyWith<$R2, PortalAnchor, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _PortalAnchorCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class UsePortalIntentMapper extends SubClassMapperBase<UsePortalIntent> {
+  UsePortalIntentMapper._();
+
+  static UsePortalIntentMapper? _instance;
+  static UsePortalIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = UsePortalIntentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'UsePortalIntent';
+
+  static int _$portalEntityId(UsePortalIntent v) => v.portalEntityId;
+  static const Field<UsePortalIntent, int> _f$portalEntityId = Field(
+    'portalEntityId',
+    _$portalEntityId,
+  );
+  static int? _$specificAnchorId(UsePortalIntent v) => v.specificAnchorId;
+  static const Field<UsePortalIntent, int> _f$specificAnchorId = Field(
+    'specificAnchorId',
+    _$specificAnchorId,
+    opt: true,
+  );
+  static int _$lifetime(UsePortalIntent v) => v.lifetime;
+  static const Field<UsePortalIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<UsePortalIntent> fields = const {
+    #portalEntityId: _f$portalEntityId,
+    #specificAnchorId: _f$specificAnchorId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'UsePortalIntent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static UsePortalIntent _instantiate(DecodingData data) {
+    return UsePortalIntent(
+      portalEntityId: data.dec(_f$portalEntityId),
+      specificAnchorId: data.dec(_f$specificAnchorId),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static UsePortalIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<UsePortalIntent>(map);
+  }
+
+  static UsePortalIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<UsePortalIntent>(json);
+  }
+}
+
+mixin UsePortalIntentMappable {
+  String toJson() {
+    return UsePortalIntentMapper.ensureInitialized()
+        .encodeJson<UsePortalIntent>(this as UsePortalIntent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return UsePortalIntentMapper.ensureInitialized().encodeMap<UsePortalIntent>(
+      this as UsePortalIntent,
+    );
+  }
+
+  UsePortalIntentCopyWith<UsePortalIntent, UsePortalIntent, UsePortalIntent>
+  get copyWith =>
+      _UsePortalIntentCopyWithImpl<UsePortalIntent, UsePortalIntent>(
+        this as UsePortalIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return UsePortalIntentMapper.ensureInitialized().stringifyValue(
+      this as UsePortalIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return UsePortalIntentMapper.ensureInitialized().equalsValue(
+      this as UsePortalIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return UsePortalIntentMapper.ensureInitialized().hashValue(
+      this as UsePortalIntent,
+    );
+  }
+}
+
+extension UsePortalIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, UsePortalIntent, $Out> {
+  UsePortalIntentCopyWith<$R, UsePortalIntent, $Out> get $asUsePortalIntent =>
+      $base.as((v, t, t2) => _UsePortalIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class UsePortalIntentCopyWith<$R, $In extends UsePortalIntent, $Out>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? portalEntityId, int? specificAnchorId});
+  UsePortalIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _UsePortalIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, UsePortalIntent, $Out>
+    implements UsePortalIntentCopyWith<$R, UsePortalIntent, $Out> {
+  _UsePortalIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<UsePortalIntent> $mapper =
+      UsePortalIntentMapper.ensureInitialized();
+  @override
+  $R call({int? portalEntityId, Object? specificAnchorId = $none}) => $apply(
+    FieldCopyWithData({
+      if (portalEntityId != null) #portalEntityId: portalEntityId,
+      if (specificAnchorId != $none) #specificAnchorId: specificAnchorId,
+    }),
+  );
+  @override
+  UsePortalIntent $make(CopyWithData data) => UsePortalIntent(
+    portalEntityId: data.get(#portalEntityId, or: $value.portalEntityId),
+    specificAnchorId: data.get(#specificAnchorId, or: $value.specificAnchorId),
+  );
+
+  @override
+  UsePortalIntentCopyWith<$R2, UsePortalIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _UsePortalIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DidPortalMapper extends SubClassMapperBase<DidPortal> {
+  DidPortalMapper._();
+
+  static DidPortalMapper? _instance;
+  static DidPortalMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DidPortalMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+      LocalPositionMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DidPortal';
+
+  static int _$portalEntityId(DidPortal v) => v.portalEntityId;
+  static const Field<DidPortal, int> _f$portalEntityId = Field(
+    'portalEntityId',
+    _$portalEntityId,
+  );
+  static int _$fromParentId(DidPortal v) => v.fromParentId;
+  static const Field<DidPortal, int> _f$fromParentId = Field(
+    'fromParentId',
+    _$fromParentId,
+  );
+  static int _$toParentId(DidPortal v) => v.toParentId;
+  static const Field<DidPortal, int> _f$toParentId = Field(
+    'toParentId',
+    _$toParentId,
+  );
+  static LocalPosition _$fromPosition(DidPortal v) => v.fromPosition;
+  static const Field<DidPortal, LocalPosition> _f$fromPosition = Field(
+    'fromPosition',
+    _$fromPosition,
+  );
+  static LocalPosition _$toPosition(DidPortal v) => v.toPosition;
+  static const Field<DidPortal, LocalPosition> _f$toPosition = Field(
+    'toPosition',
+    _$toPosition,
+  );
+  static int? _$usedAnchorId(DidPortal v) => v.usedAnchorId;
+  static const Field<DidPortal, int> _f$usedAnchorId = Field(
+    'usedAnchorId',
+    _$usedAnchorId,
+    opt: true,
+  );
+  static int _$lifetime(DidPortal v) => v.lifetime;
+  static const Field<DidPortal, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DidPortal> fields = const {
+    #portalEntityId: _f$portalEntityId,
+    #fromParentId: _f$fromParentId,
+    #toParentId: _f$toParentId,
+    #fromPosition: _f$fromPosition,
+    #toPosition: _f$toPosition,
+    #usedAnchorId: _f$usedAnchorId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DidPortal';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static DidPortal _instantiate(DecodingData data) {
+    return DidPortal(
+      portalEntityId: data.dec(_f$portalEntityId),
+      fromParentId: data.dec(_f$fromParentId),
+      toParentId: data.dec(_f$toParentId),
+      fromPosition: data.dec(_f$fromPosition),
+      toPosition: data.dec(_f$toPosition),
+      usedAnchorId: data.dec(_f$usedAnchorId),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DidPortal fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DidPortal>(map);
+  }
+
+  static DidPortal fromJson(String json) {
+    return ensureInitialized().decodeJson<DidPortal>(json);
+  }
+}
+
+mixin DidPortalMappable {
+  String toJson() {
+    return DidPortalMapper.ensureInitialized().encodeJson<DidPortal>(
+      this as DidPortal,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DidPortalMapper.ensureInitialized().encodeMap<DidPortal>(
+      this as DidPortal,
+    );
+  }
+
+  DidPortalCopyWith<DidPortal, DidPortal, DidPortal> get copyWith =>
+      _DidPortalCopyWithImpl<DidPortal, DidPortal>(
+        this as DidPortal,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DidPortalMapper.ensureInitialized().stringifyValue(
+      this as DidPortal,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DidPortalMapper.ensureInitialized().equalsValue(
+      this as DidPortal,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DidPortalMapper.ensureInitialized().hashValue(this as DidPortal);
+  }
+}
+
+extension DidPortalValueCopy<$R, $Out> on ObjectCopyWith<$R, DidPortal, $Out> {
+  DidPortalCopyWith<$R, DidPortal, $Out> get $asDidPortal =>
+      $base.as((v, t, t2) => _DidPortalCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DidPortalCopyWith<$R, $In extends DidPortal, $Out>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get fromPosition;
+  LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get toPosition;
+  @override
+  $R call({
+    int? portalEntityId,
+    int? fromParentId,
+    int? toParentId,
+    LocalPosition? fromPosition,
+    LocalPosition? toPosition,
+    int? usedAnchorId,
+  });
+  DidPortalCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DidPortalCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DidPortal, $Out>
+    implements DidPortalCopyWith<$R, DidPortal, $Out> {
+  _DidPortalCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DidPortal> $mapper =
+      DidPortalMapper.ensureInitialized();
+  @override
+  LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get fromPosition =>
+      $value.fromPosition.copyWith.$chain((v) => call(fromPosition: v));
+  @override
+  LocalPositionCopyWith<$R, LocalPosition, LocalPosition> get toPosition =>
+      $value.toPosition.copyWith.$chain((v) => call(toPosition: v));
+  @override
+  $R call({
+    int? portalEntityId,
+    int? fromParentId,
+    int? toParentId,
+    LocalPosition? fromPosition,
+    LocalPosition? toPosition,
+    Object? usedAnchorId = $none,
+  }) => $apply(
+    FieldCopyWithData({
+      if (portalEntityId != null) #portalEntityId: portalEntityId,
+      if (fromParentId != null) #fromParentId: fromParentId,
+      if (toParentId != null) #toParentId: toParentId,
+      if (fromPosition != null) #fromPosition: fromPosition,
+      if (toPosition != null) #toPosition: toPosition,
+      if (usedAnchorId != $none) #usedAnchorId: usedAnchorId,
+    }),
+  );
+  @override
+  DidPortal $make(CopyWithData data) => DidPortal(
+    portalEntityId: data.get(#portalEntityId, or: $value.portalEntityId),
+    fromParentId: data.get(#fromParentId, or: $value.fromParentId),
+    toParentId: data.get(#toParentId, or: $value.toParentId),
+    fromPosition: data.get(#fromPosition, or: $value.fromPosition),
+    toPosition: data.get(#toPosition, or: $value.toPosition),
+    usedAnchorId: data.get(#usedAnchorId, or: $value.usedAnchorId),
+  );
+
+  @override
+  DidPortalCopyWith<$R2, DidPortal, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DidPortalCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class FailedToPortalMapper extends SubClassMapperBase<FailedToPortal> {
+  FailedToPortalMapper._();
+
+  static FailedToPortalMapper? _instance;
+  static FailedToPortalMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = FailedToPortalMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+      PortalFailureReasonMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'FailedToPortal';
+
+  static int _$portalEntityId(FailedToPortal v) => v.portalEntityId;
+  static const Field<FailedToPortal, int> _f$portalEntityId = Field(
+    'portalEntityId',
+    _$portalEntityId,
+  );
+  static PortalFailureReason _$reason(FailedToPortal v) => v.reason;
+  static const Field<FailedToPortal, PortalFailureReason> _f$reason = Field(
+    'reason',
+    _$reason,
+  );
+  static int _$lifetime(FailedToPortal v) => v.lifetime;
+  static const Field<FailedToPortal, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<FailedToPortal> fields = const {
+    #portalEntityId: _f$portalEntityId,
+    #reason: _f$reason,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'FailedToPortal';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static FailedToPortal _instantiate(DecodingData data) {
+    return FailedToPortal(
+      portalEntityId: data.dec(_f$portalEntityId),
+      reason: data.dec(_f$reason),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static FailedToPortal fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<FailedToPortal>(map);
+  }
+
+  static FailedToPortal fromJson(String json) {
+    return ensureInitialized().decodeJson<FailedToPortal>(json);
+  }
+}
+
+mixin FailedToPortalMappable {
+  String toJson() {
+    return FailedToPortalMapper.ensureInitialized().encodeJson<FailedToPortal>(
+      this as FailedToPortal,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return FailedToPortalMapper.ensureInitialized().encodeMap<FailedToPortal>(
+      this as FailedToPortal,
+    );
+  }
+
+  FailedToPortalCopyWith<FailedToPortal, FailedToPortal, FailedToPortal>
+  get copyWith => _FailedToPortalCopyWithImpl<FailedToPortal, FailedToPortal>(
+    this as FailedToPortal,
+    $identity,
+    $identity,
+  );
+  @override
+  String toString() {
+    return FailedToPortalMapper.ensureInitialized().stringifyValue(
+      this as FailedToPortal,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return FailedToPortalMapper.ensureInitialized().equalsValue(
+      this as FailedToPortal,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return FailedToPortalMapper.ensureInitialized().hashValue(
+      this as FailedToPortal,
+    );
+  }
+}
+
+extension FailedToPortalValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, FailedToPortal, $Out> {
+  FailedToPortalCopyWith<$R, FailedToPortal, $Out> get $asFailedToPortal =>
+      $base.as((v, t, t2) => _FailedToPortalCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class FailedToPortalCopyWith<$R, $In extends FailedToPortal, $Out>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? portalEntityId, PortalFailureReason? reason});
+  FailedToPortalCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _FailedToPortalCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, FailedToPortal, $Out>
+    implements FailedToPortalCopyWith<$R, FailedToPortal, $Out> {
+  _FailedToPortalCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<FailedToPortal> $mapper =
+      FailedToPortalMapper.ensureInitialized();
+  @override
+  $R call({int? portalEntityId, PortalFailureReason? reason}) => $apply(
+    FieldCopyWithData({
+      if (portalEntityId != null) #portalEntityId: portalEntityId,
+      if (reason != null) #reason: reason,
+    }),
+  );
+  @override
+  FailedToPortal $make(CopyWithData data) => FailedToPortal(
+    portalEntityId: data.get(#portalEntityId, or: $value.portalEntityId),
+    reason: data.get(#reason, or: $value.reason),
+  );
+
+  @override
+  FailedToPortalCopyWith<$R2, FailedToPortal, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _FailedToPortalCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

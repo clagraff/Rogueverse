@@ -236,6 +236,10 @@ class TemplateEntitySpawner extends PositionComponent
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    if (!_isActive) {
+      return true;
+    }
+
     _logger.info('onKeyEvent triggered: event_type=${event.runtimeType} key=${event.logicalKey} _isActive=$_isActive');
 
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {

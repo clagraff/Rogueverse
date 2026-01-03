@@ -72,7 +72,8 @@ class GameArea extends FlameGame
       BehaviorSystem(), // AI decides what to do
       CollisionSystem(), // Check for blocked movement
       MovementSystem(), // Execute movement and update Direction
-      VisionSystem(), // Calculate vision AFTER movement (sees new position/direction)
+      PortalSystem(), // Execute portaling (after movement)
+      VisionSystem(), // Calculate vision AFTER movement/portaling (sees new position/direction)
       InventorySystem(),
       CombatSystem(),
     ];

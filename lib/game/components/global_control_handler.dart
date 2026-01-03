@@ -21,9 +21,10 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
 
     final game = (parent?.findGame() as GameArea);
     final isCtrlPressed = HardwareKeyboard.instance.isControlPressed;
+    final isShiftPressed = HardwareKeyboard.instance.isShiftPressed;
+    final isAltPressed = HardwareKeyboard.instance.isAltPressed;
 
-    Logger("GlobalControlHandler")
-        .info("key event: logicalKey=${event.logicalKey} isCtrl=$isCtrlPressed");
+    Logger("GlobalControlHandler").info("key event: logicalKey=${event.logicalKey.debugName} isCtrl=$isCtrlPressed isAltPRessed=$isAltPressed isShiftPressed=$isShiftPressed");
 
     // Space - advance tick
     if (event.logicalKey == LogicalKeyboardKey.space && !isCtrlPressed) {
@@ -56,6 +57,7 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
       }
     }
 
+    Logger("GlobalControlHandler").info("not handling event");
     return true;
   }
 }

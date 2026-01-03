@@ -13,9 +13,19 @@ class Entity {
 
   Entity({required this.parentCell, required this.id, bool isNewCreation = false}) {
     // Only log when entity is actually created (not fetched from cache)
-    if (isNewCreation) {
-      _logger.fine('entity_created: id=$id');
+    if (isNewCreation) { // TODO I dont think we really need this
+      _logger.fine('created entity with id=$id');
     }
+  }
+
+
+  @override
+  String toString() {
+    var name = get<Name>();
+    if (name != null && name.name.isNotEmpty) {
+      return "Entity(id: $id)..Name(name: \"${name.name}\")";
+    }
+    return "Entity(id: $id)";
   }
 
   /// Stream of component changes for this specific entity.
@@ -80,8 +90,8 @@ class Entity {
     entitiesWithComponent[id] = c;
 
     // Log important component changes (only at FINEST to reduce overhead)
-    if (c is Health || c is LocalPosition || c is VisionRadius || c is Inventory) {
-      _logger.finest('component_upserted: entity=$id, component=${c.componentType}, was_update=${existing != null}');
+    if (_logger.level == Level.FINEST) {
+      _logger.finest('component upserted on entity=$this componentType=${c.componentType} wasExisting=${existing != null} component=$c');
     }
 
     parentCell.notifyChange(Change(entityId: id, componentType: C.toString(), oldValue: existing?.value, newValue: c));

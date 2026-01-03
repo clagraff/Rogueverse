@@ -33,6 +33,8 @@ import 'package:rogueverse/game/hud/health_bar.dart';
 class GameScreen extends flame.World with Disposer {
   late FocusNode gameFocusNode;
   final Set<int> _renderedEntities = {};
+  final Logger _logger = Logger("GameScreen");
+
   StreamSubscription<Change>? _spawnListener;
   StreamSubscription<int?>? _viewedParentListener;
 
@@ -72,16 +74,15 @@ class GameScreen extends flame.World with Disposer {
     ));
 
     var gridNotifier = ValueNotifier<XY>(XY(0, 0));
-    var entityNotifier = game.selectedEntity;
     add(FocusOnTapComponent(gameFocusNode, () {
       Logger("game_screen").info("taking focus");
       game.overlays.remove("inspectorPanel");
     }));
 
     add(GridTapComponent(32, gridNotifier));
-    add(EntityTapComponent(32, entityNotifier, game.currentWorld,
+    add(EntityTapComponent(32, game.selectedEntity, game.currentWorld,
         observerEntityIdNotifier: game.observerEntityId, viewedParentNotifier: game.viewedParentId));
-    add(EntityTapVisualizerComponent(entityNotifier));
+    add(EntityTapVisualizerComponent(game.selectedEntity));
     add(GridTapVisualizerComponent(gridNotifier));
 
     add(FpsComponent());
@@ -132,14 +133,34 @@ class GameScreen extends flame.World with Disposer {
       }
     });
 
+    // Listen for HasParent changes on selected entity to auto-follow through portals
+    game.currentWorld.componentChanges.listen((change) {
+      if (change.kind == ChangeKind.updated &&
+          change.componentType == 'HasParent') {
+        final changedEntity = game.currentWorld.getEntity(change.entityId);
+
+        // If selected entity's parent changed, follow them to new parent
+        if (game.selectedEntity.value?.id == change.entityId) {
+          final newParent = changedEntity.get<HasParent>();
+          if (newParent != null) {
+            game.viewedParentId.value = newParent.parentEntityId;
+            Logger("game_screen").info(
+                "Selected entity parent changed - following to parent ${newParent.parentEntityId}");
+          }
+        }
+      }
+    });
+
     // TODO: why do we have this? Is this necessary? Dont we have a component that already does this?
     gridNotifier.addListener(() {
-      var entities = game.currentWorld.get<LocalPosition>();
-      entities.forEach((id, comp) {
-        if (comp.x == gridNotifier.value.x && comp.y == gridNotifier.value.y) {
-          entityNotifier.value = game.currentWorld.getEntity(id);
-        }
-      });
+      _logger.info("grid tapped: xy=${gridNotifier.value}");
+
+      // var entities = game.currentWorld.get<LocalPosition>();
+      // entities.forEach((id, comp) {
+      //   if (comp.x == gridNotifier.value.x && comp.y == gridNotifier.value.y) {
+      //     game.selectedEntity.value = game.currentWorld.getEntity(id);
+      //   }
+      // });
     });
 
     // Rebuild hierarchy cache after loading entities (HierarchySystem normally does this during tick)
@@ -164,7 +185,7 @@ class GameScreen extends flame.World with Disposer {
       _updateRenderedEntities(game);
 
       // Clear observer selection when changing viewed parent
-      game.observerEntityId.value = null;
+      // game.observerEntityId.value = null; // TODO: why were we clearing out the observer entity? Maybe only do so if the entity does not exist within the new parnent?
     });
 
     // Listen to observerEntityId changes to immediately recalculate vision
@@ -254,6 +275,12 @@ class GameScreen extends flame.World with Disposer {
       HasParent(starSystemBeta.id),
     ]);
 
+    // Create a small building interior (room)
+    final buildingInterior = reg.add([
+      Name(name: "Small Building - Interior"),
+      HasParent(planetSurface.id),
+    ]);
+
     // Level 4: Entities on Planet Surface
     reg.add([
       Name(name: "Player"),
@@ -265,6 +292,20 @@ class GameScreen extends flame.World with Disposer {
       Health(4, 5),
       VisionRadius(radius: 7, fieldOfViewDegrees: 90),
       Direction(CompassDirection.north),
+      HasParent(planetSurface.id),
+    ]);
+
+    // Add exterior door portal to building interior
+    reg.add([
+      Name(name: "Building Entrance"),
+      Renderable('images/door.svg'),
+      LocalPosition(x: 4, y: 0),
+      BlocksMovement(),
+      PortalToPosition(
+        destParentId: buildingInterior.id,
+        destLocation: LocalPosition(x: 0, y: 4),
+        interactionRange: 1, // Must be standing on door
+      ),
       HasParent(planetSurface.id),
     ]);
 
@@ -439,6 +480,66 @@ class GameScreen extends flame.World with Disposer {
       Behavior(MoveRandomlyNode()),
       VisionRadius(radius: 4),
       HasParent(miningOutpost.id),
+    ]);
+
+    // Building interior: Create walls around the room
+    // Top wall
+    for (var i = -3; i <= 3; i++) {
+      reg.add([
+        Name(name: "Interior Wall"),
+        Renderable('images/wall.svg'),
+        LocalPosition(x: i, y: 0),
+        BlocksMovement(),
+        BlocksSight(),
+        HasParent(buildingInterior.id),
+      ]);
+    }
+    // Bottom wall
+    for (var i = -3; i <= 3; i++) {
+      reg.add([
+        Name(name: "Interior Wall"),
+        Renderable('images/wall.svg'),
+        LocalPosition(x: i, y: 5),
+        BlocksMovement(),
+        BlocksSight(),
+        HasParent(buildingInterior.id),
+      ]);
+    }
+    // Left wall
+    for (var i = 1; i <= 4; i++) {
+      reg.add([
+        Name(name: "Interior Wall"),
+        Renderable('images/wall.svg'),
+        LocalPosition(x: -3, y: i),
+        BlocksMovement(),
+        BlocksSight(),
+        HasParent(buildingInterior.id),
+      ]);
+    }
+    // Right wall
+    for (var i = 1; i <= 4; i++) {
+      reg.add([
+        Name(name: "Interior Wall"),
+        Renderable('images/wall.svg'),
+        LocalPosition(x: 3, y: i),
+        BlocksMovement(),
+        BlocksSight(),
+        HasParent(buildingInterior.id),
+      ]);
+    }
+
+    // Add exit door portal back to planet surface
+    reg.add([
+      Name(name: "Building Exit"),
+      Renderable('images/door.svg'),
+      LocalPosition(x: 0, y: 5),
+      BlocksMovement(),
+      PortalToPosition(
+        destParentId: planetSurface.id,
+        destLocation: LocalPosition(x: 4, y: -1),
+        interactionRange: 1, // Must be standing on door
+      ),
+      HasParent(buildingInterior.id),
     ]);
   }
 

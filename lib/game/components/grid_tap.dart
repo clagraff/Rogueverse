@@ -13,6 +13,11 @@ class XY {
   final int y;
 
   XY(this.x, this.y);
+
+  @override
+  String toString() {
+    return "XY(x: $x, y: $y)";
+  }
 }
 
 class GridTapComponent extends PositionComponent with TapCallbacks {

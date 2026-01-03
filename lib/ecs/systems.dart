@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
-import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -142,13 +141,17 @@ class MovementSystem extends System with MovementSystemMappable {
 
     for (final id in ids) {
       final e = world.getEntity(id);
+      _logger.finest("moving entity=$e");
+
       final pos = e.get<LocalPosition>();
       final intent = e.get<MoveByIntent>();
-      if (pos == null || intent == null) continue;
+      if (pos == null || intent == null) {
+        _logger.warning("cannot move entity=$id due to missing position or intent: pos=$pos intent=$intent");
+        continue;
+      }
 
       final from = LocalPosition(x: pos.x, y: pos.y);
       final to = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-      //e.set(to);
 
       e.upsert<LocalPosition>(
           LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy));
@@ -160,7 +163,7 @@ class MovementSystem extends System with MovementSystemMappable {
       e.remove<MoveByIntent>();
       
       final direction = e.get<Direction>();
-      _logger.finest('entity_moved: id=$id, from=(${from.x},${from.y}), to=(${to.x},${to.y}), direction=${direction?.facing}');
+      _logger.finest('moved entity=$e from=$from to=$to with direction=${direction?.facing}');
     }
   }
 }
@@ -750,12 +753,6 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
     });
   }
 
-  /// Check if position blocks sight (O(1) via spatial index)
-  /// If observerId has a parent, only check siblings. Otherwise check all entities.
-  bool _isBlockedAtPosition(World world, LocalPosition pos, {int? observerId}) {
-    return _isBlockedAtPositionCoords(world, pos.x, pos.y, observerId: observerId);
-  }
-
   /// Find entities at visible positions (O(1) per position via spatial index)
   /// If observer has parent, only finds sibling entities. Otherwise finds all entities.
   /// Excludes the observer itself.
@@ -823,5 +820,312 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
   int _angleDifference(int a, int b) {
     int diff = (a - b).abs() % 360;
     return diff > 180 ? 360 - diff : diff;
+  }
+}
+
+/// System that processes portal usage intents.
+///
+/// Handles both PortalToPosition (fixed destination) and PortalToAnchor
+/// (dynamic destination based on anchor entities) portal types.
+@MappableClass()
+class PortalSystem extends System with PortalSystemMappable {
+  static final _logger = Logger('PortalSystem');
+
+  @override
+  void update(World world) {
+    final portalIntents = world.get<UsePortalIntent>();
+    if (portalIntents.isEmpty) return;
+
+    // Create copy to allow modification during iteration
+    final components = Map.from(portalIntents);
+
+    components.forEach((travelerId, intent) {
+      final traveler = world.getEntity(travelerId);
+      final portalIntent = intent as UsePortalIntent;
+
+      _processPortalIntent(world, traveler, portalIntent);
+
+      // Always remove intent after processing
+      traveler.remove<UsePortalIntent>();
+    });
+  }
+
+  void _processPortalIntent(
+      World world, Entity traveler, UsePortalIntent intent) {
+    _logger.finest("processing entity=$traveler with intent=$intent");
+
+    final portal = world.getEntity(intent.portalEntityId);
+    final travelerPos = traveler.get<LocalPosition>();
+
+    // Validation: Check if traveler has required components
+    if (travelerPos == null) {
+      _logger.warning("entity=$traveler is missing local position");
+      _fail(traveler, intent.portalEntityId,
+          PortalFailureReason.missingComponents);
+      return;
+    }
+
+    // Validation: Check if traveler and portal share the same parent
+    final travelerParentId = traveler.get<HasParent>()?.parentEntityId;
+    final portalParentId = portal.get<HasParent>()?.parentEntityId;
+
+    if (travelerParentId != portalParentId) {
+      _logger.warning("traveler's parentId=$travelerParentId does not match portal parent parentId=$portalParentId");
+      _fail(traveler, intent.portalEntityId, PortalFailureReason.notSameParent);
+      return;
+    }
+
+    // Check for PortalToPosition or PortalToAnchor
+    final toPosition = portal.get<PortalToPosition>();
+    final toAnchor = portal.get<PortalToAnchor>();
+
+    if (toPosition != null) {
+      _handlePortalToPosition(world, traveler, portal, toPosition, travelerPos);
+    } else if (toAnchor != null) {
+      _handlePortalToAnchor(world, traveler, portal, toAnchor, travelerPos,
+          intent.specificAnchorId);
+    } else {
+      _logger.warning("portal=$portal must have either a PortalToPosition or PortalToAnchor component");
+      _fail(traveler, intent.portalEntityId, PortalFailureReason.portalNotFound);
+    }
+  }
+
+  void _handlePortalToPosition(
+    World world,
+    Entity traveler,
+    Entity portal,
+    PortalToPosition portalConfig,
+    LocalPosition travelerPos,
+  ) {
+    _logger.finest("portaling entity=$traveler to parentId=${portalConfig.destParentId} at localPosition=${portalConfig.destLocation}");
+    final portalPos = portal.get<LocalPosition>();
+
+    // Validation: Check interaction range
+    if (!_isWithinRange(
+        travelerPos, portalPos, portalConfig.interactionRange, traveler, portal, world)) {
+      _logger.warning("traveler=$traveler is not within range of portal=$portal");
+      _fail(traveler, portal.id, PortalFailureReason.outOfRange);
+      return;
+    }
+
+    // Check if destination parent exists (check if any component exists for this entity ID)
+    final destParentExists = world.components.values.any((componentMap) => 
+        componentMap.containsKey(portalConfig.destParentId));
+    if (!destParentExists) {
+      _logger.warning("portal parentId=${portalConfig.destParentId} does not exist");
+      _fail(
+          traveler, portal.id, PortalFailureReason.destinationParentNotFound);
+      return;
+    }
+
+    // Check if destination is blocked
+    // TODO: double-check this logic.
+    if (_isDestinationBlocked(
+        world, portalConfig.destParentId, portalConfig.destLocation, traveler.id)) {
+      _logger.warning("destintation is blocked for entity=$traveler in parentId=${portalConfig.destParentId} at localPosition=${portalConfig.destLocation}");
+      _fail(traveler, portal.id, PortalFailureReason.destinationBlocked);
+      return;
+    }
+
+    // Perform the portal!
+    _teleport(
+      world,
+      traveler,
+      portal.id,
+      traveler.get<HasParent>()?.parentEntityId ?? -1,
+      portalConfig.destParentId,
+      travelerPos,
+      portalConfig.destLocation,
+      null, // No anchor used
+    );
+  }
+
+  void _handlePortalToAnchor(
+    World world,
+    Entity traveler,
+    Entity portal,
+    PortalToAnchor portalConfig,
+    LocalPosition travelerPos,
+    int? specificAnchorId,
+  ) {
+    final portalPos = portal.get<LocalPosition>();
+
+    // Validation: Check interaction range
+    if (!_isWithinRange(
+        travelerPos, portalPos, portalConfig.interactionRange, traveler, portal, world)) {
+      _fail(traveler, portal.id, PortalFailureReason.outOfRange);
+      return;
+    }
+
+    // Determine which anchor to use
+    int? targetAnchorId;
+
+    if (specificAnchorId != null) {
+      // Use the specifically requested anchor if it's in the list
+      if (portalConfig.destAnchorEntityIds.contains(specificAnchorId)) {
+        targetAnchorId = specificAnchorId;
+      } else {
+        _fail(traveler, portal.id, PortalFailureReason.anchorNotFound);
+        return;
+      }
+    } else {
+      // No specific anchor requested, try anchors in order until one works
+      for (final anchorId in portalConfig.destAnchorEntityIds) {
+        final anchor = world.getEntity(anchorId);
+
+        if (!anchor.has<PortalAnchor>()) continue;
+
+        final anchorPos = anchor.get<LocalPosition>();
+        final anchorParent = anchor.get<HasParent>();
+
+        if (anchorPos == null || anchorParent == null) continue;
+
+        // Calculate destination position (anchor + offset)
+        final destPos = LocalPosition(
+          x: anchorPos.x + portalConfig.offsetX,
+          y: anchorPos.y + portalConfig.offsetY,
+        );
+
+        // Check if destination is blocked
+        if (!_isDestinationBlocked(
+            world, anchorParent.parentEntityId, destPos, traveler.id)) {
+          // Found a valid anchor!
+          targetAnchorId = anchorId;
+          break;
+        }
+      }
+
+      if (targetAnchorId == null) {
+        _fail(traveler, portal.id, PortalFailureReason.noValidAnchors);
+        return;
+      }
+    }
+
+    // We have a valid anchor, perform the teleport
+    final anchor = world.getEntity(targetAnchorId);
+    final anchorPos = anchor.get<LocalPosition>()!;
+    final anchorParent = anchor.get<HasParent>()!;
+
+    final destPos = LocalPosition(
+      x: anchorPos.x + portalConfig.offsetX,
+      y: anchorPos.y + portalConfig.offsetY,
+    );
+
+    // Final check if destination is blocked (in case specificAnchorId was provided)
+    if (_isDestinationBlocked(
+        world, anchorParent.parentEntityId, destPos, traveler.id)) {
+      _fail(traveler, portal.id, PortalFailureReason.destinationBlocked);
+      return;
+    }
+
+    // Perform the portal!
+    _teleport(
+      world,
+      traveler,
+      portal.id,
+      traveler.get<HasParent>()?.parentEntityId ?? -1,
+      anchorParent.parentEntityId,
+      travelerPos,
+      destPos,
+      targetAnchorId,
+    );
+  }
+
+  bool _isWithinRange(
+    LocalPosition travelerPos,
+    LocalPosition? portalPos,
+    int interactionRange,
+    Entity traveler,
+    Entity portal,
+    World world,
+  ) {
+    // Range < 0: any distance allowed
+    if (interactionRange < 0) return true;
+
+    // No portal position means we can't check range
+    if (portalPos == null) return false;
+
+    // Range == 0: must be at exact same position
+    if (interactionRange == 0) {
+      return travelerPos.sameLocation(portalPos);
+    }
+
+    // Range > 0: within Manhattan distance
+    final dx = (travelerPos.x - portalPos.x).abs();
+    final dy = (travelerPos.y - portalPos.y).abs();
+    final distance = dx + dy; // Manhattan distance
+
+    return distance <= interactionRange;
+  }
+
+  bool _isDestinationBlocked(
+    World world,
+    int destParentId,
+    LocalPosition destPos,
+    int travelerId,
+  ) {
+    // Get all children in destination parent
+    final children = world.hierarchyCache.getChildren(destParentId);
+
+    for (final childId in children) {
+      if (childId == travelerId) continue; // Don't check against self
+
+      final child = world.getEntity(childId);
+      if (!child.has<BlocksMovement>()) continue;
+
+      final childPos = child.get<LocalPosition>();
+      if (childPos != null && childPos.sameLocation(destPos)) {
+        return true; // Destination is blocked
+      }
+    }
+
+    return false;
+  }
+
+  void _teleport(
+    World world,
+    Entity traveler,
+    int portalId,
+    int fromParentId,
+    int toParentId,
+    LocalPosition fromPos,
+    LocalPosition toPos,
+    int? usedAnchorId,
+  ) {
+    // Update position
+    traveler.upsert(LocalPosition(x: toPos.x, y: toPos.y));
+
+    // Update parent if changing
+    if (fromParentId != toParentId) {
+      traveler.upsert(HasParent(toParentId));
+    } else {
+      _logger.finest("entity=$traveler already has matching toParentId=$toParentId");
+    }
+
+    // Add success component
+    traveler.upsert(DidPortal(
+      portalEntityId: portalId,
+      fromParentId: fromParentId,
+      toParentId: toParentId,
+      fromPosition: fromPos,
+      toPosition: toPos,
+      usedAnchorId: usedAnchorId,
+    ));
+
+    _logger.info('portalled entity=${traveler} via portal=$portalId '
+        'from_parent=$fromParentId to_parent=$toParentId '
+        'from=$fromPos to=$toPos '
+        '${usedAnchorId != null ? ', anchor=$usedAnchorId' : ''}');
+  }
+
+  // TODO: uh do we need this? we already have log statements for most of the failure conditions at the place they happened.
+  void _fail(Entity traveler, int portalId, PortalFailureReason reason) {
+    traveler.upsert(FailedToPortal(
+      portalEntityId: portalId,
+      reason: reason,
+    ));
+
+    _logger.warning(
+        'portal_failed: entity=${traveler.id}, portal=$portalId, reason=$reason');
   }
 }

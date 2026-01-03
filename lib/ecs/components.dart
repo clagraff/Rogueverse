@@ -465,3 +465,130 @@ class HasParent with HasParentMappable implements Component {
   @override
   String get componentType => "HasParent";
 }
+
+// ============================================================================
+// Portal System Components
+// ============================================================================
+
+/// Portal that teleports to a specific position within a destination parent.
+///
+/// Example: An exterior door that teleports to a fixed spawn point inside a building.
+@MappableClass()
+class PortalToPosition with PortalToPositionMappable implements Component {
+  final int destParentId; // Parent entity where traveler will appear
+  final LocalPosition destLocation; // Position within that parent
+  final int interactionRange; // Distance from portal: <0=any, 0=exact, >0=max tiles
+
+  PortalToPosition({
+    required this.destParentId,
+    required this.destLocation,
+    this.interactionRange = 0,
+  });
+
+  @override
+  String get componentType => "PortalToPosition";
+}
+
+/// Portal that teleports relative to one of multiple possible anchor entities.
+///
+/// Example: An entrance that can spawn at any of several interior doors,
+/// choosing the first unblocked one.
+@MappableClass()
+class PortalToAnchor with PortalToAnchorMappable implements Component {
+  final List<int> destAnchorEntityIds; // List of entities with PortalAnchor
+  final int offsetX; // Offset from anchor position
+  final int offsetY;
+  final int interactionRange; // Distance from portal: <0=any, 0=exact, >0=max tiles
+
+  PortalToAnchor({
+    required this.destAnchorEntityIds,
+    this.offsetX = 0,
+    this.offsetY = 0,
+    this.interactionRange = 0,
+  });
+
+  @override
+  String get componentType => "PortalToAnchor";
+}
+
+/// Marker for entities that can serve as portal anchor destinations.
+@MappableClass()
+class PortalAnchor with PortalAnchorMappable implements Component {
+  final String? anchorName; // Optional: for debugging/UI
+
+  PortalAnchor({this.anchorName});
+
+  @override
+  String get componentType => "PortalAnchor";
+}
+
+/// Intent to use a portal (supports both PortalToPosition and PortalToAnchor).
+@MappableClass()
+class UsePortalIntent extends AfterTick
+    with UsePortalIntentMappable
+    implements Component {
+  final int portalEntityId;
+  final int?
+      specificAnchorId; // Optional: for PortalToAnchor, specify which anchor
+
+  UsePortalIntent({
+    required this.portalEntityId,
+    this.specificAnchorId,
+  });
+
+  @override
+  String get componentType => "UsePortalIntent";
+}
+
+/// Component added when entity successfully portaled.
+@MappableClass()
+class DidPortal extends BeforeTick with DidPortalMappable implements Component {
+  final int portalEntityId;
+  final int fromParentId;
+  final int toParentId;
+  final LocalPosition fromPosition;
+  final LocalPosition toPosition;
+  final int? usedAnchorId; // Which anchor was used (if PortalToAnchor)
+
+  DidPortal({
+    required this.portalEntityId,
+    required this.fromParentId,
+    required this.toParentId,
+    required this.fromPosition,
+    required this.toPosition,
+    this.usedAnchorId,
+  }) : super(1);
+
+  @override
+  String get componentType => "DidPortal";
+}
+
+/// Component added when portal attempt failed.
+@MappableClass()
+class FailedToPortal extends BeforeTick
+    with FailedToPortalMappable
+    implements Component {
+  final int portalEntityId;
+  final PortalFailureReason reason;
+
+  FailedToPortal({
+    required this.portalEntityId,
+    required this.reason,
+  }) : super(1);
+
+  @override
+  String get componentType => "FailedToPortal";
+}
+
+/// Reasons why portal usage might fail.
+@MappableEnum()
+enum PortalFailureReason {
+  portalNotFound, // Portal entity doesn't exist
+  notSameParent, // Traveler and portal don't share the same parent
+  outOfRange, // Not within interactionRange of portal
+  destinationBlocked, // Destination position is occupied
+  destinationParentNotFound, // Destination parent doesn't exist
+  anchorNotFound, // No valid anchor entity found
+  noValidAnchors, // All anchors in list are invalid/blocked
+  missingComponents, // Entity lacks required components (position, etc)
+}

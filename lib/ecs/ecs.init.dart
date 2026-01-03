@@ -59,7 +59,14 @@ void initializeMappers() {
   p5.VisibleEntitiesMapper.ensureInitialized();
   p5.VisionMemoryMapper.ensureInitialized();
   p5.HasParentMapper.ensureInitialized();
+  p5.PortalToPositionMapper.ensureInitialized();
+  p5.PortalToAnchorMapper.ensureInitialized();
+  p5.PortalAnchorMapper.ensureInitialized();
+  p5.UsePortalIntentMapper.ensureInitialized();
+  p5.DidPortalMapper.ensureInitialized();
+  p5.FailedToPortalMapper.ensureInitialized();
   p5.CompassDirectionMapper.ensureInitialized();
+  p5.PortalFailureReasonMapper.ensureInitialized();
   p6.EntityTemplateMapper.ensureInitialized();
   p7.SystemMapper.ensureInitialized();
   p7.BudgetedSystemMapper.ensureInitialized();
@@ -70,6 +77,7 @@ void initializeMappers() {
   p7.CombatSystemMapper.ensureInitialized();
   p7.BehaviorSystemMapper.ensureInitialized();
   p7.VisionSystemMapper.ensureInitialized();
+  p7.PortalSystemMapper.ensureInitialized();
   p8.WorldMapper.ensureInitialized();
 }
 

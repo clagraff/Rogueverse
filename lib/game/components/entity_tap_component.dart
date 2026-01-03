@@ -54,12 +54,11 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
 
     var tappedEntity = query.find(world).firstOrNull;
     if (tappedEntity != null) {
-      Logger("EntityTap").info("Tapped ${tappedEntity.id}");
+      Logger("EntityTap").info("Tapped $tappedEntity");
       notifier.value = tappedEntity;
-      Logger("EntityTap").info("Setting observerEntityId to ${tappedEntity.id}");
+      Logger("EntityTap").info("Setting observerEntityId to $tappedEntity");
       observerEntityIdNotifier?.value = tappedEntity.id;
       matched = true;
-
     }
 
     if (!matched && notifier.value != null) {
