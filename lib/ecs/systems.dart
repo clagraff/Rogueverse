@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:developer';
 import 'dart:math';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
@@ -51,7 +52,9 @@ abstract class BudgetedSystem extends System with BudgetedSystemMappable {
 class HierarchySystem extends System with HierarchySystemMappable {
   @override
   void update(World world) {
-    world.hierarchyCache.rebuild(world);
+    Timeline.timeSync("HierarchySystem: update", () {
+      world.hierarchyCache.rebuild(world);
+    });
   }
 }
 
@@ -65,65 +68,69 @@ class CollisionSystem extends System with CollisionSystemMappable {
   
   @override
   void update(World world) {
-    final positions = world.get<LocalPosition>();
-    final blocks = world.get<BlocksMovement>();
-    final moveIntents = world.get<MoveByIntent>();
+    Timeline.timeSync("CollisionSystem: update", () {
+      Timeline.startSync("CollisionSystem: gets");
+      final positions = world.get<LocalPosition>();
+      final blocks = world.get<BlocksMovement>();
+      final moveIntents = world.get<MoveByIntent>();
 
-    final movingEntityIds = moveIntents.keys.toList();
+      final movingEntityIds = moveIntents.keys.toList();
+      Timeline.finishSync();
 
-    if (blocks.isEmpty) return;
+      if (blocks.isEmpty) return;
 
-    for (final id in movingEntityIds) {
-      final e = world.getEntity(id);
-      final pos = e.get<LocalPosition>();
-      final intent = e.get<MoveByIntent>();
+      for (final id in movingEntityIds) {
+        final e = world.getEntity(id);
+        final pos = e.get<LocalPosition>();
+        final intent = e.get<MoveByIntent>();
 
-      if (pos == null || intent == null) continue;
+        if (pos == null || intent == null) continue;
 
-      final dest = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-      var blocked = false;
+        final dest = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
+        var blocked = false;
 
-      // Get entities to check for collisions
-      // If entity has parent, only check siblings (same parent)
-      // Otherwise, check all entities (backward compatibility)
-      final parentId = e.get<HasParent>()?.parentEntityId;
+        // Get entities to check for collisions
+        // If entity has parent, only check siblings (same parent)
+        // Otherwise, check all entities (backward compatibility)
+        final parentId = e.get<HasParent>()?.parentEntityId;
 
-      if (parentId != null) {
-        // Hierarchy-scoped: check only siblings
-        final siblings = world.hierarchyCache.getSiblings(id);
+        if (parentId != null) {
+          // Hierarchy-scoped: check only siblings
+          final siblings = world.hierarchyCache.getSiblings(id);
 
-        for (final siblingId in siblings) {
-          final sibling = world.getEntity(siblingId);
-          if (!sibling.has<BlocksMovement>()) continue;
+          for (final siblingId in siblings) {
+            final sibling = world.getEntity(siblingId);
+            if (!sibling.has<BlocksMovement>()) continue;
 
-          final siblingPos = sibling.get<LocalPosition>();
-          if (siblingPos != null &&
-              siblingPos.x == dest.x &&
-              siblingPos.y == dest.y) {
-            blocked = true;
-            break;
+            final siblingPos = sibling.get<LocalPosition>();
+            if (siblingPos != null &&
+                siblingPos.x == dest.x &&
+                siblingPos.y == dest.y) {
+              blocked = true;
+              break;
+            }
           }
+        } else {
+          // No parent: check all entities (old behavior)
+          positions.forEach((key, value) {
+            if (value.x == dest.x &&
+                value.y == dest.y &&
+                world.getEntity(key).has<BlocksMovement>()) {
+              blocked = true;
+            }
+          });
         }
-      } else {
-        // No parent: check all entities (old behavior)
-        positions.forEach((key, value) {
-          if (value.x == dest.x &&
-              value.y == dest.y &&
-              world.getEntity(key).has<BlocksMovement>()) {
-            blocked = true;
-          }
-        });
-      }
 
-      if (blocked) {
-        // Update direction even when movement is blocked
-        e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
-        e.upsert(BlockedMove(dest));
-        e.remove<MoveByIntent>();
-        
-        _logger.finest('collision_blocked: entity=$id, from=(${pos.x},${pos.y}), to=(${dest.x},${dest.y})');
+        if (blocked) {
+          // Update direction even when movement is blocked
+          e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
+          e.upsert(BlockedMove(dest));
+          e.remove<MoveByIntent>();
+
+          _logger.finest('collision_blocked: entity=$id, from=(${pos.x},${pos.y}), to=(${dest.x},${dest.y})');
+        }
       }
-    }
+    });
   }
 }
 
@@ -136,35 +143,37 @@ class MovementSystem extends System with MovementSystemMappable {
   
   @override
   void update(World world) {
-    final moveIntents = world.get<MoveByIntent>();
-    final ids = moveIntents.keys.toList();
+    Timeline.timeSync("MovementSystem: update", () {
+      final moveIntents = world.get<MoveByIntent>();
+      final ids = moveIntents.keys.toList();
 
-    for (final id in ids) {
-      final e = world.getEntity(id);
-      _logger.finest("moving entity=$e");
+      for (final id in ids) {
+        final e = world.getEntity(id);
+        _logger.finest("moving entity=$e");
 
-      final pos = e.get<LocalPosition>();
-      final intent = e.get<MoveByIntent>();
-      if (pos == null || intent == null) {
-        _logger.warning("cannot move entity=$id due to missing position or intent: pos=$pos intent=$intent");
-        continue;
+        final pos = e.get<LocalPosition>();
+        final intent = e.get<MoveByIntent>();
+        if (pos == null || intent == null) {
+          _logger.warning("cannot move entity=$id due to missing position or intent: pos=$pos intent=$intent");
+          continue;
+        }
+
+        final from = LocalPosition(x: pos.x, y: pos.y);
+        final to = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
+
+        e.upsert<LocalPosition>(
+            LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy));
+
+        // Update direction based on movement
+        e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
+
+        e.upsert(DidMove(from: from, to: to));
+        e.remove<MoveByIntent>();
+
+        final direction = e.get<Direction>();
+        _logger.finest('moved entity=$e from=$from to=$to with direction=${direction?.facing}');
       }
-
-      final from = LocalPosition(x: pos.x, y: pos.y);
-      final to = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-
-      e.upsert<LocalPosition>(
-          LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy));
-
-      // Update direction based on movement
-      e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
-
-      e.upsert(DidMove(from: from, to: to));
-      e.remove<MoveByIntent>();
-      
-      final direction = e.get<Direction>();
-      _logger.finest('moved entity=$e from=$from to=$to with direction=${direction?.facing}');
-    }
+    });
   }
 }
 
@@ -179,55 +188,58 @@ class InventorySystem extends System with InventorySystemMappable {
 
   @override
   void update(World world) {
-    final pickupIntents = world.get<PickupIntent>();
-    if (pickupIntents.isEmpty) {
-      return;
-    }
+    Timeline.timeSync("InventorySystem: update", () {
 
-    // need to use a copy so we can modify elements within our loop...
-    var components = Map.from(pickupIntents);
-
-    components.forEach((sourceId, intent) {
-      var pickupIntent = intent as PickupIntent;
-      var source = world.getEntity(sourceId);
-      var target = world.getEntity(pickupIntent.targetEntityId);
-
-      if (!canPickup.isMatchEntity(source) ||
-          !canBePickedUp.isMatchEntity(target)) {
-        return; // Skip. TODO: Add some kind of error feedback or message?
-      }
-
-      if (!source
-          .get<LocalPosition>()!
-          .sameLocation(target.get<LocalPosition>()!)) {
-        return; // Skip
-      }
-
-      // At this point, no matter what happens, we can remove this intent.
-      source.remove<PickupIntent>();
-
-      var invMax = source.get<InventoryMaxCount>();
-      if (invMax != null &&
-          source.get<Inventory>()!.items.length + 1 > invMax.maxAmount) {
-        // Inventory is maxed out, set a failure state and return.
-        source.upsert<InventoryFullFailure>(InventoryFullFailure(target.id));
+      final pickupIntents = world.get<PickupIntent>();
+      if (pickupIntents.isEmpty) {
         return;
       }
 
-      target
-          .remove<Pickupable>(); // Cannot be picked up again once in inventory.
-      target.remove<Renderable>();
-      target.remove<LocalPosition>();
+      // need to use a copy so we can modify elements within our loop...
+      var components = Map.from(pickupIntents);
 
-      source.upsert<Inventory>(Inventory([
-        ...source.get<Inventory>()!.items,
-        pickupIntent.targetEntityId
-      ])); // Update inventory to include latest object
-      source.upsert<PickedUp>(PickedUp(
-          pickupIntent.targetEntityId)); // Allow for notifying of new item
-      
-      final targetPos = source.get<LocalPosition>();
-      _logger.info('item_pickup: entity=$sourceId, item=${pickupIntent.targetEntityId}, position=(${targetPos?.x},${targetPos?.y})');
+      components.forEach((sourceId, intent) {
+        var pickupIntent = intent as PickupIntent;
+        var source = world.getEntity(sourceId);
+        var target = world.getEntity(pickupIntent.targetEntityId);
+
+        if (!canPickup.isMatchEntity(source) ||
+            !canBePickedUp.isMatchEntity(target)) {
+          return; // Skip. TODO: Add some kind of error feedback or message?
+        }
+
+        if (!source
+            .get<LocalPosition>()!
+            .sameLocation(target.get<LocalPosition>()!)) {
+          return; // Skip
+        }
+
+        // At this point, no matter what happens, we can remove this intent.
+        source.remove<PickupIntent>();
+
+        var invMax = source.get<InventoryMaxCount>();
+        if (invMax != null &&
+            source.get<Inventory>()!.items.length + 1 > invMax.maxAmount) {
+          // Inventory is maxed out, set a failure state and return.
+          source.upsert<InventoryFullFailure>(InventoryFullFailure(target.id));
+          return;
+        }
+
+        target
+            .remove<Pickupable>(); // Cannot be picked up again once in inventory.
+        target.remove<Renderable>();
+        target.remove<LocalPosition>();
+
+        source.upsert<Inventory>(Inventory([
+          ...source.get<Inventory>()!.items,
+          pickupIntent.targetEntityId
+        ])); // Update inventory to include latest object
+        source.upsert<PickedUp>(PickedUp(
+            pickupIntent.targetEntityId)); // Allow for notifying of new item
+
+        final targetPos = source.get<LocalPosition>();
+        _logger.info('item_pickup: entity=$sourceId, item=${pickupIntent.targetEntityId}, position=(${targetPos?.x},${targetPos?.y})');
+      });
     });
   }
 }
@@ -238,62 +250,64 @@ class CombatSystem extends System with CombatSystemMappable {
   
   @override
   void update(World world) {
-    final attackIntents = world.get<AttackIntent>();
+    Timeline.timeSync("CombatSystem: update", () {
+      final attackIntents = world.get<AttackIntent>();
 
-    var components = Map.from(attackIntents);
-    components.forEach((sourceId, intent) {
-      var attackIntent = intent as AttackIntent;
-      var source = world.getEntity(sourceId);
-      var target = world.getEntity(attackIntent.targetId);
+      var components = Map.from(attackIntents);
+      components.forEach((sourceId, intent) {
+        var attackIntent = intent as AttackIntent;
+        var source = world.getEntity(sourceId);
+        var target = world.getEntity(attackIntent.targetId);
 
-      var health = target.get<Health>(Health(0, 0))!;
-      // TODO change how damage is calculated
-      const damage = 1;
-      health.current -= damage;
-      
-      _logger.info('combat_damage: attacker=$sourceId, target=${attackIntent.targetId}, damage=$damage, remaining_health=${health.current}');
-      
-      if (health.current <= 0) {
-        health.current = 0;
+        var health = target.get<Health>(Health(0, 0))!;
+        // TODO change how damage is calculated
+        const damage = 1;
+        health.current -= damage;
 
-        // TODO: this doesnt actually prevent other systems from processing
-        // this now-dead entity.
-        target.upsert(Dead());
-        target.remove<BlocksMovement>();
-        
-        _logger.info('combat_defeat: attacker=$sourceId, target=${attackIntent.targetId}');
+        _logger.info('combat_damage: attacker=$sourceId, target=${attackIntent.targetId}, damage=$damage, remaining_health=${health.current}');
 
-        var r = Random();
-        var lootTable = target.get<LootTable>();
-        if (lootTable != null) {
-          for (var lootable in lootTable.lootables) {
-            var prob = r.nextDouble() * (1 + double.minPositive);
-            if (prob <= lootable.probability) {
-              var inv = target.get<Inventory>(Inventory(
-                  []))!; // Create inventory comp if it doesnt exist. Otherwise we cannot do anything from the LootTable
-              for (var i = 0; i < lootable.quantity; i++) {
-                var item = world.add([]);
+        if (health.current <= 0) {
+          health.current = 0;
 
-                for (var c in lootable.components) {
-                  // Have to do things the hard way to avoid `dynamic` component types in the components map.
-                  var comp = world.components.putIfAbsent(
-                      c.componentType,
-                      () =>
-                          {}); // TODO must never update `world.components` directly as it side-steps our notifications.
-                  comp[item.id] = c;
+          // TODO: this doesnt actually prevent other systems from processing
+          // this now-dead entity.
+          target.upsert(Dead());
+          target.remove<BlocksMovement>();
+
+          _logger.info('combat_defeat: attacker=$sourceId, target=${attackIntent.targetId}');
+
+          var r = Random();
+          var lootTable = target.get<LootTable>();
+          if (lootTable != null) {
+            for (var lootable in lootTable.lootables) {
+              var prob = r.nextDouble() * (1 + double.minPositive);
+              if (prob <= lootable.probability) {
+                var inv = target.get<Inventory>(Inventory(
+                    []))!; // Create inventory comp if it doesnt exist. Otherwise we cannot do anything from the LootTable
+                for (var i = 0; i < lootable.quantity; i++) {
+                  var item = world.add([]);
+
+                  for (var c in lootable.components) {
+                    // Have to do things the hard way to avoid `dynamic` component types in the components map.
+                    var comp = world.components.putIfAbsent(
+                        c.componentType,
+                            () =>
+                        {}); // TODO must never update `world.components` directly as it side-steps our notifications.
+                    comp[item.id] = c;
+                  }
+
+                  inv.items.add(item.id);
                 }
-
-                inv.items.add(item.id);
               }
             }
           }
         }
-      }
-      target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
-      // TODO notify on health change?
+        target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
+        // TODO notify on health change?
 
-      source.remove<AttackIntent>();
-      source.upsert<DidAttack>(DidAttack(targetId: target.id, damage: 1));
+        source.remove<AttackIntent>();
+        source.upsert<DidAttack>(DidAttack(targetId: target.id, damage: 1));
+      });
     });
   }
 }
@@ -306,40 +320,44 @@ class BehaviorSystem extends BudgetedSystem with BehaviorSystemMappable {
 
   @override
   void update(World world) {
-    final behaviors = world.get<Behavior>();
-    behaviors.forEach((e, b) {
-      var entity = world.getEntity(e);
-      queue.addLast((entity, b));
+    Timeline.timeSync("BehaviorSystem: update", () {
+      final behaviors = world.get<Behavior>();
+      behaviors.forEach((e, b) {
+        var entity = world.getEntity(e);
+        queue.addLast((entity, b));
 
-      // var result = b.behavior
-      //     .tick(entity); // TODO i dont know what to do with the result....
-      //
-      // _logger.fine('behavior_tick: entity=$e node=${b.behavior.runtimeType} result=$result');
+        // var result = b.behavior
+        //     .tick(entity); // TODO i dont know what to do with the result....
+        //
+        // _logger.fine('behavior_tick: entity=$e node=${b.behavior.runtimeType} result=$result');
+      });
     });
   }
 
   @override
   bool budget(World world, Duration budget) {
-    final sw = Stopwatch()..start();
-    if (queue.isEmpty) {
-      return false;
-    }
-
-    while (sw.elapsed < budget && queue.isNotEmpty) {
-      var entry = queue.removeFirst();
-      var entity =  entry.$1;
-      var behaviorComponent = entry.$2;
-
-      var result = behaviorComponent.behavior.tick(entity);
-      _logger.fine('behavior system ticked: entity=${entity.id} node=${behaviorComponent.behavior.runtimeType} result=$result');
-
+    return Timeline.timeSync("BehaviorSystem: budget", () {
+      final sw = Stopwatch()..start();
       if (queue.isEmpty) {
-        _logger.fine('behavior system emptied queue');
         return false;
       }
-    }
 
-    return true;
+      while (sw.elapsed < budget && queue.isNotEmpty) {
+        var entry = queue.removeFirst();
+        var entity =  entry.$1;
+        var behaviorComponent = entry.$2;
+
+        var result = behaviorComponent.behavior.tick(entity);
+        _logger.fine('behavior system ticked: entity=${entity.id} node=${behaviorComponent.behavior.runtimeType} result=$result');
+
+        if (queue.isEmpty) {
+          _logger.fine('behavior system emptied queue');
+          return false;
+        }
+      }
+
+      return true;
+    });
   }
 }
 
@@ -365,44 +383,48 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
 
   @override
   void update(World world) {
-    _ensureInitialized(world);
-    
-    // Only process observers marked dirty OR first-time (no VisibleEntities yet)
-    final observers = world.get<VisionRadius>();
+    Timeline.timeSync("VisionSystem: update", () {
+      _ensureInitialized(world);
 
-    for (final observerId in observers.keys) {
-      final observer = world.getEntity(observerId);
-      
-      if (_dirtyObservers.contains(observerId) || 
-          observer.get<VisibleEntities>() == null) {
-        queue.addLast(observer);
-        //_updateVisionForObserver(world, observerId);
+      // Only process observers marked dirty OR first-time (no VisibleEntities yet)
+      final observers = world.get<VisionRadius>();
+
+      for (final observerId in observers.keys) {
+        final observer = world.getEntity(observerId);
+
+        if (_dirtyObservers.contains(observerId) ||
+            observer.get<VisibleEntities>() == null) {
+          queue.addLast(observer);
+          //_updateVisionForObserver(world, observerId);
+        }
       }
-    }
-    
-    // Clear dirty set for next tick
-    _dirtyObservers.clear();
+
+      // Clear dirty set for next tick
+      _dirtyObservers.clear();
+    });
   }
 
   @override
   bool budget(World world, Duration budget) {
-    final sw = Stopwatch()..start();
-
-    if (queue.isEmpty) {
-      return false;
-    }
-
-    while (sw.elapsed < budget && queue.isNotEmpty) {
-      var entity = queue.removeFirst();
-      _updateVisionForObserver(world, entity.id);
+    return Timeline.timeSync("VisionSystem: budget", () {
+      final sw = Stopwatch()..start();
 
       if (queue.isEmpty) {
-        _logger.fine('vision system emptied queue');
         return false;
       }
-    }
 
-    return true;
+      while (sw.elapsed < budget && queue.isNotEmpty) {
+        var entity = queue.removeFirst();
+        _updateVisionForObserver(world, entity.id);
+
+        if (queue.isEmpty) {
+          _logger.fine('vision system emptied queue');
+          return false;
+        }
+      }
+
+      return true;
+    });
   }
 
   /// Manually update vision for a specific observer entity.
@@ -833,20 +855,22 @@ class PortalSystem extends System with PortalSystemMappable {
 
   @override
   void update(World world) {
-    final portalIntents = world.get<UsePortalIntent>();
-    if (portalIntents.isEmpty) return;
+    Timeline.timeSync("PortalSystem: update", () {
+      final portalIntents = world.get<UsePortalIntent>();
+      if (portalIntents.isEmpty) return;
 
-    // Create copy to allow modification during iteration
-    final components = Map.from(portalIntents);
+      // Create copy to allow modification during iteration
+      final components = Map.from(portalIntents);
 
-    components.forEach((travelerId, intent) {
-      final traveler = world.getEntity(travelerId);
-      final portalIntent = intent as UsePortalIntent;
+      components.forEach((travelerId, intent) {
+        final traveler = world.getEntity(travelerId);
+        final portalIntent = intent as UsePortalIntent;
 
-      _processPortalIntent(world, traveler, portalIntent);
+        _processPortalIntent(world, traveler, portalIntent);
 
-      // Always remove intent after processing
-      traveler.remove<UsePortalIntent>();
+        // Always remove intent after processing
+        traveler.remove<UsePortalIntent>();
+      });
     });
   }
 

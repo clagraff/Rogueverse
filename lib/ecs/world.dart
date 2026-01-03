@@ -1,5 +1,6 @@
 import 'dart:async' show StreamController;
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:collection/collection.dart';
@@ -209,60 +210,52 @@ class World with WorldMappable implements IWorldView {
   }
 
   /// Executes a single ECS update tick.
-  void tick() {
-    final tickStopwatch = Stopwatch()..start();
-    final systemTimings = <String, Duration>{};
-    _logger.finest("processing tickId=$tickId");
+    void tick() {
+      Timeline.timeSync("World: tick", () {
+        _logger.fine("processing tickId=$tickId");
 
-    // TODO pre-tick notification???
-    clearLifetimeComponents<
-        BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
+        // TODO pre-tick notification???
+        clearLifetimeComponents<
+            BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
-    for (var s in systems) {
-      final systemStopwatch = Stopwatch()..start();
-      _logger.finest("processing system=${s.runtimeType}");
-      s.update(this);
-      systemStopwatch.stop();
-      systemTimings[s.runtimeType.toString()] = systemStopwatch.elapsed;
+        Timeline.timeSync("World: process systems", () {
+          for (var s in systems) {
+            Timeline.timeSync("World: process ${s.runtimeType}", () {
+              _logger.fine("processing system=${s.runtimeType}");
+              s.update(this);
+            });
+          }
+        });
+
+        clearLifetimeComponents<
+            AfterTick>(); // TODO would be cool to find a better way of pulling this out from the class.
+
+        _logger.fine("processed tickId=$tickId");
+        tickId++; // TODO: wrap around to avoid out of bounds type error?
+      });
     }
 
-    clearLifetimeComponents<
-        AfterTick>(); // TODO would be cool to find a better way of pulling this out from the class.
+    void clearLifetimeComponents<T extends Lifetime>() {
+      Timeline.timeSync("World: clear $T", () {
+        for (var componentMap in components.values) {
+          var entries = Map.of(componentMap)
+              .entries; // Create copy since we'll be modifying the actual map.
 
-    // TODO post-tick notification???
+          for (var entityToComponent in entries) {
+            if (entityToComponent.value is T &&
+                (entityToComponent.value as T).tick()) {
+              // if is BeforeTick and is dead, remove.
+              componentMap.remove(entityToComponent.key);
 
-    tickStopwatch.stop();
-    
-    // Log tick performance with per-system timing
-    final systemTimingsStr = systemTimings.entries.sorted((e1, e2) {
-          return e2.value.inMicroseconds.compareTo(e1.value.inMicroseconds);
-        })
-        .map((e) => '${e.key}=${e.value.toHumanReadableString()}')
-        .join(' ');
-    _logger.info('tick complete: tickId=$tickId duration=${tickStopwatch.elapsed.toHumanReadableString()}, $systemTimingsStr');
-
-    tickId++; // TODO: wrap around to avoid out of bounds type error?
-  }
-
-  void clearLifetimeComponents<T extends Lifetime>() {
-    for (var componentMap in components.values) {
-      var entries = Map.of(componentMap)
-          .entries; // Create copy since we'll be modifying the actual map.
-
-      for (var entityToComponent in entries) {
-        if (entityToComponent.value is T &&
-            (entityToComponent.value as T).tick()) {
-          // if is BeforeTick and is dead, remove.
-          componentMap.remove(entityToComponent.key);
-
-          notifyChange(Change(
-              entityId: entityToComponent.key,
-              componentType: entityToComponent.value.componentType,
-              oldValue: entityToComponent.value,
-              newValue: null));
+              notifyChange(Change(
+                  entityId: entityToComponent.key,
+                  componentType: entityToComponent.value.componentType,
+                  oldValue: entityToComponent.value,
+                  newValue: null));
+            }
+          }
         }
-      }
-    }
+      });
   }
 }
 
@@ -301,31 +294,43 @@ class WorldSaves {
   static final Logger _logger = Logger("WorldSaves");
 
   static Future<World?> loadSave() async {
-    var supportDir = await getApplicationSupportDirectory();
-    var saveGame = File("${supportDir.path}/save.json");
-    if (saveGame.existsSync()) {
-      _logger.info("loading save from path=${supportDir.path}/save.json");
-      var jsonContents = saveGame.readAsStringSync();
-      return WorldMapper.fromJson(jsonContents);
-    }
+    var task = TimelineTask(filterKey: "fileio");
+    task.start("save: read");
 
-    return null;
+    try {
+      var supportDir = await getApplicationSupportDirectory();
+      var saveGame = File("${supportDir.path}/save.json");
+      if (saveGame.existsSync()) {
+        _logger.info("loading save from path=${supportDir.path}/save.json");
+        var jsonContents = saveGame.readAsStringSync();
+        return WorldMapper.fromJson(jsonContents);
+      }
+
+      return null;
+    } finally {
+      task.finish();
+    }
   }
 
   static Future<void> writeSave(World world, [bool indent = true]) async {
-    var indentChar = indent ? "\t" : "";
-    var saveState = JsonEncoder.withIndent(indentChar).convert(world.toMap());
-    var supportDir = await getApplicationSupportDirectory();
-    var saveFile = File("${supportDir.path}/save.json");
+    var task = TimelineTask(filterKey: "fileio");
+    task.start("save: write");
+    try {
+      var indentChar = indent ? "\t" : "";
+      var saveState = JsonEncoder.withIndent(indentChar).convert(world.toMap());
+      var supportDir = await getApplicationSupportDirectory();
+      var saveFile = File("${supportDir.path}/save.json");
 
-    _logger.info("writing save at path=${supportDir.path}/save.json");
+      _logger.info("writing save at path=${supportDir.path}/save.json");
 
-    saveFile.open(mode: FileMode.write);
-    var writer = saveFile.openWrite();
-    writer.write(saveState);
-    await writer.flush();
-    await writer.close();
+      var writer = saveFile.openWrite();
+      writer.write(saveState);
+      await writer.flush();
+      await writer.close();
 
-    return;
+      return;
+    } finally {
+      task.finish();
+    }
   }
 }

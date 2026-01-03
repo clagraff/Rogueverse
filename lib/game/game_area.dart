@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 
 import 'package:collection/collection.dart';
 import 'package:flame/components.dart' hide World;
@@ -99,39 +100,30 @@ class GameArea extends FlameGame
     return super.onLoad();
   }
 
-  final Stopwatch updateSw = Stopwatch();
+  final Duration systemBudget = Duration(milliseconds: 2);
 
   @override
   void update(double dt) {
-    super.update(dt);
-    final systemTimings = <String, Duration>{};
+    // TODO: move this logic into the World class, next to tick().
 
-    var budgetedSystems = currentWorld
-        .systems
-        .whereType<BudgetedSystem>()
-        .toList();
+    Timeline.timeSync("GameArea: update", () {
+      Timeline.timeSync("GameArea: super.update", () {
+        super.update(dt);
+      });
 
-    var allDone = true;
-    for (var system in budgetedSystems) {
-      var s = Stopwatch()..start();
-      var needsMoreProcessing = system.budget(currentWorld, Duration(milliseconds: 2));
-      if (needsMoreProcessing) {
-        allDone = false;
-      }
-      s.stop();
-      systemTimings[system.runtimeType.toString()] = s.elapsed;
-    }
+      // TODO: probably need to move this out from here for performance reasons.
+      var budgetedSystems = Timeline.timeSync("GameArea: fetch systems", () {
+        return currentWorld
+            .systems
+            .whereType<BudgetedSystem>();
+      });
 
-    if (allDone && updateSw.isRunning) {
-      updateSw.stop();
-      updateSw.reset();
-      final systemTimingsStr = systemTimings.entries.sorted((e1, e2) {
-        return e2.value.inMicroseconds.compareTo(e1.value.inMicroseconds);
-      })
-          .map((e) => '${e.key}=${e.value.toHumanReadableString()}')
-          .join(' ');
-      _logger.fine('update complete: duration=${updateSw.elapsed.toHumanReadableString()} $systemTimingsStr');
-    }
+      Timeline.timeSync("GameArea: systems", () {
+        for (var system in budgetedSystems) {
+          system.budget(currentWorld, systemBudget);
+        }
+      });
+    });
   }
 
   /// Handles scroll events by delegating to the scroll dispatcher first,
@@ -170,7 +162,6 @@ class GameArea extends FlameGame
   Future<void> tickEcs() async {
     currentWorld.tick();
     await WorldSaves.writeSave(currentWorld);
-    updateSw.start();
   }
 
   /// Starts creating a new template by showing a name dialog and setting up temp world.
