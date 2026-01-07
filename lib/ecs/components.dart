@@ -411,6 +411,11 @@ class VisibleEntities with VisibleEntitiesMappable implements Component {
 
   @override
   String get componentType => "VisibleEntities";
+
+  @override
+  String toString() {
+    return "VisibleEntities(entityIds: [... ${entityIds.length} count, visibleTiles: [... ${visibleTiles.length} count])";
+  }
 }
 
 /// Tracks entities that were previously seen by this observer.
@@ -426,6 +431,12 @@ class VisionMemory with VisionMemoryMappable implements Component {
 
   @override
   String get componentType => "VisionMemory";
+
+
+  @override
+  String toString() {
+    return "VisionMemory(lastSeenPositions: {... ${lastSeenPositions.length} entries})";
+  }
 
   // Helper methods to work with int keys
   LocalPosition? getLastSeenPosition(int entityId) {
@@ -591,4 +602,102 @@ enum PortalFailureReason {
   anchorNotFound, // No valid anchor entity found
   noValidAnchors, // All anchors in list are invalid/blocked
   missingComponents, // Entity lacks required components (position, etc)
+}
+
+// ============================================================================
+// Control System Components
+// ============================================================================
+
+@MappableClass()
+class Controllable with ControllableMappable implements Component {
+
+  Controllable();
+
+  @override
+  String get componentType => "Controllable";
+}
+
+/// Component that marks an actor as controlling another entity (e.g., a vehicle).
+///
+/// When an actor has this component, the UI switches selectedEntity to the
+/// controlled entity, causing input to be directed to it instead of the actor.
+@MappableClass()
+class Controlling with ControllingMappable implements Component {
+  final int controlledEntityId;
+
+  Controlling({required this.controlledEntityId});
+
+  @override
+  String get componentType => "Controlling";
+}
+
+/// Component that marks an entity (e.g., pilot seat) as enabling control of another entity.
+///
+/// When an actor interacts with an entity that has this component, they gain
+/// a Controlling component that references the controlledEntityId.
+@MappableClass()
+class EnablesControl with EnablesControlMappable implements Component {
+  final int controlledEntityId;
+
+  EnablesControl({required this.controlledEntityId});
+
+  @override
+  String get componentType => "EnablesControl";
+}
+
+/// Marker component indicating an entity is docked/landed.
+///
+/// When present, prevents the entity from moving or engaging in combat.
+/// Does not prevent other actions like using portals or interacting with objects.
+@MappableClass()
+class Docked with DockedMappable implements Component {
+  @override
+  String get componentType => "Docked";
+}
+
+/// Intent to take control of an entity via an EnablesControl entity.
+@MappableClass()
+class WantsControlIntent extends AfterTick
+    with WantsControlIntentMappable
+    implements Component {
+  final int targetEntityId; // Entity with EnablesControl component
+
+  WantsControlIntent({required this.targetEntityId});
+
+  @override
+  String get componentType => "WantsControlIntent";
+}
+
+/// Intent to release control of the currently controlled entity.
+///
+/// This intent is added to the controlled entity (e.g., vehicle), and the
+/// ControlSystem finds the actor with the matching Controlling component.
+@MappableClass()
+class ReleasesControlIntent extends AfterTick
+    with ReleasesControlIntentMappable
+    implements Component {
+  ReleasesControlIntent();
+
+  @override
+  String get componentType => "ReleasesControlIntent";
+}
+
+/// Intent to dock/land the entity.
+@MappableClass()
+class DockIntent extends AfterTick with DockIntentMappable implements Component {
+  DockIntent();
+
+  @override
+  String get componentType => "DockIntent";
+}
+
+/// Intent to undock/takeoff the entity.
+@MappableClass()
+class UndockIntent extends AfterTick
+    with UndockIntentMappable
+    implements Component {
+  UndockIntent();
+
+  @override
+  String get componentType => "UndockIntent";
 }

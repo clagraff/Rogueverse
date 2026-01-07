@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:developer';
 
-import 'package:collection/collection.dart';
 import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -9,7 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart' show Logger;
 
 import 'package:rogueverse/app/screens/game_screen.dart';
-import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/entity_template.dart';
 import 'package:rogueverse/ecs/events.dart';
@@ -22,8 +21,8 @@ import 'package:rogueverse/game/mixins/scroll_callback.dart';
 /// and entity/template selection for the game editor.
 class GameArea extends FlameGame
     with HasKeyboardHandlerComponents, ScrollDetector {
-  static final _logger = Logger('GameArea');
 
+  final Logger _logger = Logger("GameArea");
 
   /// The currently selected entity for inspection/editing in the inspector panel.
   final ValueNotifier<Entity?> selectedEntity = ValueNotifier(null);
@@ -71,6 +70,7 @@ class GameArea extends FlameGame
     var systems = [
       HierarchySystem(), // Rebuild hierarchy cache FIRST (other systems may use it)
       BehaviorSystem(), // AI decides what to do
+      ControlSystem(), // Process control intents (before movement/combat)
       CollisionSystem(), // Check for blocked movement
       MovementSystem(), // Execute movement and update Direction
       PortalSystem(), // Execute portaling (after movement)
@@ -80,6 +80,32 @@ class GameArea extends FlameGame
     ];
 
     currentWorld = World(systems, {});
+
+    // Listen for Controlling component changes to update selectedEntity
+    currentWorld.componentChanges
+        .onComponentAdded<Controlling>()
+        .listen((change) {
+      final actor = currentWorld.getEntity(change.entityId);
+      final controlling = actor.get<Controlling>()!;
+      final controlledEntity = currentWorld.getEntity(controlling.controlledEntityId);
+
+      _logger.info("entity control triggered", {"controllerEntityId": change.entityId, "controlledId": controlling.controlledEntityId});
+
+      // TODO: need to check the JSON state AFTER we take control, to see if the planet has visible entities, a vision radius, etc.
+      // Update which entity we are controlling and viewing based on which has just gained control.
+      selectedEntity.value = controlledEntity;
+      observerEntityId.value = controlledEntity.id;
+      viewedParentId.value = controlledEntity.get<HasParent>()?.parentEntityId;
+
+      _logger.finest("controlled entity visibility",{"vision": controlledEntity.get<VisionRadius>(), "memory": controlledEntity.get<VisionMemory>()});
+    });
+
+    currentWorld.componentChanges
+        .onComponentRemoved<Controlling>()
+        .listen((change) {
+      // Switch selectedEntity back to the actor
+      selectedEntity.value = currentWorld.getEntity(change.entityId);
+    });
   }
 
   /// Initializes the game area by setting up the camera anchor, camera controls,

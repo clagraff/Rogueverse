@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
+import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/game/game_area.dart';
 
@@ -46,16 +47,55 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
       return false;
     }
 
-    // Esc - deselect entity
+    // Esc - release control or deselect entity
     if (event.logicalKey == LogicalKeyboardKey.escape) {
-      Logger("GlobalControlHandler").info("deselecting entity");
-      if (selectedEntityNotifier.value != null) {
+      Logger("GlobalControlHandler").info("escape pressed");
+      final selected = selectedEntityNotifier.value;
+      
+      if (selected != null) {
+        // Check if this entity is being controlled by someone
+        final world = game.currentWorld;
+        final controllingMap = world.get<Controlling>();
+        
+        for (final controlling in controllingMap.values) {
+          if (controlling.controlledEntityId == selected.id) {
+            // This entity is being controlled - release it
+            Logger("GlobalControlHandler").info("releasing control of entity ${selected.id}");
+            selected.upsert(ReleasesControlIntent());
+            return false;
+          }
+        }
+        
+        // Not being controlled - deselect entity
+        Logger("GlobalControlHandler").info("deselecting entity");
         selectedEntityNotifier.value = null;
         game.observerEntityId.value = null;
         game.overlays.remove('inspectorPanel');
         return false;
       }
     }
+
+    // // D - Dock
+    // if (event.logicalKey == LogicalKeyboardKey.keyD && !isCtrlPressed) {
+    //   Logger("GlobalControlHandler").info("dock pressed");
+    //   final selected = selectedEntityNotifier.value;
+    //   if (selected != null) {
+    //     Logger("GlobalControlHandler").info("docking entity ${selected.id}");
+    //     selected.upsert(DockIntent());
+    //     return false;
+    //   }
+    // }
+    //
+    // // U - Undock
+    // if (event.logicalKey == LogicalKeyboardKey.keyU && !isCtrlPressed) {
+    //   Logger("GlobalControlHandler").info("undock pressed");
+    //   final selected = selectedEntityNotifier.value;
+    //   if (selected != null) {
+    //     Logger("GlobalControlHandler").info("undocking entity ${selected.id}");
+    //     selected.upsert(UndockIntent());
+    //     return false;
+    //   }
+    // }
 
     Logger("GlobalControlHandler").info("not handling event");
     return true;

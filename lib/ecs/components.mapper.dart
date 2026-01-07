@@ -192,6 +192,14 @@ class ComponentMapper extends ClassMapperBase<Component> {
       UsePortalIntentMapper.ensureInitialized();
       DidPortalMapper.ensureInitialized();
       FailedToPortalMapper.ensureInitialized();
+      ControllableMapper.ensureInitialized();
+      ControllingMapper.ensureInitialized();
+      EnablesControlMapper.ensureInitialized();
+      DockedMapper.ensureInitialized();
+      WantsControlIntentMapper.ensureInitialized();
+      ReleasesControlIntentMapper.ensureInitialized();
+      DockIntentMapper.ensureInitialized();
+      UndockIntentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -614,6 +622,10 @@ class AfterTickMapper extends SubClassMapperBase<AfterTick> {
       MoveByIntentMapper.ensureInitialized();
       PickupIntentMapper.ensureInitialized();
       UsePortalIntentMapper.ensureInitialized();
+      WantsControlIntentMapper.ensureInitialized();
+      ReleasesControlIntentMapper.ensureInitialized();
+      DockIntentMapper.ensureInitialized();
+      UndockIntentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -5295,5 +5307,1012 @@ class _FailedToPortalCopyWithImpl<$R, $Out>
   FailedToPortalCopyWith<$R2, FailedToPortal, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _FailedToPortalCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class ControllableMapper extends SubClassMapperBase<Controllable> {
+  ControllableMapper._();
+
+  static ControllableMapper? _instance;
+  static ControllableMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ControllableMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Controllable';
+
+  @override
+  final MappableFields<Controllable> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Controllable';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Controllable _instantiate(DecodingData data) {
+    return Controllable();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Controllable fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Controllable>(map);
+  }
+
+  static Controllable fromJson(String json) {
+    return ensureInitialized().decodeJson<Controllable>(json);
+  }
+}
+
+mixin ControllableMappable {
+  String toJson() {
+    return ControllableMapper.ensureInitialized().encodeJson<Controllable>(
+      this as Controllable,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return ControllableMapper.ensureInitialized().encodeMap<Controllable>(
+      this as Controllable,
+    );
+  }
+
+  ControllableCopyWith<Controllable, Controllable, Controllable> get copyWith =>
+      _ControllableCopyWithImpl<Controllable, Controllable>(
+        this as Controllable,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return ControllableMapper.ensureInitialized().stringifyValue(
+      this as Controllable,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ControllableMapper.ensureInitialized().equalsValue(
+      this as Controllable,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return ControllableMapper.ensureInitialized().hashValue(
+      this as Controllable,
+    );
+  }
+}
+
+extension ControllableValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, Controllable, $Out> {
+  ControllableCopyWith<$R, Controllable, $Out> get $asControllable =>
+      $base.as((v, t, t2) => _ControllableCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class ControllableCopyWith<$R, $In extends Controllable, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  ControllableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _ControllableCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Controllable, $Out>
+    implements ControllableCopyWith<$R, Controllable, $Out> {
+  _ControllableCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Controllable> $mapper =
+      ControllableMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  Controllable $make(CopyWithData data) => Controllable();
+
+  @override
+  ControllableCopyWith<$R2, Controllable, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _ControllableCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class ControllingMapper extends SubClassMapperBase<Controlling> {
+  ControllingMapper._();
+
+  static ControllingMapper? _instance;
+  static ControllingMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ControllingMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Controlling';
+
+  static int _$controlledEntityId(Controlling v) => v.controlledEntityId;
+  static const Field<Controlling, int> _f$controlledEntityId = Field(
+    'controlledEntityId',
+    _$controlledEntityId,
+  );
+
+  @override
+  final MappableFields<Controlling> fields = const {
+    #controlledEntityId: _f$controlledEntityId,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Controlling';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Controlling _instantiate(DecodingData data) {
+    return Controlling(controlledEntityId: data.dec(_f$controlledEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Controlling fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Controlling>(map);
+  }
+
+  static Controlling fromJson(String json) {
+    return ensureInitialized().decodeJson<Controlling>(json);
+  }
+}
+
+mixin ControllingMappable {
+  String toJson() {
+    return ControllingMapper.ensureInitialized().encodeJson<Controlling>(
+      this as Controlling,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return ControllingMapper.ensureInitialized().encodeMap<Controlling>(
+      this as Controlling,
+    );
+  }
+
+  ControllingCopyWith<Controlling, Controlling, Controlling> get copyWith =>
+      _ControllingCopyWithImpl<Controlling, Controlling>(
+        this as Controlling,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return ControllingMapper.ensureInitialized().stringifyValue(
+      this as Controlling,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ControllingMapper.ensureInitialized().equalsValue(
+      this as Controlling,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return ControllingMapper.ensureInitialized().hashValue(this as Controlling);
+  }
+}
+
+extension ControllingValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, Controlling, $Out> {
+  ControllingCopyWith<$R, Controlling, $Out> get $asControlling =>
+      $base.as((v, t, t2) => _ControllingCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class ControllingCopyWith<$R, $In extends Controlling, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? controlledEntityId});
+  ControllingCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _ControllingCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Controlling, $Out>
+    implements ControllingCopyWith<$R, Controlling, $Out> {
+  _ControllingCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Controlling> $mapper =
+      ControllingMapper.ensureInitialized();
+  @override
+  $R call({int? controlledEntityId}) => $apply(
+    FieldCopyWithData({
+      if (controlledEntityId != null) #controlledEntityId: controlledEntityId,
+    }),
+  );
+  @override
+  Controlling $make(CopyWithData data) => Controlling(
+    controlledEntityId: data.get(
+      #controlledEntityId,
+      or: $value.controlledEntityId,
+    ),
+  );
+
+  @override
+  ControllingCopyWith<$R2, Controlling, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _ControllingCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class EnablesControlMapper extends SubClassMapperBase<EnablesControl> {
+  EnablesControlMapper._();
+
+  static EnablesControlMapper? _instance;
+  static EnablesControlMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = EnablesControlMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'EnablesControl';
+
+  static int _$controlledEntityId(EnablesControl v) => v.controlledEntityId;
+  static const Field<EnablesControl, int> _f$controlledEntityId = Field(
+    'controlledEntityId',
+    _$controlledEntityId,
+  );
+
+  @override
+  final MappableFields<EnablesControl> fields = const {
+    #controlledEntityId: _f$controlledEntityId,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'EnablesControl';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static EnablesControl _instantiate(DecodingData data) {
+    return EnablesControl(controlledEntityId: data.dec(_f$controlledEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static EnablesControl fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<EnablesControl>(map);
+  }
+
+  static EnablesControl fromJson(String json) {
+    return ensureInitialized().decodeJson<EnablesControl>(json);
+  }
+}
+
+mixin EnablesControlMappable {
+  String toJson() {
+    return EnablesControlMapper.ensureInitialized().encodeJson<EnablesControl>(
+      this as EnablesControl,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return EnablesControlMapper.ensureInitialized().encodeMap<EnablesControl>(
+      this as EnablesControl,
+    );
+  }
+
+  EnablesControlCopyWith<EnablesControl, EnablesControl, EnablesControl>
+  get copyWith => _EnablesControlCopyWithImpl<EnablesControl, EnablesControl>(
+    this as EnablesControl,
+    $identity,
+    $identity,
+  );
+  @override
+  String toString() {
+    return EnablesControlMapper.ensureInitialized().stringifyValue(
+      this as EnablesControl,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return EnablesControlMapper.ensureInitialized().equalsValue(
+      this as EnablesControl,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return EnablesControlMapper.ensureInitialized().hashValue(
+      this as EnablesControl,
+    );
+  }
+}
+
+extension EnablesControlValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, EnablesControl, $Out> {
+  EnablesControlCopyWith<$R, EnablesControl, $Out> get $asEnablesControl =>
+      $base.as((v, t, t2) => _EnablesControlCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class EnablesControlCopyWith<$R, $In extends EnablesControl, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? controlledEntityId});
+  EnablesControlCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _EnablesControlCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, EnablesControl, $Out>
+    implements EnablesControlCopyWith<$R, EnablesControl, $Out> {
+  _EnablesControlCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<EnablesControl> $mapper =
+      EnablesControlMapper.ensureInitialized();
+  @override
+  $R call({int? controlledEntityId}) => $apply(
+    FieldCopyWithData({
+      if (controlledEntityId != null) #controlledEntityId: controlledEntityId,
+    }),
+  );
+  @override
+  EnablesControl $make(CopyWithData data) => EnablesControl(
+    controlledEntityId: data.get(
+      #controlledEntityId,
+      or: $value.controlledEntityId,
+    ),
+  );
+
+  @override
+  EnablesControlCopyWith<$R2, EnablesControl, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _EnablesControlCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DockedMapper extends SubClassMapperBase<Docked> {
+  DockedMapper._();
+
+  static DockedMapper? _instance;
+  static DockedMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DockedMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Docked';
+
+  @override
+  final MappableFields<Docked> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Docked';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Docked _instantiate(DecodingData data) {
+    return Docked();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Docked fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Docked>(map);
+  }
+
+  static Docked fromJson(String json) {
+    return ensureInitialized().decodeJson<Docked>(json);
+  }
+}
+
+mixin DockedMappable {
+  String toJson() {
+    return DockedMapper.ensureInitialized().encodeJson<Docked>(this as Docked);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DockedMapper.ensureInitialized().encodeMap<Docked>(this as Docked);
+  }
+
+  DockedCopyWith<Docked, Docked, Docked> get copyWith =>
+      _DockedCopyWithImpl<Docked, Docked>(this as Docked, $identity, $identity);
+  @override
+  String toString() {
+    return DockedMapper.ensureInitialized().stringifyValue(this as Docked);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DockedMapper.ensureInitialized().equalsValue(this as Docked, other);
+  }
+
+  @override
+  int get hashCode {
+    return DockedMapper.ensureInitialized().hashValue(this as Docked);
+  }
+}
+
+extension DockedValueCopy<$R, $Out> on ObjectCopyWith<$R, Docked, $Out> {
+  DockedCopyWith<$R, Docked, $Out> get $asDocked =>
+      $base.as((v, t, t2) => _DockedCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DockedCopyWith<$R, $In extends Docked, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  DockedCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DockedCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Docked, $Out>
+    implements DockedCopyWith<$R, Docked, $Out> {
+  _DockedCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Docked> $mapper = DockedMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  Docked $make(CopyWithData data) => Docked();
+
+  @override
+  DockedCopyWith<$R2, Docked, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _DockedCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class WantsControlIntentMapper extends SubClassMapperBase<WantsControlIntent> {
+  WantsControlIntentMapper._();
+
+  static WantsControlIntentMapper? _instance;
+  static WantsControlIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = WantsControlIntentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'WantsControlIntent';
+
+  static int _$targetEntityId(WantsControlIntent v) => v.targetEntityId;
+  static const Field<WantsControlIntent, int> _f$targetEntityId = Field(
+    'targetEntityId',
+    _$targetEntityId,
+  );
+  static int _$lifetime(WantsControlIntent v) => v.lifetime;
+  static const Field<WantsControlIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<WantsControlIntent> fields = const {
+    #targetEntityId: _f$targetEntityId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'WantsControlIntent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static WantsControlIntent _instantiate(DecodingData data) {
+    return WantsControlIntent(targetEntityId: data.dec(_f$targetEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static WantsControlIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<WantsControlIntent>(map);
+  }
+
+  static WantsControlIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<WantsControlIntent>(json);
+  }
+}
+
+mixin WantsControlIntentMappable {
+  String toJson() {
+    return WantsControlIntentMapper.ensureInitialized()
+        .encodeJson<WantsControlIntent>(this as WantsControlIntent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return WantsControlIntentMapper.ensureInitialized()
+        .encodeMap<WantsControlIntent>(this as WantsControlIntent);
+  }
+
+  WantsControlIntentCopyWith<
+    WantsControlIntent,
+    WantsControlIntent,
+    WantsControlIntent
+  >
+  get copyWith =>
+      _WantsControlIntentCopyWithImpl<WantsControlIntent, WantsControlIntent>(
+        this as WantsControlIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return WantsControlIntentMapper.ensureInitialized().stringifyValue(
+      this as WantsControlIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return WantsControlIntentMapper.ensureInitialized().equalsValue(
+      this as WantsControlIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return WantsControlIntentMapper.ensureInitialized().hashValue(
+      this as WantsControlIntent,
+    );
+  }
+}
+
+extension WantsControlIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, WantsControlIntent, $Out> {
+  WantsControlIntentCopyWith<$R, WantsControlIntent, $Out>
+  get $asWantsControlIntent => $base.as(
+    (v, t, t2) => _WantsControlIntentCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class WantsControlIntentCopyWith<
+  $R,
+  $In extends WantsControlIntent,
+  $Out
+>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? targetEntityId});
+  WantsControlIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _WantsControlIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, WantsControlIntent, $Out>
+    implements WantsControlIntentCopyWith<$R, WantsControlIntent, $Out> {
+  _WantsControlIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<WantsControlIntent> $mapper =
+      WantsControlIntentMapper.ensureInitialized();
+  @override
+  $R call({int? targetEntityId}) => $apply(
+    FieldCopyWithData({
+      if (targetEntityId != null) #targetEntityId: targetEntityId,
+    }),
+  );
+  @override
+  WantsControlIntent $make(CopyWithData data) => WantsControlIntent(
+    targetEntityId: data.get(#targetEntityId, or: $value.targetEntityId),
+  );
+
+  @override
+  WantsControlIntentCopyWith<$R2, WantsControlIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _WantsControlIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class ReleasesControlIntentMapper
+    extends SubClassMapperBase<ReleasesControlIntent> {
+  ReleasesControlIntentMapper._();
+
+  static ReleasesControlIntentMapper? _instance;
+  static ReleasesControlIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ReleasesControlIntentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'ReleasesControlIntent';
+
+  static int _$lifetime(ReleasesControlIntent v) => v.lifetime;
+  static const Field<ReleasesControlIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<ReleasesControlIntent> fields = const {
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'ReleasesControlIntent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static ReleasesControlIntent _instantiate(DecodingData data) {
+    return ReleasesControlIntent();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static ReleasesControlIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<ReleasesControlIntent>(map);
+  }
+
+  static ReleasesControlIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<ReleasesControlIntent>(json);
+  }
+}
+
+mixin ReleasesControlIntentMappable {
+  String toJson() {
+    return ReleasesControlIntentMapper.ensureInitialized()
+        .encodeJson<ReleasesControlIntent>(this as ReleasesControlIntent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return ReleasesControlIntentMapper.ensureInitialized()
+        .encodeMap<ReleasesControlIntent>(this as ReleasesControlIntent);
+  }
+
+  ReleasesControlIntentCopyWith<
+    ReleasesControlIntent,
+    ReleasesControlIntent,
+    ReleasesControlIntent
+  >
+  get copyWith =>
+      _ReleasesControlIntentCopyWithImpl<
+        ReleasesControlIntent,
+        ReleasesControlIntent
+      >(this as ReleasesControlIntent, $identity, $identity);
+  @override
+  String toString() {
+    return ReleasesControlIntentMapper.ensureInitialized().stringifyValue(
+      this as ReleasesControlIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ReleasesControlIntentMapper.ensureInitialized().equalsValue(
+      this as ReleasesControlIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return ReleasesControlIntentMapper.ensureInitialized().hashValue(
+      this as ReleasesControlIntent,
+    );
+  }
+}
+
+extension ReleasesControlIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, ReleasesControlIntent, $Out> {
+  ReleasesControlIntentCopyWith<$R, ReleasesControlIntent, $Out>
+  get $asReleasesControlIntent => $base.as(
+    (v, t, t2) => _ReleasesControlIntentCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class ReleasesControlIntentCopyWith<
+  $R,
+  $In extends ReleasesControlIntent,
+  $Out
+>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  ReleasesControlIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _ReleasesControlIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, ReleasesControlIntent, $Out>
+    implements ReleasesControlIntentCopyWith<$R, ReleasesControlIntent, $Out> {
+  _ReleasesControlIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<ReleasesControlIntent> $mapper =
+      ReleasesControlIntentMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  ReleasesControlIntent $make(CopyWithData data) => ReleasesControlIntent();
+
+  @override
+  ReleasesControlIntentCopyWith<$R2, ReleasesControlIntent, $Out2>
+  $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _ReleasesControlIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DockIntentMapper extends SubClassMapperBase<DockIntent> {
+  DockIntentMapper._();
+
+  static DockIntentMapper? _instance;
+  static DockIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DockIntentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DockIntent';
+
+  static int _$lifetime(DockIntent v) => v.lifetime;
+  static const Field<DockIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DockIntent> fields = const {#lifetime: _f$lifetime};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DockIntent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static DockIntent _instantiate(DecodingData data) {
+    return DockIntent();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DockIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DockIntent>(map);
+  }
+
+  static DockIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<DockIntent>(json);
+  }
+}
+
+mixin DockIntentMappable {
+  String toJson() {
+    return DockIntentMapper.ensureInitialized().encodeJson<DockIntent>(
+      this as DockIntent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DockIntentMapper.ensureInitialized().encodeMap<DockIntent>(
+      this as DockIntent,
+    );
+  }
+
+  DockIntentCopyWith<DockIntent, DockIntent, DockIntent> get copyWith =>
+      _DockIntentCopyWithImpl<DockIntent, DockIntent>(
+        this as DockIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DockIntentMapper.ensureInitialized().stringifyValue(
+      this as DockIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DockIntentMapper.ensureInitialized().equalsValue(
+      this as DockIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DockIntentMapper.ensureInitialized().hashValue(this as DockIntent);
+  }
+}
+
+extension DockIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DockIntent, $Out> {
+  DockIntentCopyWith<$R, DockIntent, $Out> get $asDockIntent =>
+      $base.as((v, t, t2) => _DockIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DockIntentCopyWith<$R, $In extends DockIntent, $Out>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  DockIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DockIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DockIntent, $Out>
+    implements DockIntentCopyWith<$R, DockIntent, $Out> {
+  _DockIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DockIntent> $mapper =
+      DockIntentMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  DockIntent $make(CopyWithData data) => DockIntent();
+
+  @override
+  DockIntentCopyWith<$R2, DockIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DockIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class UndockIntentMapper extends SubClassMapperBase<UndockIntent> {
+  UndockIntentMapper._();
+
+  static UndockIntentMapper? _instance;
+  static UndockIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = UndockIntentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'UndockIntent';
+
+  static int _$lifetime(UndockIntent v) => v.lifetime;
+  static const Field<UndockIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<UndockIntent> fields = const {#lifetime: _f$lifetime};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'UndockIntent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static UndockIntent _instantiate(DecodingData data) {
+    return UndockIntent();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static UndockIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<UndockIntent>(map);
+  }
+
+  static UndockIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<UndockIntent>(json);
+  }
+}
+
+mixin UndockIntentMappable {
+  String toJson() {
+    return UndockIntentMapper.ensureInitialized().encodeJson<UndockIntent>(
+      this as UndockIntent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return UndockIntentMapper.ensureInitialized().encodeMap<UndockIntent>(
+      this as UndockIntent,
+    );
+  }
+
+  UndockIntentCopyWith<UndockIntent, UndockIntent, UndockIntent> get copyWith =>
+      _UndockIntentCopyWithImpl<UndockIntent, UndockIntent>(
+        this as UndockIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return UndockIntentMapper.ensureInitialized().stringifyValue(
+      this as UndockIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return UndockIntentMapper.ensureInitialized().equalsValue(
+      this as UndockIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return UndockIntentMapper.ensureInitialized().hashValue(
+      this as UndockIntent,
+    );
+  }
+}
+
+extension UndockIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, UndockIntent, $Out> {
+  UndockIntentCopyWith<$R, UndockIntent, $Out> get $asUndockIntent =>
+      $base.as((v, t, t2) => _UndockIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class UndockIntentCopyWith<$R, $In extends UndockIntent, $Out>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  UndockIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _UndockIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, UndockIntent, $Out>
+    implements UndockIntentCopyWith<$R, UndockIntent, $Out> {
+  _UndockIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<UndockIntent> $mapper =
+      UndockIntentMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  UndockIntent $make(CopyWithData data) => UndockIntent();
+
+  @override
+  UndockIntentCopyWith<$R2, UndockIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _UndockIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

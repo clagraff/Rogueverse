@@ -215,7 +215,7 @@ class World with WorldMappable implements IWorldView {
   /// Executes a single ECS update tick.
     void tick() {
       Timeline.timeSync("World: tick", () {
-        _logger.fine("processing tick", {tickId=tickId});
+        _logger.fine("processing tick", {"tickId": tickId});
 
         // TODO pre-tick notification???
         clearLifetimeComponents<

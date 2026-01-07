@@ -151,6 +151,12 @@ class MovementSystem extends System with MovementSystemMappable {
         final e = world.getEntity(id);
         _logger.finest("moving entity", {"entity": e});
 
+        // Skip if entity is docked
+        if (e.has<Docked>()) {
+          _logger.finest("skipping docked entity movement", {"entity": e});
+          continue;
+        }
+
         final pos = e.get<LocalPosition>();
         final intent = e.get<MoveByIntent>();
         if (pos == null || intent == null) {
@@ -257,6 +263,14 @@ class CombatSystem extends System with CombatSystemMappable {
       components.forEach((sourceId, intent) {
         var attackIntent = intent as AttackIntent;
         var source = world.getEntity(sourceId);
+        
+        // Skip if attacker is docked
+        if (source.has<Docked>()) {
+          _logger.finest("skipping docked entity combat", {"entity": source});
+          source.remove<AttackIntent>();
+          return;
+        }
+        
         var target = world.getEntity(attackIntent.targetId);
 
         var health = target.get<Health>(Health(0, 0))!;
@@ -842,6 +856,67 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
   }
 }
 
+/// System that processes control and docking intents.
+///
+/// Handles:
+/// - WantsControlIntent: Grants control of an entity (e.g., vehicle) to an actor
+/// - ReleasesControlIntent: Releases control, switching back to actor
+/// - DockIntent: Adds Docked component (disables movement/combat)
+/// - UndockIntent: Removes Docked component (re-enables movement/combat)
+@MappableClass()
+class ControlSystem extends System with ControlSystemMappable {
+  static final _logger = Logger('ControlSystem');
+
+  @override
+  void update(World world) {
+    Timeline.timeSync("ControlSystem: update", () {
+      // 1. Process WantsControlIntent - grant control
+      final wantsControlMap = world.get<WantsControlIntent>();
+      for (final actorId in wantsControlMap.keys) {
+        final intent = wantsControlMap[actorId]!;
+        final actor = world.getEntity(actorId);
+        final targetEntity = world.getEntity(intent.targetEntityId);
+
+        if (targetEntity.has<EnablesControl>()) {
+          final enablesControl = targetEntity.get<EnablesControl>()!;
+          actor.upsert(Controlling(controlledEntityId: enablesControl.controlledEntityId));
+          _logger.fine("actor granted control", {"actor": actor, "controlledEntityId": enablesControl.controlledEntityId});
+        }
+      }
+
+      // 2. Process ReleasesControlIntent - release control
+      final releasesControlMap = world.get<ReleasesControlIntent>();
+      for (final controlledEntityId in releasesControlMap.keys) {
+        // Find actor controlling this entity
+        final controllingMap = world.get<Controlling>();
+
+        for (final actorId in controllingMap.keys) {
+          final controlling = controllingMap[actorId]!;
+          if (controlling.controlledEntityId == controlledEntityId) {
+            world.getEntity(actorId).remove<Controlling>();
+            _logger.fine("actor released control", {"actorId": actorId, "controlledEntityId": controlledEntityId});
+            break;
+          }
+        }
+      }
+
+      // 3. Process DockIntent - add Docked component
+      final dockIntentMap = world.get<DockIntent>();
+      for (final entityId in dockIntentMap.keys) {
+        world.getEntity(entityId).upsert(Docked());
+        _logger.fine("entity docked", {"entityId": entityId});
+      }
+
+      // 4. Process UndockIntent - remove Docked component
+      final undockIntentMap = world.get<UndockIntent>();
+      for (final entityId in undockIntentMap.keys) {
+        world.getEntity(entityId).remove<Docked>();
+        _logger.fine("entity undocked", {"entityId": entityId});
+      }
+    });
+  }
+}
+
 /// System that processes portal usage intents.
 ///
 /// Handles both PortalToPosition (fixed destination) and PortalToAnchor
@@ -1132,6 +1207,8 @@ class PortalSystem extends System with PortalSystemMappable {
       toPosition: toPos,
       usedAnchorId: usedAnchorId,
     ));
+
+    // TODO: set entity direction based on Portal component (as an optional field in there).
 
     _logger.finest("portaled traveler", {
       "traveler": traveler,

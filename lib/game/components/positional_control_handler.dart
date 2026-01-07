@@ -97,7 +97,7 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
       // Nothing obstructing movement, so move
       entity.upsert(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
     } else {
-      _logger.finer("checking if entity=$entity can attack: targetEntity=${targetEntity}");
+      _logger.finer("checking if entity=$entity can attack: targetEntity=$targetEntity");
 
       // Something is blocking the path - check if we can attack it
       final hasHealth = targetEntity.get<Health>() != null;
@@ -154,13 +154,28 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
         .first(world);
   }
 
-  /// Handles entity action input (e.g., picking up items).
+  /// Handles entity action input (e.g., picking up items, taking control).
   void _handleAction(EntityAction action, Entity entity, GameArea game) {
     switch (action) {
       case EntityAction.interact:
         final pos = entity.get<LocalPosition>()!;
+        final entityParentId = entity.get<HasParent>()?.parentEntityId;
 
-        // Look for pickupable items at the entity's current position
+        // Priority 1: Check for EnablesControl at same position
+        final controlSeat = Query()
+            .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
+            .require<HasParent>((p) => p.parentEntityId == entityParentId)
+            .require<EnablesControl>()
+            .first(world);
+
+        if (controlSeat != null) {
+          _logger.finer("Found EnablesControl entity at position, adding WantsControlIntent");
+          entity.upsert(WantsControlIntent(targetEntityId: controlSeat.id));
+          game.tickEcs();
+          return;
+        }
+
+        // Priority 2: Look for pickupable items at the entity's current position
         final firstItemAtFeet = Query()
             .require<LocalPosition>((c) {
               return c.x == pos.x && c.y == pos.y;
@@ -171,7 +186,10 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
         if (firstItemAtFeet != null) {
           entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.id));
           game.tickEcs();
+          return;
         }
+
+        _logger.warning("interaction triggered but nothing happened");
         break;
     }
   }

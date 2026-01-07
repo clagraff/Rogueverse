@@ -53,9 +53,10 @@ class GameScreen extends flame.World with Disposer {
     // TODO this can only work when running on Desktop, not web!
     var save = await WorldSaves.loadSave();
     if (save != null) {
-      game.currentWorld = save;
+      _initializeControlExample(game);
+      //game.currentWorld = save;
     } else {
-      _initializeEntities(game);
+      _initializeControlExample(game);
     }
 
     // Create template entity spawner (listens to template selection)
@@ -176,6 +177,17 @@ class GameScreen extends flame.World with Disposer {
       game.viewedParentId.value = playerParent.parentEntityId;
     }
 
+    // Update the vision system on game-load for all observers.
+    var visionSystem = game.currentWorld.systems.whereType<VisionSystem>().firstOrNull;
+    // Find all entities with VisionRadius
+    final observers = game.currentWorld.entities().where((entity) {
+      return entity.get<VisionRadius>() != null;
+    });
+    // Calculate vision for each observer
+    for (final observer in observers) {
+      visionSystem?.updateVisionForObserver(game.currentWorld, observer.id);
+    }
+
     // Don't set observerEntityId by default - let user click to select
     // game.observerEntityId.value = null; (already null by default)
 
@@ -201,7 +213,11 @@ class GameScreen extends flame.World with Disposer {
         if (visionSystem != null) {
           Logger("game_screen")
               .info("Updating vision for observer $observerId");
-          visionSystem.updateVisionForObserver(game.currentWorld, observerId);
+
+          // TODO: have to comment out the below line. Otherwise we can get into a ValueListener controller error when
+          // we move Controls to a new entity, since would change our game.observerEntityId immediately and end up in here
+          // before we are done processing, which somehow causes an issue.
+          //visionSystem.updateVisionForObserver(game.currentWorld, observerId);
         }
       }
     });
@@ -229,6 +245,69 @@ class GameScreen extends flame.World with Disposer {
     });
   }
 
+  void _initializeControlExample(GameArea game) {
+    var reg = game.currentWorld;
+
+    // Create hierarchical structure:
+    // Galaxy (abstract container)
+    //   └─ Spaceship Alpha
+    //       └─ Player
+    //   └─ Spaceship beta
+
+    final galaxy = reg.add([
+      Name(name: "Milky Way Galaxy"),
+    ]);
+
+    // Level 2: Star Systems (abstract parents - no position/renderable)
+    final spaceShipAlpha = reg.add([
+      Name(name: "Spaceship Alpha"),
+      HasParent(galaxy.id),
+
+      Renderable("images/ship.svg"),
+      Direction(CompassDirection.north),
+      LocalPosition(x: 0, y: 0),
+      Controllable(),
+      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
+      VisionMemory(),
+    ]);
+
+    final spaceShipBeta = reg.add([
+      Name(name: "Spaceship Beta"),
+      HasParent(galaxy.id),
+
+      Renderable("images/ship.svg"),
+      Direction(CompassDirection.north),
+      LocalPosition(x: 3, y: 4),
+      Controllable(), // TODO: lol this isnt a ship though but whatever.
+      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
+      VisionMemory(),
+    ]);
+
+    // Level 4: Entities on Planet Surface
+    reg.add([
+      Name(name: "Player"),
+      Renderable('images/player.svg'),
+      LocalPosition(x: 0, y: 0),
+      BlocksMovement(),
+      Inventory([]),
+      InventoryMaxCount(5),
+      Health(4, 5),
+      VisionRadius(radius: 7, fieldOfViewDegrees: 90),
+      Direction(CompassDirection.north),
+      HasParent(spaceShipAlpha.id),
+    ]);
+
+
+    reg.add([
+      Name(name: "Spaceship controls"),
+      Renderable('images/control.svg'),
+      LocalPosition(x: 2, y: 3),
+      HasParent(spaceShipAlpha.id),
+      EnablesControl(controlledEntityId: spaceShipAlpha.id),
+    ]);
+  }
+
+
   void _initializeEntities(GameArea game) {
     var reg = game.currentWorld;
 
@@ -255,11 +334,28 @@ class GameScreen extends flame.World with Disposer {
     final starSystemAlpha = reg.add([
       Name(name: "Star System Alpha"),
       HasParent(galaxy.id),
+
+      Renderable("images/planet.svg"),
+      Direction(CompassDirection.north),
+      LocalPosition(x: 0, y: 0),
+      Controllable(), // TODO: lol this isnt a ship though but whatever.
+      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
+      VisionMemory(),
+      VisibleEntities(),
     ]);
 
     final starSystemBeta = reg.add([
       Name(name: "Star System Beta"),
       HasParent(galaxy.id),
+
+      Renderable("images/planet.svg"),
+      Direction(CompassDirection.north),
+      LocalPosition(x: 3, y: 4),
+      Controllable(), // TODO: lol this isnt a ship though but whatever.
+      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
+      VisionMemory(),
+      VisibleEntities(),
+
     ]);
 
     // Level 3: Regions within star systems
@@ -267,6 +363,14 @@ class GameScreen extends flame.World with Disposer {
     final planetSurface = reg.add([
       Name(name: "Planet Surface - Grasslands"),
       HasParent(starSystemAlpha.id),
+
+      Renderable("images/planet.svg"),
+      Direction(CompassDirection.north),
+      LocalPosition(x: 3, y: 4),
+      Controllable(), // TODO: lol this isnt a ship though but whatever.
+      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
+      VisionMemory(),
+      VisibleEntities(),
     ]);
 
     // Region 2: Abandoned Station (in Beta)
@@ -294,6 +398,8 @@ class GameScreen extends flame.World with Disposer {
       Direction(CompassDirection.north),
       HasParent(planetSurface.id),
     ]);
+
+
 
     // Add exterior door portal to building interior
     reg.add([
@@ -451,6 +557,14 @@ class GameScreen extends flame.World with Disposer {
     final miningOutpost = reg.add([
       Name(name: "Mining Outpost"),
       HasParent(starSystemAlpha.id),
+
+      Renderable("images/planet.svg"),
+      Direction(CompassDirection.north),
+      LocalPosition(x: 1, y: 2),
+      Controllable(), // TODO: lol this isnt a ship though but whatever.
+      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
+      VisionMemory(),
+      VisibleEntities(),
     ]);
 
     // Entities in mining outpost
@@ -540,6 +654,14 @@ class GameScreen extends flame.World with Disposer {
         interactionRange: 1, // Must be standing on door
       ),
       HasParent(buildingInterior.id),
+    ]);
+
+    reg.add([
+      Name(name: "Planet Surface controls"),
+      Renderable('images/control.svg'),
+      LocalPosition(x: 2, y: 3),
+      HasParent(buildingInterior.id),
+      EnablesControl(controlledEntityId: planetSurface.id),
     ]);
   }
 
