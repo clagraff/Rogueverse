@@ -214,13 +214,9 @@ class Health with HealthMappable implements Component {
   int current;
   int max;
 
-  Health(this.current, this.max) {
-    if (current > max) {
-      // TODO just clamp to max?
-      throw Exception("[current] health cannot exceed [max] health");
-    }
-    // TODO check for under zero?
-  }
+  Health(int current, int max) 
+    : max = max < 0 ? 0 : max,
+      current = current < 0 ? 0 : (current > max ? max : current);
 
   @override
   String get componentType => "Health";

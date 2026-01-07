@@ -33,7 +33,7 @@ class Entity {
     return entitiesWithComponent.containsKey(id);
   }
 
-  // TODO maybe have a dedicated `getOrUpsert`?
+  // TODO: convert existing calls to `get<>(default)` to the dedicated getOrUpsert call.
   C? get<C extends Component>([C? orDefault]) {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => <int, Component>{});
     if (entitiesWithComponent.containsKey(id)) {
@@ -48,6 +48,14 @@ class Entity {
     }
 
     return null;
+  }
+
+  /// Gets component of type [C], or creates and adds it if missing.
+  /// 
+  /// More explicit alternative to `get<C>(defaultValue)`.
+  /// Always returns a non-null component.
+  C getOrUpsert<C extends Component>(C defaultValue) {
+    return get<C>(defaultValue)!;
   }
 
   Component? getByName(String componentType, [Component? orDefault]) {

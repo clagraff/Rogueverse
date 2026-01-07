@@ -222,7 +222,11 @@ class World with WorldMappable implements IWorldView {
             BeforeTick>(); // TODO would be cool to find a better way of pulling this out from the class.
 
         Timeline.timeSync("World: process systems", () {
-          for (var s in systems) {
+          // Sort systems by priority (lower numbers run first)
+          final sortedSystems = systems.toList()
+            ..sort((a, b) => a.priority.compareTo(b.priority));
+          
+          for (var s in sortedSystems) {
             Timeline.timeSync("World: process ${s.runtimeType}", () {
               _logger.fine("processing system", {"system": s.runtimeType.toString()});
               s.update(this);

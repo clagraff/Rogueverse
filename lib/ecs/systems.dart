@@ -31,8 +31,16 @@ part 'systems.mapper.dart';
 // }
 
 /// A base class for all systems that operate over a [Chunk] of ECS data.
+/// 
+/// Systems execute in (ascending) priority order during World.tick():
+/// - 0-50: Early systems (e.g., cache rebuilding, preprocessing)
+/// - 100: Normal gameplay systems (default)
+/// - 150+: Late systems (e.g., cleanup, post-processing)
 @MappableClass()
 abstract class System with SystemMappable {
+  /// Execution priority. Lower numbers run first. Default is 100.
+  int get priority => 100;
+  
   void update(World world);
 
 }
@@ -47,9 +55,12 @@ abstract class BudgetedSystem extends System with BudgetedSystemMappable {
 /// System that maintains the hierarchy cache for fast parent-child queries.
 ///
 /// This system rebuilds the World's hierarchyCache each tick from HasParent components.
-/// Should run first in the system execution order to ensure cache is fresh for other systems.
+/// Runs first (priority 0) to ensure cache is fresh for other systems.
 @MappableClass()
 class HierarchySystem extends System with HierarchySystemMappable {
+  @override
+  int get priority => 0; // Must run before other systems use hierarchy cache
+  
   @override
   void update(World world) {
     Timeline.timeSync("HierarchySystem: update", () {

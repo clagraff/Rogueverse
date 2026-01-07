@@ -41,13 +41,30 @@ class Query {
   }
 
   /// Returns all matching entities in the [chunk].
+  /// 
+  /// Optimized to iterate over the smallest component set to minimize checks.
   Iterable<Entity> find(World world) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
-    final firstRequiredType = _required.keys.first;
-    final store = world.components.putIfAbsent(firstRequiredType.toString(), () => {});
+    // Find the smallest component set to iterate over for better performance.
+    // Eg if we needed entities with `[Health, VisionRadius]` and we had 1,000
+    // entities with health but only 50 with vision, iterating through 50 would be
+    // a lot faster for the same end-result.
+    Type? smallestType;
+    int smallestCount = double.maxFinite.toInt();
+    
+    for (final type in _required.keys) {
+      final store = world.components[type.toString()] ?? {};
+      final count = store.length;
+      if (count < smallestCount) {
+        smallestType = type;
+        smallestCount = count;
+      }
+    }
+
+    final store = world.components[smallestType.toString()] ?? {};
 
     for (final id in store.keys) {
       if (isMatching(world, id)) {
@@ -57,13 +74,30 @@ class Query {
   }
 
   /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
+  /// 
+  /// Optimized to iterate over the smallest component set to minimize checks.
   Iterable<Entity> findFromIds(World world, List<int> possibleIds) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
-    final firstRequiredType = _required.keys.first;
-    final store = world.components.putIfAbsent(firstRequiredType.toString(), () => {});
+    // Find the smallest component set to iterate over for better performance
+    // Eg if we needed entities with `[Health, VisionRadius]` and we had 1,000
+    // entities with health but only 50 with vision, iterating through 50 would be
+    // a lot faster for the same end-result.
+    Type? smallestType;
+    int smallestCount = double.maxFinite.toInt();
+    
+    for (final type in _required.keys) {
+      final store = world.components[type.toString()] ?? {};
+      final count = store.length;
+      if (count < smallestCount) {
+        smallestType = type;
+        smallestCount = count;
+      }
+    }
+
+    final store = world.components[smallestType.toString()] ?? {};
 
     for (final id in store.keys) {
       if (!possibleIds.contains(id)) {
