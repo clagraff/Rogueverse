@@ -4,7 +4,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:rogueverse/ecs/components.dart' as components;
 import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/game/components/svg_component.dart';
+import 'package:rogueverse/game/components/svg_visual_component.dart';
 
 class HealthBar extends Component {
   final Paint paint;
@@ -24,7 +24,7 @@ class HealthBar extends Component {
     removeAll(children);
 
     for(var i = 0.0; i < health; i++) {
-      var comp = SvgTileComponent(
+      var comp = SvgVisualComponent(
           svgAssetPath: "images/heart.svg",
           position: Vector2(5 + (35 * i), 5),
           size: Vector2(32, 32));

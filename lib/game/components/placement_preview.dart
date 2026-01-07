@@ -1,7 +1,7 @@
 import 'package:flame/components.dart' show PositionComponent, Vector2;
 import 'package:flutter/material.dart' show Colors;
 import 'package:rogueverse/ecs/components.dart' show LocalPosition;
-import 'package:rogueverse/game/components/svg_component.dart' show SvgTileComponent;
+import 'package:rogueverse/game/components/svg_visual_component.dart' show SvgVisualComponent;
 import 'package:rogueverse/game/utils/grid_coordinates.dart' show GridCoordinates;
 
 /// Component that manages preview visualization for entity placement.
@@ -13,7 +13,7 @@ class PlacementPreview extends PositionComponent {
   final String? svgAssetPath;
 
   /// List of currently displayed preview components.
-  final List<SvgTileComponent> _previewComponents = [];
+  final List<SvgVisualComponent> _previewComponents = [];
 
   PlacementPreview({this.svgAssetPath});
 
@@ -33,7 +33,7 @@ class PlacementPreview extends PositionComponent {
 
     // Create new preview components at each position
     for (final pos in positions) {
-      final preview = SvgTileComponent(
+      final preview = SvgVisualComponent(
         svgAssetPath: svgAssetPath!,
         position: GridCoordinates.gridToScreen(pos),
         size: Vector2.all(GridCoordinates.TILE_SIZE),

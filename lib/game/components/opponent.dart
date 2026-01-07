@@ -10,7 +10,7 @@ class Opponent extends Agent {
 
   Opponent({required super.world,
       required super.entity,
-      required super.svgAssetPath,
+      required super.assetPath,
       super.position,
       super.size});
 

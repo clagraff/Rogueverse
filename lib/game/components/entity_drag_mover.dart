@@ -8,7 +8,7 @@ import 'package:rogueverse/ecs/entity.dart' show Entity;
 import 'package:rogueverse/ecs/entity_template.dart' show EntityTemplate;
 import 'package:rogueverse/ecs/query.dart' show Query;
 import 'package:rogueverse/ecs/world.dart' show World;
-import 'package:rogueverse/game/components/svg_component.dart' show SvgTileComponent;
+import 'package:rogueverse/game/components/svg_visual_component.dart' show SvgVisualComponent;
 import 'package:rogueverse/game/utils/grid_coordinates.dart' show GridCoordinates;
 
 /// Allows dragging entities to move them when template panel is open but no template is selected.
@@ -36,7 +36,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
   Entity? _draggedEntity;
   LocalPosition? _originalPosition;
   LocalPosition? _currentDragPosition;
-  SvgTileComponent? _previewComponent;
+  SvgVisualComponent? _previewComponent;
 
   EntityDragMover({
     required this.world,
@@ -93,7 +93,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
     // Create preview component
     final renderable = _draggedEntity!.get<Renderable>();
     if (renderable != null) {
-      _previewComponent = SvgTileComponent(
+      _previewComponent = SvgVisualComponent(
         svgAssetPath: renderable.svgAssetPath,
         position: GridCoordinates.gridToScreen(_originalPosition!),
         size: Vector2.all(GridCoordinates.TILE_SIZE),

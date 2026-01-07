@@ -10,13 +10,17 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent_health_bar.dart';
-import 'package:rogueverse/game/components/svg_component.dart';
+import 'package:rogueverse/game/components/visual_component.dart';
+import 'package:rogueverse/game/components/svg_visual_component.dart';
+import 'package:rogueverse/game/components/png_visual_component.dart';
 import 'package:rogueverse/game/game_area.dart';
 
-class Agent extends SvgTileComponent with HasVisibility, Disposer {
+class Agent extends PositionComponent with HasVisibility, Disposer {
   final World world;
   final Entity entity;
+  final String assetPath;
   AgentHealthBar? healthBar;
+  VisualComponent? _visual;
 
   // Vision-based rendering state
   StreamSubscription<Change>? _visionSubscription;
@@ -27,13 +31,20 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
   Agent({
     required this.world,
     required this.entity,
-    required super.svgAssetPath,
-    super.position,
-    super.size,
-  });
+    required this.assetPath,
+    Vector2? position,
+    Vector2? size,
+  }) {
+    this.position = position ?? Vector2.zero();
+    this.size = size ?? Vector2.all(32);
+  }
 
   @override
   Future<void> onLoad() async {
+    // Create the appropriate visual component based on file extension
+    _visual = _createVisualComponent(assetPath, size);
+    await add(_visual!);
+
     // TODO convert this to something that can run in `update(dt)`
     // world.eventBus.on<Dead>(entity.id).forEach((e) {
     //   // isVisible = false;
@@ -77,6 +88,18 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     return super.onLoad();
   }
 
+  /// Creates the appropriate visual component based on file extension.
+  VisualComponent _createVisualComponent(String assetPath, Vector2? size) {
+    if (assetPath.endsWith('.svg')) {
+      return SvgVisualComponent(svgAssetPath: assetPath, size: size);
+    } else if (assetPath.endsWith('.png')) {
+      return PngVisualComponent(pngAssetPath: assetPath, size: size);
+    } else {
+      // Default to SVG for backwards compatibility
+      return SvgVisualComponent(svgAssetPath: assetPath, size: size);
+    }
+  }
+
   /// Sets up tracking of the observer entity to determine visibility and opacity.
   void _setupVisionTracking() {
     final game = parent?.findGame() as GameArea?;
@@ -107,7 +130,8 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     _visionSubscription = null;
 
     if (observerId == null) {
-      opacity = 1.0; // Default to visible if no observer
+      // Default to visible if no observer
+      _visual?.opacity = 1.0;
       healthBar?.isVisible = true;
       return;
     }
@@ -115,7 +139,8 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     // Check if observer has VisionRadius - if not, show all entities
     final observer = world.getEntity(observerId);
     if (!observer.has<VisionRadius>()) {
-      opacity = 1.0; // Show all entities if observer has no vision system
+      // Show all entities if observer has no vision system
+      _visual?.opacity = 1.0;
       healthBar?.isVisible = true;
       return;
     }
@@ -135,35 +160,38 @@ class Agent extends SvgTileComponent with HasVisibility, Disposer {
     final visibleEntities = observer.get<VisibleEntities>();
     final visionMemory = observer.get<VisionMemory>();
 
+    double targetOpacity;
+
     // The observer itself is always fully visible
     if (entity.id == observerId) {
-      opacity = 1.0;
+      targetOpacity = 1.0;
       healthBar?.isVisible = true;
-      return;
     }
-
     // Check if currently visible
-    if (visibleEntities?.entityIds.contains(entity.id) ?? false) {
-      opacity = 1.0;
+    else if (visibleEntities?.entityIds.contains(entity.id) ?? false) {
+      targetOpacity = 1.0;
       healthBar?.isVisible = true;
       // Update last-seen position
       final localPos = entity.get<LocalPosition>();
       if (localPos != null) {
         _lastSeenPosition = Vector2(localPos.x * 32.0, localPos.y * 32.0);
       }
-      return;
     }
-
-    healthBar?.isVisible = false;
-
     // Check if in vision memory (seen before but not currently visible)
-    if (visionMemory?.hasSeenEntity(entity.id) ?? false) {
-      opacity = 0.3; // Very transparent for remembered entities
-      return;
+    else if (visionMemory?.hasSeenEntity(entity.id) ?? false) {
+      targetOpacity = 0.3; // Very transparent for remembered entities
+      healthBar?.isVisible = false;
+    }
+    // Not visible and never seen
+    else {
+      targetOpacity = 0.0; // Invisible
+      healthBar?.isVisible = false;
     }
 
-    // Not visible and never seen
-    opacity = 0.0; // Invisible
+    // Apply opacity to visual component
+    if (_visual != null) {
+      _visual!.opacity = targetOpacity;
+    }
   }
 
   @override

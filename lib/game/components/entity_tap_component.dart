@@ -3,8 +3,8 @@ import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.barrel.dart';
-import 'package:rogueverse/game/components/svg_component.dart'
-    show SvgTileComponent;
+import 'package:rogueverse/game/components/svg_visual_component.dart'
+    show SvgVisualComponent;
 import 'package:rogueverse/game/utils/grid_coordinates.dart'
     show GridCoordinates;
 
@@ -74,7 +74,7 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
 }
 
 /// Displays a visual border around the currently selected entity.
-class EntityTapVisualizerComponent extends SvgTileComponent with HasVisibility {
+class EntityTapVisualizerComponent extends SvgVisualComponent with HasVisibility {
   final ValueNotifier<Entity?> notifier;
 
   /// Creates a visualizer that tracks entity selection changes.

@@ -3,8 +3,8 @@ import 'package:flame/effects.dart' show OpacityEffect, EffectController;
 import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:rogueverse/ecs/components.dart';
-import 'package:rogueverse/game/components/svg_component.dart'
-    show SvgTileComponent;
+import 'package:rogueverse/game/components/svg_visual_component.dart'
+    show SvgVisualComponent;
 import 'package:rogueverse/game/utils/grid_coordinates.dart'
     show GridCoordinates;
 
@@ -43,7 +43,7 @@ class GridTapComponent extends PositionComponent with TapCallbacks {
   }
 }
 
-class GridTapVisualizerComponent extends SvgTileComponent with HasVisibility {
+class GridTapVisualizerComponent extends SvgVisualComponent with HasVisibility {
   final ValueNotifier<XY> notifier;
 
   GridTapVisualizerComponent(this.notifier)

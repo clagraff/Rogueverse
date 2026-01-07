@@ -752,14 +752,14 @@ class GameScreen extends flame.World with Disposer {
       component = Opponent(
         world: game.currentWorld,
         entity: game.currentWorld.getEntity(entity.id),
-        svgAssetPath: renderable.svgAssetPath,
+        assetPath: renderable.svgAssetPath,
         position: position,
       );
     } else {
       component = Agent(
         world: game.currentWorld,
         entity: game.currentWorld.getEntity(entity.id),
-        svgAssetPath: renderable.svgAssetPath,
+        assetPath: renderable.svgAssetPath,
         position: position,
       );
     }
