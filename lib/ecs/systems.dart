@@ -429,7 +429,25 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
   @override
   bool budget(World world, Duration budget) {
     return Timeline.timeSync("VisionSystem: budget", () {
+      _ensureInitialized(world);
+      
       final sw = Stopwatch()..start();
+
+      // Transfer any dirty observers to queue immediately (don't wait for update())
+      // This ensures reactive changes (e.g., BlocksSight added) are processed within one frame
+      if (_dirtyObservers.isNotEmpty) {
+        for (final observerId in _dirtyObservers) {
+          final observer = world.getEntity(observerId);
+          if (observer.has<VisionRadius>() && observer.get<VisibleEntities>() == null) {
+            // First-time observer (no VisibleEntities yet)
+            queue.addLast(observer);
+          } else if (observer.has<VisionRadius>()) {
+            // Existing observer that needs update
+            queue.addLast(observer);
+          }
+        }
+        _dirtyObservers.clear();
+      }
 
       if (queue.isEmpty) {
         return false;
@@ -540,8 +558,16 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       final parentId = entity.get<HasParent>()?.parentEntityId;
       
       if (pos != null) {
+        _logger.fine("BlocksSight ${change.kind} detected - checking observers", {
+          "entityId": change.entityId,
+          "position": "(${pos.x}, ${pos.y})",
+          "parentId": parentId,
+        });
         _markObserversInRange(world, pos, parentId);
-        _logger.finest("marked observer dirty", {"observer": entity, "componentType": change.componentType, "reason": change.kind});
+      } else {
+        _logger.warning("BlocksSight ${change.kind} but entity has no LocalPosition", {
+          "entityId": change.entityId,
+        });
       }
     }
   }
@@ -607,6 +633,9 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
   /// Mark all observers in range of a position as dirty (optimal: only those who can see it)
   void _markObserversInRange(World world, LocalPosition pos, int? parentId) {
     final observers = world.get<VisionRadius>();
+    int matchingParent = 0;
+    int inRange = 0;
+    int marked = 0;
     
     for (final entry in observers.entries) {
       final observerId = entry.key;
@@ -615,6 +644,7 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       // Check hierarchy: only consider observers with same parent
       final observerParentId = observer.get<HasParent>()?.parentEntityId;
       if (observerParentId != parentId) continue;
+      matchingParent++;
       
       final observerPos = observer.get<LocalPosition>();
       if (observerPos == null) continue;
@@ -627,6 +657,8 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       );
       
       if (distance <= visionRadius.radius) {
+        inRange++;
+        
         // Additional check: is position within FOV cone?
         if (visionRadius.fieldOfViewDegrees < 360) {
           final direction = observer.get<Direction>();
@@ -636,8 +668,16 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
         }
         
         _markObserverDirty(observerId);
+        marked++;
       }
     }
+    
+    _logger.fine("Observer scan for position (${pos.x}, ${pos.y}) parentId=$parentId", {
+      "totalObservers": observers.length,
+      "matchingParent": matchingParent,
+      "inRange": inRange,
+      "markedDirty": marked,
+    });
   }
   
   /// Check if target position is within observer's FOV cone

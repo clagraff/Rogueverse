@@ -26,7 +26,7 @@ class EntityManipulator {
     }
 
     // Always place new entity from template
-    template.build(world, baseComponents: [pos]);
+    template.build(world, baseComponents: [pos], parentId: parentId);
   }
 
   /// Removes all entities with [BlocksMovement] at the specified position.

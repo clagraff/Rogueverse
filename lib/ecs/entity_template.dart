@@ -58,15 +58,28 @@ class EntityTemplate with EntityTemplateMappable {
   /// Creates an entity in the given world with all components from the template.
   /// Additional base components can be provided (e.g., LocalPosition).
   ///
-  /// Note: LocalPosition components in the template are skipped since position
-  /// should be provided via baseComponents at placement time.
-  Entity build(World world, {List<Component> baseComponents = const []}) {
+  /// Note: LocalPosition and HasParent components in the template are skipped 
+  /// since position and parent are provided at placement time via baseComponents 
+  /// and parentId parameters.
+  Entity build(
+    World world, {
+    List<Component> baseComponents = const [],
+    int? parentId,
+  }) {
     final entity = world.add([...baseComponents]);
 
-    // Add all template components to the entity, skipping LocalPosition
+    // Add HasParent FIRST before other components to ensure it's set when
+    // reactive systems (like VisionSystem) process subsequent component additions
+    if (parentId != null) {
+      entity.upsertByName(HasParent(parentId));
+    }
+    // If parentId is null, don't add HasParent (entity is parentless/root-level)
+
+    // Add all template components to the entity, skipping LocalPosition and HasParent
     // since position is provided at placement time via baseComponents
+    // and parent is provided via parentId parameter
     for (final component in components) {
-      if (component is! LocalPosition) {
+      if (component is! LocalPosition && component is! HasParent) {
         entity.upsertByName(component);
       }
     }
