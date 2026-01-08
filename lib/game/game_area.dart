@@ -106,6 +106,20 @@ class GameArea extends FlameGame
       // Switch selectedEntity back to the actor
       selectedEntity.value = currentWorld.getEntity(change.entityId);
     });
+
+    // Clear selected entity and observer when switching to a different parent view
+    viewedParentId.addListener(() {
+      selectedEntity.value = null;
+      observerEntityId.value = null;
+    });
+
+    // Clear selected entity and observer when entering template placement mode
+    selectedTemplate.addListener(() {
+      if (selectedTemplate.value != null) {
+        selectedEntity.value = null;
+        observerEntityId.value = null;
+      }
+    });
   }
 
   /// Initializes the game area by setting up the camera anchor, camera controls,
