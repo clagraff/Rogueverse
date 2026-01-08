@@ -39,6 +39,7 @@ class _HierarchyPanelState extends State<HierarchyPanel> {
 
   @override
   void dispose() {
+    widget.viewedParentIdNotifier.removeListener(_onViewedParentChanged);
     _focusNode.dispose();
     super.dispose();
   }
@@ -63,6 +64,8 @@ class _HierarchyPanelState extends State<HierarchyPanel> {
 
   /// Expands all parent nodes in the path to the given entity
   void _expandPathToEntity(int entityId) {
+    if (!mounted) return; // Safety check: don't call setState if disposed
+    
     final hierarchyCache = widget.world.hierarchyCache;
 
     // Trace up the hierarchy and expand all ancestors
