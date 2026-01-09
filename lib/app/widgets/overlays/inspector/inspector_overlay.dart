@@ -50,9 +50,16 @@ class _InspectorPanelState extends State<InspectorPanel> {
       ComponentRegistry.register(HealthMetadata());
       ComponentRegistry.register(RenderableMetadata());
 
+      // Hierarchy components
+      ComponentRegistry.register(HasParentMetadata());
+
       // Inventory components
       ComponentRegistry.register(InventoryMetadata());
       ComponentRegistry.register(InventoryMaxCountMetadata());
+      ComponentRegistry.register(PickupIntentMetadata());
+      ComponentRegistry.register(PickedUpMetadata());
+      ComponentRegistry.register(InventoryFullFailureMetadata());
+      ComponentRegistry.register(LootTableMetadata());
 
       // Marker components (tags with no data)
       ComponentRegistry.register(AiControlledMetadata());
@@ -65,7 +72,39 @@ class _InspectorPanelState extends State<InspectorPanel> {
       ComponentRegistry.register(VisibleEntitiesMetadata());
       ComponentRegistry.register(VisionMemoryMetadata());
       ComponentRegistry.register(BlocksSightMetadata());
-      // ComponentRegistry.register(VisibilityStateMetadata());
+
+      // Combat components
+      ComponentRegistry.register(AttackIntentMetadata());
+      ComponentRegistry.register(DidAttackMetadata());
+      ComponentRegistry.register(WasAttackedMetadata());
+
+      // Portal components
+      ComponentRegistry.register(PortalToPositionMetadata());
+      ComponentRegistry.register(PortalToAnchorMetadata());
+      ComponentRegistry.register(PortalAnchorMetadata());
+      ComponentRegistry.register(UsePortalIntentMetadata());
+      ComponentRegistry.register(DidPortalMetadata());
+      ComponentRegistry.register(FailedToPortalMetadata());
+
+      // Control components
+      ComponentRegistry.register(ControllableMetadata());
+      ComponentRegistry.register(ControllingMetadata());
+      ComponentRegistry.register(EnablesControlMetadata());
+      ComponentRegistry.register(DockedMetadata());
+      ComponentRegistry.register(WantsControlIntentMetadata());
+      ComponentRegistry.register(ReleasesControlIntentMetadata());
+      ComponentRegistry.register(DockIntentMetadata());
+      ComponentRegistry.register(UndockIntentMetadata());
+
+      // Openable components
+      ComponentRegistry.register(OpenableMetadata());
+      ComponentRegistry.register(OpenIntentMetadata());
+      ComponentRegistry.register(CloseIntentMetadata());
+      ComponentRegistry.register(DidOpenMetadata());
+      ComponentRegistry.register(DidCloseMetadata());
+
+      // AI/Behavior components
+      ComponentRegistry.register(BehaviorMetadata());
 
       // Transient event components (for debugging)
       ComponentRegistry.register(MoveByIntentMetadata());

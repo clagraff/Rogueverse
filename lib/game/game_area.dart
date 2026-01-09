@@ -77,6 +77,7 @@ class GameArea extends FlameGame
       VisionSystem(), // Calculate vision AFTER movement/portaling (sees new position/direction)
       InventorySystem(),
       CombatSystem(),
+      OpenableSystem(),
     ];
 
     currentWorld = World(systems, {});

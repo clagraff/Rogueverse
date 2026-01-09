@@ -200,6 +200,11 @@ class ComponentMapper extends ClassMapperBase<Component> {
       ReleasesControlIntentMapper.ensureInitialized();
       DockIntentMapper.ensureInitialized();
       UndockIntentMapper.ensureInitialized();
+      OpenableMapper.ensureInitialized();
+      OpenIntentMapper.ensureInitialized();
+      CloseIntentMapper.ensureInitialized();
+      DidOpenMapper.ensureInitialized();
+      DidCloseMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -495,6 +500,8 @@ class BeforeTickMapper extends SubClassMapperBase<BeforeTick> {
       PickedUpMapper.ensureInitialized();
       DidPortalMapper.ensureInitialized();
       FailedToPortalMapper.ensureInitialized();
+      DidOpenMapper.ensureInitialized();
+      DidCloseMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -626,6 +633,8 @@ class AfterTickMapper extends SubClassMapperBase<AfterTick> {
       ReleasesControlIntentMapper.ensureInitialized();
       DockIntentMapper.ensureInitialized();
       UndockIntentMapper.ensureInitialized();
+      OpenIntentMapper.ensureInitialized();
+      CloseIntentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -6314,5 +6323,738 @@ class _UndockIntentCopyWithImpl<$R, $Out>
   UndockIntentCopyWith<$R2, UndockIntent, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _UndockIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class OpenableMapper extends SubClassMapperBase<Openable> {
+  OpenableMapper._();
+
+  static OpenableMapper? _instance;
+  static OpenableMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = OpenableMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Openable';
+
+  static bool _$isOpen(Openable v) => v.isOpen;
+  static const Field<Openable, bool> _f$isOpen = Field(
+    'isOpen',
+    _$isOpen,
+    opt: true,
+    def: false,
+  );
+  static String _$openRenderablePath(Openable v) => v.openRenderablePath;
+  static const Field<Openable, String> _f$openRenderablePath = Field(
+    'openRenderablePath',
+    _$openRenderablePath,
+  );
+  static String _$closedRenderablePath(Openable v) => v.closedRenderablePath;
+  static const Field<Openable, String> _f$closedRenderablePath = Field(
+    'closedRenderablePath',
+    _$closedRenderablePath,
+  );
+  static bool _$blocksMovementWhenClosed(Openable v) =>
+      v.blocksMovementWhenClosed;
+  static const Field<Openable, bool> _f$blocksMovementWhenClosed = Field(
+    'blocksMovementWhenClosed',
+    _$blocksMovementWhenClosed,
+    opt: true,
+    def: true,
+  );
+  static bool _$blocksVisionWhenClosed(Openable v) => v.blocksVisionWhenClosed;
+  static const Field<Openable, bool> _f$blocksVisionWhenClosed = Field(
+    'blocksVisionWhenClosed',
+    _$blocksVisionWhenClosed,
+    opt: true,
+    def: true,
+  );
+
+  @override
+  final MappableFields<Openable> fields = const {
+    #isOpen: _f$isOpen,
+    #openRenderablePath: _f$openRenderablePath,
+    #closedRenderablePath: _f$closedRenderablePath,
+    #blocksMovementWhenClosed: _f$blocksMovementWhenClosed,
+    #blocksVisionWhenClosed: _f$blocksVisionWhenClosed,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Openable';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Openable _instantiate(DecodingData data) {
+    return Openable(
+      isOpen: data.dec(_f$isOpen),
+      openRenderablePath: data.dec(_f$openRenderablePath),
+      closedRenderablePath: data.dec(_f$closedRenderablePath),
+      blocksMovementWhenClosed: data.dec(_f$blocksMovementWhenClosed),
+      blocksVisionWhenClosed: data.dec(_f$blocksVisionWhenClosed),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Openable fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Openable>(map);
+  }
+
+  static Openable fromJson(String json) {
+    return ensureInitialized().decodeJson<Openable>(json);
+  }
+}
+
+mixin OpenableMappable {
+  String toJson() {
+    return OpenableMapper.ensureInitialized().encodeJson<Openable>(
+      this as Openable,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return OpenableMapper.ensureInitialized().encodeMap<Openable>(
+      this as Openable,
+    );
+  }
+
+  OpenableCopyWith<Openable, Openable, Openable> get copyWith =>
+      _OpenableCopyWithImpl<Openable, Openable>(
+        this as Openable,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return OpenableMapper.ensureInitialized().stringifyValue(this as Openable);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return OpenableMapper.ensureInitialized().equalsValue(
+      this as Openable,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return OpenableMapper.ensureInitialized().hashValue(this as Openable);
+  }
+}
+
+extension OpenableValueCopy<$R, $Out> on ObjectCopyWith<$R, Openable, $Out> {
+  OpenableCopyWith<$R, Openable, $Out> get $asOpenable =>
+      $base.as((v, t, t2) => _OpenableCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class OpenableCopyWith<$R, $In extends Openable, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({
+    bool? isOpen,
+    String? openRenderablePath,
+    String? closedRenderablePath,
+    bool? blocksMovementWhenClosed,
+    bool? blocksVisionWhenClosed,
+  });
+  OpenableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _OpenableCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Openable, $Out>
+    implements OpenableCopyWith<$R, Openable, $Out> {
+  _OpenableCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Openable> $mapper =
+      OpenableMapper.ensureInitialized();
+  @override
+  $R call({
+    bool? isOpen,
+    String? openRenderablePath,
+    String? closedRenderablePath,
+    bool? blocksMovementWhenClosed,
+    bool? blocksVisionWhenClosed,
+  }) => $apply(
+    FieldCopyWithData({
+      if (isOpen != null) #isOpen: isOpen,
+      if (openRenderablePath != null) #openRenderablePath: openRenderablePath,
+      if (closedRenderablePath != null)
+        #closedRenderablePath: closedRenderablePath,
+      if (blocksMovementWhenClosed != null)
+        #blocksMovementWhenClosed: blocksMovementWhenClosed,
+      if (blocksVisionWhenClosed != null)
+        #blocksVisionWhenClosed: blocksVisionWhenClosed,
+    }),
+  );
+  @override
+  Openable $make(CopyWithData data) => Openable(
+    isOpen: data.get(#isOpen, or: $value.isOpen),
+    openRenderablePath: data.get(
+      #openRenderablePath,
+      or: $value.openRenderablePath,
+    ),
+    closedRenderablePath: data.get(
+      #closedRenderablePath,
+      or: $value.closedRenderablePath,
+    ),
+    blocksMovementWhenClosed: data.get(
+      #blocksMovementWhenClosed,
+      or: $value.blocksMovementWhenClosed,
+    ),
+    blocksVisionWhenClosed: data.get(
+      #blocksVisionWhenClosed,
+      or: $value.blocksVisionWhenClosed,
+    ),
+  );
+
+  @override
+  OpenableCopyWith<$R2, Openable, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _OpenableCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class OpenIntentMapper extends SubClassMapperBase<OpenIntent> {
+  OpenIntentMapper._();
+
+  static OpenIntentMapper? _instance;
+  static OpenIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = OpenIntentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'OpenIntent';
+
+  static int _$targetEntityId(OpenIntent v) => v.targetEntityId;
+  static const Field<OpenIntent, int> _f$targetEntityId = Field(
+    'targetEntityId',
+    _$targetEntityId,
+  );
+  static int _$lifetime(OpenIntent v) => v.lifetime;
+  static const Field<OpenIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<OpenIntent> fields = const {
+    #targetEntityId: _f$targetEntityId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'OpenIntent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static OpenIntent _instantiate(DecodingData data) {
+    return OpenIntent(targetEntityId: data.dec(_f$targetEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static OpenIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<OpenIntent>(map);
+  }
+
+  static OpenIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<OpenIntent>(json);
+  }
+}
+
+mixin OpenIntentMappable {
+  String toJson() {
+    return OpenIntentMapper.ensureInitialized().encodeJson<OpenIntent>(
+      this as OpenIntent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return OpenIntentMapper.ensureInitialized().encodeMap<OpenIntent>(
+      this as OpenIntent,
+    );
+  }
+
+  OpenIntentCopyWith<OpenIntent, OpenIntent, OpenIntent> get copyWith =>
+      _OpenIntentCopyWithImpl<OpenIntent, OpenIntent>(
+        this as OpenIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return OpenIntentMapper.ensureInitialized().stringifyValue(
+      this as OpenIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return OpenIntentMapper.ensureInitialized().equalsValue(
+      this as OpenIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return OpenIntentMapper.ensureInitialized().hashValue(this as OpenIntent);
+  }
+}
+
+extension OpenIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, OpenIntent, $Out> {
+  OpenIntentCopyWith<$R, OpenIntent, $Out> get $asOpenIntent =>
+      $base.as((v, t, t2) => _OpenIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class OpenIntentCopyWith<$R, $In extends OpenIntent, $Out>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? targetEntityId});
+  OpenIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _OpenIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, OpenIntent, $Out>
+    implements OpenIntentCopyWith<$R, OpenIntent, $Out> {
+  _OpenIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<OpenIntent> $mapper =
+      OpenIntentMapper.ensureInitialized();
+  @override
+  $R call({int? targetEntityId}) => $apply(
+    FieldCopyWithData({
+      if (targetEntityId != null) #targetEntityId: targetEntityId,
+    }),
+  );
+  @override
+  OpenIntent $make(CopyWithData data) => OpenIntent(
+    targetEntityId: data.get(#targetEntityId, or: $value.targetEntityId),
+  );
+
+  @override
+  OpenIntentCopyWith<$R2, OpenIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _OpenIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class CloseIntentMapper extends SubClassMapperBase<CloseIntent> {
+  CloseIntentMapper._();
+
+  static CloseIntentMapper? _instance;
+  static CloseIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CloseIntentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'CloseIntent';
+
+  static int _$targetEntityId(CloseIntent v) => v.targetEntityId;
+  static const Field<CloseIntent, int> _f$targetEntityId = Field(
+    'targetEntityId',
+    _$targetEntityId,
+  );
+  static int _$lifetime(CloseIntent v) => v.lifetime;
+  static const Field<CloseIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<CloseIntent> fields = const {
+    #targetEntityId: _f$targetEntityId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'CloseIntent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static CloseIntent _instantiate(DecodingData data) {
+    return CloseIntent(targetEntityId: data.dec(_f$targetEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static CloseIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<CloseIntent>(map);
+  }
+
+  static CloseIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<CloseIntent>(json);
+  }
+}
+
+mixin CloseIntentMappable {
+  String toJson() {
+    return CloseIntentMapper.ensureInitialized().encodeJson<CloseIntent>(
+      this as CloseIntent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return CloseIntentMapper.ensureInitialized().encodeMap<CloseIntent>(
+      this as CloseIntent,
+    );
+  }
+
+  CloseIntentCopyWith<CloseIntent, CloseIntent, CloseIntent> get copyWith =>
+      _CloseIntentCopyWithImpl<CloseIntent, CloseIntent>(
+        this as CloseIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return CloseIntentMapper.ensureInitialized().stringifyValue(
+      this as CloseIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return CloseIntentMapper.ensureInitialized().equalsValue(
+      this as CloseIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return CloseIntentMapper.ensureInitialized().hashValue(this as CloseIntent);
+  }
+}
+
+extension CloseIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, CloseIntent, $Out> {
+  CloseIntentCopyWith<$R, CloseIntent, $Out> get $asCloseIntent =>
+      $base.as((v, t, t2) => _CloseIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class CloseIntentCopyWith<$R, $In extends CloseIntent, $Out>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? targetEntityId});
+  CloseIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _CloseIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, CloseIntent, $Out>
+    implements CloseIntentCopyWith<$R, CloseIntent, $Out> {
+  _CloseIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<CloseIntent> $mapper =
+      CloseIntentMapper.ensureInitialized();
+  @override
+  $R call({int? targetEntityId}) => $apply(
+    FieldCopyWithData({
+      if (targetEntityId != null) #targetEntityId: targetEntityId,
+    }),
+  );
+  @override
+  CloseIntent $make(CopyWithData data) => CloseIntent(
+    targetEntityId: data.get(#targetEntityId, or: $value.targetEntityId),
+  );
+
+  @override
+  CloseIntentCopyWith<$R2, CloseIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _CloseIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DidOpenMapper extends SubClassMapperBase<DidOpen> {
+  DidOpenMapper._();
+
+  static DidOpenMapper? _instance;
+  static DidOpenMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DidOpenMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DidOpen';
+
+  static int _$targetEntityId(DidOpen v) => v.targetEntityId;
+  static const Field<DidOpen, int> _f$targetEntityId = Field(
+    'targetEntityId',
+    _$targetEntityId,
+  );
+  static int _$lifetime(DidOpen v) => v.lifetime;
+  static const Field<DidOpen, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DidOpen> fields = const {
+    #targetEntityId: _f$targetEntityId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DidOpen';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static DidOpen _instantiate(DecodingData data) {
+    return DidOpen(targetEntityId: data.dec(_f$targetEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DidOpen fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DidOpen>(map);
+  }
+
+  static DidOpen fromJson(String json) {
+    return ensureInitialized().decodeJson<DidOpen>(json);
+  }
+}
+
+mixin DidOpenMappable {
+  String toJson() {
+    return DidOpenMapper.ensureInitialized().encodeJson<DidOpen>(
+      this as DidOpen,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DidOpenMapper.ensureInitialized().encodeMap<DidOpen>(
+      this as DidOpen,
+    );
+  }
+
+  DidOpenCopyWith<DidOpen, DidOpen, DidOpen> get copyWith =>
+      _DidOpenCopyWithImpl<DidOpen, DidOpen>(
+        this as DidOpen,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DidOpenMapper.ensureInitialized().stringifyValue(this as DidOpen);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DidOpenMapper.ensureInitialized().equalsValue(
+      this as DidOpen,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DidOpenMapper.ensureInitialized().hashValue(this as DidOpen);
+  }
+}
+
+extension DidOpenValueCopy<$R, $Out> on ObjectCopyWith<$R, DidOpen, $Out> {
+  DidOpenCopyWith<$R, DidOpen, $Out> get $asDidOpen =>
+      $base.as((v, t, t2) => _DidOpenCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DidOpenCopyWith<$R, $In extends DidOpen, $Out>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? targetEntityId});
+  DidOpenCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DidOpenCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DidOpen, $Out>
+    implements DidOpenCopyWith<$R, DidOpen, $Out> {
+  _DidOpenCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DidOpen> $mapper =
+      DidOpenMapper.ensureInitialized();
+  @override
+  $R call({int? targetEntityId}) => $apply(
+    FieldCopyWithData({
+      if (targetEntityId != null) #targetEntityId: targetEntityId,
+    }),
+  );
+  @override
+  DidOpen $make(CopyWithData data) => DidOpen(
+    targetEntityId: data.get(#targetEntityId, or: $value.targetEntityId),
+  );
+
+  @override
+  DidOpenCopyWith<$R2, DidOpen, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _DidOpenCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DidCloseMapper extends SubClassMapperBase<DidClose> {
+  DidCloseMapper._();
+
+  static DidCloseMapper? _instance;
+  static DidCloseMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DidCloseMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DidClose';
+
+  static int _$targetEntityId(DidClose v) => v.targetEntityId;
+  static const Field<DidClose, int> _f$targetEntityId = Field(
+    'targetEntityId',
+    _$targetEntityId,
+  );
+  static int _$lifetime(DidClose v) => v.lifetime;
+  static const Field<DidClose, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DidClose> fields = const {
+    #targetEntityId: _f$targetEntityId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DidClose';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static DidClose _instantiate(DecodingData data) {
+    return DidClose(targetEntityId: data.dec(_f$targetEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DidClose fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DidClose>(map);
+  }
+
+  static DidClose fromJson(String json) {
+    return ensureInitialized().decodeJson<DidClose>(json);
+  }
+}
+
+mixin DidCloseMappable {
+  String toJson() {
+    return DidCloseMapper.ensureInitialized().encodeJson<DidClose>(
+      this as DidClose,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DidCloseMapper.ensureInitialized().encodeMap<DidClose>(
+      this as DidClose,
+    );
+  }
+
+  DidCloseCopyWith<DidClose, DidClose, DidClose> get copyWith =>
+      _DidCloseCopyWithImpl<DidClose, DidClose>(
+        this as DidClose,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DidCloseMapper.ensureInitialized().stringifyValue(this as DidClose);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DidCloseMapper.ensureInitialized().equalsValue(
+      this as DidClose,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DidCloseMapper.ensureInitialized().hashValue(this as DidClose);
+  }
+}
+
+extension DidCloseValueCopy<$R, $Out> on ObjectCopyWith<$R, DidClose, $Out> {
+  DidCloseCopyWith<$R, DidClose, $Out> get $asDidClose =>
+      $base.as((v, t, t2) => _DidCloseCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DidCloseCopyWith<$R, $In extends DidClose, $Out>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? targetEntityId});
+  DidCloseCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DidCloseCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DidClose, $Out>
+    implements DidCloseCopyWith<$R, DidClose, $Out> {
+  _DidCloseCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DidClose> $mapper =
+      DidCloseMapper.ensureInitialized();
+  @override
+  $R call({int? targetEntityId}) => $apply(
+    FieldCopyWithData({
+      if (targetEntityId != null) #targetEntityId: targetEntityId,
+    }),
+  );
+  @override
+  DidClose $make(CopyWithData data) => DidClose(
+    targetEntityId: data.get(#targetEntityId, or: $value.targetEntityId),
+  );
+
+  @override
+  DidCloseCopyWith<$R2, DidClose, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DidCloseCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

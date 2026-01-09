@@ -697,3 +697,78 @@ class UndockIntent extends AfterTick
   @override
   String get componentType => "UndockIntent";
 }
+
+// ============================================================================
+// Openable System Components
+// ============================================================================
+
+/// Component for entities that can be opened/closed (doors, gates, chests, etc.).
+///
+/// When closed, the entity can optionally block movement and/or vision.
+/// An OpenableSystem handles state changes and synchronizes the Renderable,
+/// BlocksMovement, and BlocksSight components based on the current state.
+@MappableClass()
+class Openable with OpenableMappable implements Component {
+  bool isOpen;
+  final String openRenderablePath;
+  final String closedRenderablePath;
+  final bool blocksMovementWhenClosed;
+  final bool blocksVisionWhenClosed;
+
+  Openable({
+    this.isOpen = false,
+    required this.openRenderablePath,
+    required this.closedRenderablePath,
+    this.blocksMovementWhenClosed = true,
+    this.blocksVisionWhenClosed = true,
+  });
+
+  @override
+  String get componentType => "Openable";
+}
+
+/// Intent to open an openable entity.
+@MappableClass()
+class OpenIntent extends AfterTick with OpenIntentMappable implements Component {
+  final int targetEntityId;
+
+  OpenIntent({required this.targetEntityId});
+
+  @override
+  String get componentType => "OpenIntent";
+}
+
+/// Intent to close an openable entity.
+@MappableClass()
+class CloseIntent extends AfterTick
+    with CloseIntentMappable
+    implements Component {
+  final int targetEntityId;
+
+  CloseIntent({required this.targetEntityId});
+
+  @override
+  String get componentType => "CloseIntent";
+}
+
+/// Component added when an entity was successfully opened.
+@MappableClass()
+class DidOpen extends BeforeTick with DidOpenMappable implements Component {
+  final int targetEntityId;
+
+  DidOpen({required this.targetEntityId}) : super(1);
+
+  @override
+  String get componentType => "DidOpen";
+}
+
+/// Component added when an entity was successfully closed.
+@MappableClass()
+class DidClose extends BeforeTick with DidCloseMappable implements Component {
+  final int targetEntityId;
+
+  DidClose({required this.targetEntityId}) : super(1);
+
+  @override
+  String get componentType => "DidClose";
+}

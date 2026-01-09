@@ -73,6 +73,11 @@ void initializeMappers() {
   p5.ReleasesControlIntentMapper.ensureInitialized();
   p5.DockIntentMapper.ensureInitialized();
   p5.UndockIntentMapper.ensureInitialized();
+  p5.OpenableMapper.ensureInitialized();
+  p5.OpenIntentMapper.ensureInitialized();
+  p5.CloseIntentMapper.ensureInitialized();
+  p5.DidOpenMapper.ensureInitialized();
+  p5.DidCloseMapper.ensureInitialized();
   p5.CompassDirectionMapper.ensureInitialized();
   p5.PortalFailureReasonMapper.ensureInitialized();
   p6.EntityTemplateMapper.ensureInitialized();
@@ -86,6 +91,7 @@ void initializeMappers() {
   p7.BehaviorSystemMapper.ensureInitialized();
   p7.VisionSystemMapper.ensureInitialized();
   p7.ControlSystemMapper.ensureInitialized();
+  p7.OpenableSystemMapper.ensureInitialized();
   p7.PortalSystemMapper.ensureInitialized();
   p8.WorldMapper.ensureInitialized();
 }
