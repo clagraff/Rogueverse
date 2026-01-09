@@ -120,7 +120,7 @@ class Query {
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = world.components.putIfAbsent(type.toString(), () => {});
+      final store = world.components[type.toString()] ?? {};
       if (!store.containsKey(entityId)) return false;
 
       if (predicate != null && !predicate(store[entityId]!)) { // TODO should we handle store[entityId]! better?
@@ -131,7 +131,7 @@ class Query {
     for (final entry in _excluded.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = world.components.putIfAbsent(type.toString(), () => {});
+      final store = world.components[type.toString()] ?? {};
       if (!store.containsKey(entityId)) continue;
 
       if (predicate == null || predicate(store[entityId]!)) {  // TODO should we handle store[entityId]! better?

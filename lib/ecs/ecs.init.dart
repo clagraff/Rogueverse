@@ -48,8 +48,6 @@ void initializeMappers() {
   p5.DeadMapper.ensureInitialized();
   p5.InventoryMapper.ensureInitialized();
   p5.InventoryMaxCountMapper.ensureInitialized();
-  p5.LootMapper.ensureInitialized();
-  p5.LootTableMapper.ensureInitialized();
   p5.InventoryFullFailureMapper.ensureInitialized();
   p5.PickupableMapper.ensureInitialized();
   p5.PickupIntentMapper.ensureInitialized();

@@ -300,32 +300,6 @@ class CombatSystem extends System with CombatSystemMappable {
           target.remove<BlocksMovement>();
 
           _logger.finer("target killed", {"attacker": source, "target":target});
-
-          var r = Random();
-          var lootTable = target.get<LootTable>();
-          if (lootTable != null) { // TODO: jesus christ, maybe this should be its own system that runs after Combat? This look horrible.
-            for (var lootable in lootTable.lootables) {
-              var prob = r.nextDouble() * (1 + double.minPositive);
-              if (prob <= lootable.probability) {
-                var inv = target.get<Inventory>(Inventory(
-                    []))!; // Create inventory comp if it doesnt exist. Otherwise we cannot do anything from the LootTable
-                for (var i = 0; i < lootable.quantity; i++) {
-                  var item = world.add([]);
-
-                  for (var c in lootable.components) {
-                    // Have to do things the hard way to avoid `dynamic` component types in the components map.
-                    var comp = world.components.putIfAbsent(
-                        c.componentType,
-                            () =>
-                        {}); // TODO must never update `world.components` directly as it side-steps our notifications.
-                    comp[item.id] = c;
-                  }
-
-                  inv.items.add(item.id);
-                }
-              }
-            }
-          }
         }
         target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
         // TODO notify on health change?

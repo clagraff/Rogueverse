@@ -434,13 +434,6 @@ class GameScreen extends flame.World with Disposer {
       Health(2, 2),
       BlocksSight(),
       HasParent(planetSurface.id),
-      LootTable([
-        Loot(components: [
-          Renderable('images/item_small.svg'),
-          Pickupable(),
-          Name(name: 'Mineral Ore'),
-        ])
-      ]),
     ]);
 
     reg.add([
@@ -451,13 +444,6 @@ class GameScreen extends flame.World with Disposer {
       Health(2, 2),
       BlocksSight(),
       HasParent(planetSurface.id),
-      LootTable([
-        Loot(components: [
-          Renderable('images/item_small.svg'),
-          Pickupable(),
-          Name(name: 'Mineral Ore'),
-        ])
-      ]),
     ]);
 
     // Random items on planet surface

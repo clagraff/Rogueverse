@@ -298,32 +298,6 @@ class InventoryMaxCount with InventoryMaxCountMappable implements Component {
 }
 
 @MappableClass()
-class Loot with LootMappable implements Component {
-  final List<Component> components;
-  final double probability; // 0.0 - 1.0
-  final int quantity;
-
-  Loot({
-    required this.components,
-    this.probability = 1.0,
-    this.quantity = 1,
-  });
-
-  @override
-  String get componentType => "Loot";
-}
-
-@MappableClass()
-class LootTable with LootTableMappable implements Component {
-  final List<Loot> lootables;
-
-  LootTable(this.lootables);
-
-  @override
-  String get componentType => "LootTable";
-}
-
-@MappableClass()
 class InventoryFullFailure extends BeforeTick
     with InventoryFullFailureMappable
     implements Component {

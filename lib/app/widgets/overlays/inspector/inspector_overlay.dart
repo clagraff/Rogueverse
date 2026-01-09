@@ -59,7 +59,6 @@ class _InspectorPanelState extends State<InspectorPanel> {
       ComponentRegistry.register(PickupIntentMetadata());
       ComponentRegistry.register(PickedUpMetadata());
       ComponentRegistry.register(InventoryFullFailureMetadata());
-      ComponentRegistry.register(LootTableMetadata());
 
       // Marker components (tags with no data)
       ComponentRegistry.register(AiControlledMetadata());
