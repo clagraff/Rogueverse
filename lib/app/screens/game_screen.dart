@@ -1,13 +1,12 @@
-import 'dart:math';
 import 'dart:async';
 
+import 'package:collection/collection.dart';
 import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
 import 'package:flame/components.dart' as flame;
 import 'package:flame/debug.dart';
 
-import 'package:rogueverse/ecs/ai/behaviors/behaviors.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -53,10 +52,10 @@ class GameScreen extends flame.World with Disposer {
     // TODO this can only work when running on Desktop, not web!
     var save = await WorldSaves.loadSave();
     if (save != null) {
-      _initializeControlExample(game);
-      //game.currentWorld = save;
+      //_initializeControlExample(game);
+      game.currentWorld = save;
     } else {
-      _initializeControlExample(game);
+      //_initializeControlExample(game);
     }
 
     // Create template entity spawner (listens to template selection)
@@ -168,11 +167,10 @@ class GameScreen extends flame.World with Disposer {
     game.currentWorld.hierarchyCache.rebuild(game.currentWorld);
 
     // Find an entity named "Player" to set default viewedParentId
-    final playerEntity = game.currentWorld.entities().firstWhere(
+    final playerEntity = game.currentWorld.entities().firstWhereOrNull(
           (e) => e.get<Name>()?.name == "Player",
-          orElse: () => game.currentWorld.entities().first,
         );
-    final playerParent = playerEntity.get<HasParent>();
+    final playerParent = playerEntity?.get<HasParent>();
     if (playerParent != null) {
       game.viewedParentId.value = playerParent.parentEntityId;
     }
@@ -271,7 +269,7 @@ class GameScreen extends flame.World with Disposer {
       VisionMemory(),
     ]);
 
-    final spaceShipBeta = reg.add([
+    reg.add([
       Name(name: "Spaceship Beta"),
       HasParent(galaxy.id),
 
@@ -304,350 +302,6 @@ class GameScreen extends flame.World with Disposer {
       LocalPosition(x: 2, y: 3),
       HasParent(spaceShipAlpha.id),
       EnablesControl(controlledEntityId: spaceShipAlpha.id),
-    ]);
-  }
-
-
-  void _initializeEntities(GameArea game) {
-    var reg = game.currentWorld;
-
-    // Create hierarchical structure:
-    // Galaxy (abstract container)
-    //   └─ Star System Alpha (abstract container)
-    //       └─ Planet Surface (region with entities)
-    //           ├─ Player
-    //           ├─ Snake (hostile)
-    //           ├─ Minerals
-    //           └─ Items
-    //   └─ Star System Beta (abstract container)
-    //       └─ Abandoned Station (container with entities)
-    //           ├─ Wall structures
-    //           ├─ Snake (enemy)
-    //           └─ Items
-
-    // Level 1: Galaxy (abstract parent - no position/renderable)
-    final galaxy = reg.add([
-      Name(name: "Milky Way Galaxy"),
-    ]);
-
-    // Level 2: Star Systems (abstract parents - no position/renderable)
-    final starSystemAlpha = reg.add([
-      Name(name: "Star System Alpha"),
-      HasParent(galaxy.id),
-
-      Renderable("images/planet.svg"),
-      Direction(CompassDirection.north),
-      LocalPosition(x: 0, y: 0),
-      Controllable(), // TODO: lol this isnt a ship though but whatever.
-      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
-      VisionMemory(),
-      VisibleEntities(),
-    ]);
-
-    final starSystemBeta = reg.add([
-      Name(name: "Star System Beta"),
-      HasParent(galaxy.id),
-
-      Renderable("images/planet.svg"),
-      Direction(CompassDirection.north),
-      LocalPosition(x: 3, y: 4),
-      Controllable(), // TODO: lol this isnt a ship though but whatever.
-      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
-      VisionMemory(),
-      VisibleEntities(),
-
-    ]);
-
-    // Level 3: Regions within star systems
-    // Region 1: Planet Surface (in Alpha)
-    final planetSurface = reg.add([
-      Name(name: "Planet Surface - Grasslands"),
-      HasParent(starSystemAlpha.id),
-
-      Renderable("images/planet.svg"),
-      Direction(CompassDirection.north),
-      LocalPosition(x: 3, y: 4),
-      Controllable(), // TODO: lol this isnt a ship though but whatever.
-      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
-      VisionMemory(),
-      VisibleEntities(),
-    ]);
-
-    // Region 2: Abandoned Station (in Beta)
-    final abandonedStation = reg.add([
-      Name(name: "Abandoned Space Station"),
-      HasParent(starSystemBeta.id),
-    ]);
-
-    // Create a small building interior (room)
-    final buildingInterior = reg.add([
-      Name(name: "Small Building - Interior"),
-      HasParent(planetSurface.id),
-    ]);
-
-    // Level 4: Entities on Planet Surface
-    reg.add([
-      Name(name: "Player"),
-      Renderable('images/player.svg'),
-      LocalPosition(x: 0, y: 0),
-      BlocksMovement(),
-      Inventory([]),
-      InventoryMaxCount(5),
-      Health(4, 5),
-      VisionRadius(radius: 7, fieldOfViewDegrees: 90),
-      Direction(CompassDirection.north),
-      HasParent(planetSurface.id),
-    ]);
-
-
-
-    // Add exterior door portal to building interior
-    reg.add([
-      Name(name: "Building Entrance"),
-      Renderable('images/door.svg'),
-      LocalPosition(x: 4, y: 0),
-      BlocksMovement(),
-      PortalToPosition(
-        destParentId: buildingInterior.id,
-        destLocation: LocalPosition(x: 0, y: 4),
-        interactionRange: 1, // Must be standing on door
-      ),
-      HasParent(planetSurface.id),
-    ]);
-
-    reg.add([
-      Name(name: "Snake"),
-      Renderable('images/snake.svg'),
-      LocalPosition(x: 1, y: 2),
-      AiControlled(),
-      BlocksMovement(),
-      Behavior(MoveRandomlyNode()),
-      VisionRadius(radius: 5),
-      HasParent(planetSurface.id),
-    ]);
-
-    reg.add([
-      Name(name: "Mineral Deposit"),
-      Renderable('images/mineral.svg'),
-      LocalPosition(x: 3, y: 2),
-      BlocksMovement(),
-      Health(2, 2),
-      BlocksSight(),
-      HasParent(planetSurface.id),
-    ]);
-
-    reg.add([
-      Name(name: "Mineral Deposit"),
-      Renderable('images/mineral.svg'),
-      LocalPosition(x: -2, y: 1),
-      BlocksMovement(),
-      Health(2, 2),
-      BlocksSight(),
-      HasParent(planetSurface.id),
-    ]);
-
-    // Random items on planet surface
-    var planetItems = [
-      'Iron short sword',
-      'Recurve bow',
-      'Health potion',
-      'Stamina potion',
-    ];
-
-    var r = Random();
-    for (var i = 0; i < 3; i++) {
-      var x = 0;
-      var y = 0;
-
-      while (x == 0 && y == 0) {
-        x = r.nextInt(5) * (r.nextBool() ? 1 : -1);
-        y = r.nextInt(5) * (r.nextBool() ? 1 : -1);
-      }
-
-      reg.add([
-        Renderable('images/item_small.svg'),
-        LocalPosition(x: x, y: y),
-        Pickupable(),
-        Name(name: planetItems[r.nextInt(planetItems.length)]),
-        HasParent(planetSurface.id),
-      ]);
-    }
-
-    // Level 4: Entities in Abandoned Station
-    // Create a wall structure
-    for (var i = -2; i <= 2; i++) {
-      reg.add([
-        Name(name: "Station Wall"),
-        Renderable('images/wall.svg'),
-        LocalPosition(x: i, y: -3),
-        BlocksMovement(),
-        BlocksSight(),
-        HasParent(abandonedStation.id),
-      ]);
-    }
-
-    // Vertical walls
-    reg.add([
-      Name(name: "Station Wall"),
-      Renderable('images/wall.svg'),
-      LocalPosition(x: -2, y: -2),
-      BlocksMovement(),
-      BlocksSight(),
-      HasParent(abandonedStation.id),
-    ]);
-
-    reg.add([
-      Name(name: "Station Wall"),
-      Renderable('images/wall.svg'),
-      LocalPosition(x: 2, y: -2),
-      BlocksMovement(),
-      BlocksSight(),
-      HasParent(abandonedStation.id),
-    ]);
-
-    // Hostile snake in the station
-    reg.add([
-      Name(name: "Mutant Snake"),
-      Renderable('images/snake.svg'),
-      LocalPosition(x: 0, y: -2),
-      AiControlled(),
-      BlocksMovement(),
-      Behavior(MoveRandomlyNode()),
-      VisionRadius(radius: 5),
-      HasParent(abandonedStation.id),
-    ]);
-
-    // Valuable items in the station
-    var stationItems = [
-      'Copper helm',
-      'Leather gloves',
-      'Gold',
-      'Gold',
-      'Energy cell',
-    ];
-
-    for (var i = 0; i < 4; i++) {
-      var x = r.nextInt(3) - 1; // -1, 0, or 1
-      var y = -2;
-
-      reg.add([
-        Renderable('images/item_large.svg'),
-        LocalPosition(x: x + (i * 0.3).floor(), y: y),
-        Pickupable(),
-        Name(name: stationItems[r.nextInt(stationItems.length)]),
-        HasParent(abandonedStation.id),
-      ]);
-    }
-
-    // Create a third region for variety: Mining Outpost (also in Alpha)
-    final miningOutpost = reg.add([
-      Name(name: "Mining Outpost"),
-      HasParent(starSystemAlpha.id),
-
-      Renderable("images/planet.svg"),
-      Direction(CompassDirection.north),
-      LocalPosition(x: 1, y: 2),
-      Controllable(), // TODO: lol this isnt a ship though but whatever.
-      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
-      VisionMemory(),
-      VisibleEntities(),
-    ]);
-
-    // Entities in mining outpost
-    reg.add([
-      Name(name: "Mining Equipment"),
-      Renderable('images/mineral.svg'),
-      LocalPosition(x: 5, y: 5),
-      BlocksMovement(),
-      HasParent(miningOutpost.id),
-    ]);
-
-    reg.add([
-      Name(name: "Storage Crate"),
-      Renderable('images/wall.svg'),
-      LocalPosition(x: 6, y: 5),
-      BlocksMovement(),
-      BlocksSight(),
-      HasParent(miningOutpost.id),
-    ]);
-
-    reg.add([
-      Name(name: "Guard Snake"),
-      Renderable('images/snake.svg'),
-      LocalPosition(x: 5, y: 6),
-      AiControlled(),
-      BlocksMovement(),
-      Behavior(MoveRandomlyNode()),
-      VisionRadius(radius: 4),
-      HasParent(miningOutpost.id),
-    ]);
-
-    // Building interior: Create walls around the room
-    // Top wall
-    for (var i = -3; i <= 3; i++) {
-      reg.add([
-        Name(name: "Interior Wall"),
-        Renderable('images/wall.svg'),
-        LocalPosition(x: i, y: 0),
-        BlocksMovement(),
-        BlocksSight(),
-        HasParent(buildingInterior.id),
-      ]);
-    }
-    // Bottom wall
-    for (var i = -3; i <= 3; i++) {
-      reg.add([
-        Name(name: "Interior Wall"),
-        Renderable('images/wall.svg'),
-        LocalPosition(x: i, y: 5),
-        BlocksMovement(),
-        BlocksSight(),
-        HasParent(buildingInterior.id),
-      ]);
-    }
-    // Left wall
-    for (var i = 1; i <= 4; i++) {
-      reg.add([
-        Name(name: "Interior Wall"),
-        Renderable('images/wall.svg'),
-        LocalPosition(x: -3, y: i),
-        BlocksMovement(),
-        BlocksSight(),
-        HasParent(buildingInterior.id),
-      ]);
-    }
-    // Right wall
-    for (var i = 1; i <= 4; i++) {
-      reg.add([
-        Name(name: "Interior Wall"),
-        Renderable('images/wall.svg'),
-        LocalPosition(x: 3, y: i),
-        BlocksMovement(),
-        BlocksSight(),
-        HasParent(buildingInterior.id),
-      ]);
-    }
-
-    // Add exit door portal back to planet surface
-    reg.add([
-      Name(name: "Building Exit"),
-      Renderable('images/door.svg'),
-      LocalPosition(x: 0, y: 5),
-      BlocksMovement(),
-      PortalToPosition(
-        destParentId: planetSurface.id,
-        destLocation: LocalPosition(x: 4, y: -1),
-        interactionRange: 1, // Must be standing on door
-      ),
-      HasParent(buildingInterior.id),
-    ]);
-
-    reg.add([
-      Name(name: "Planet Surface controls"),
-      Renderable('images/control.svg'),
-      LocalPosition(x: 2, y: 3),
-      HasParent(buildingInterior.id),
-      EnablesControl(controlledEntityId: planetSurface.id),
     ]);
   }
 

@@ -271,6 +271,7 @@ class _TemplatePanelState extends State<TemplatePanel> {
                 });
               },
               onEdit: () => widget.onEditTemplate(template),
+              onDuplicate: () => _duplicateTemplate(context, template),
               onDelete: () async {
                 // Show confirmation dialog
                 final confirmed = await _confirmDelete(context, template);
@@ -339,6 +340,96 @@ class _TemplatePanelState extends State<TemplatePanel> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Duplicates a template with a new name.
+  Future<void> _duplicateTemplate(BuildContext context, EntityTemplate template) async {
+    final newName = await showDialog<String>(
+      context: context,
+      builder: (context) => _DuplicateTemplateDialog(
+        originalName: template.displayName,
+      ),
+    );
+
+    if (newName == null || newName.isEmpty) return;
+
+    final duplicate = EntityTemplate(
+      id: TemplateRegistry.instance.generateId(),
+      displayName: newName,
+      components: List.from(template.components),
+    );
+
+    await TemplateRegistry.instance.save(duplicate);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Created "$newName"'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+}
+
+/// Dialog for entering a name when duplicating a template.
+class _DuplicateTemplateDialog extends StatefulWidget {
+  final String originalName;
+
+  const _DuplicateTemplateDialog({required this.originalName});
+
+  @override
+  State<_DuplicateTemplateDialog> createState() => _DuplicateTemplateDialogState();
+}
+
+class _DuplicateTemplateDialogState extends State<_DuplicateTemplateDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    final defaultName = '${widget.originalName} (Copy)';
+    _controller = TextEditingController(text: defaultName);
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: defaultName.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Duplicate Template'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'Template Name',
+          border: OutlineInputBorder(),
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Duplicate'),
+        ),
+      ],
     );
   }
 }

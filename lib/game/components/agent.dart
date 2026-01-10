@@ -18,12 +18,13 @@ import 'package:rogueverse/game/game_area.dart';
 class Agent extends PositionComponent with HasVisibility, Disposer {
   final World world;
   final Entity entity;
-  final String assetPath;
+  String _currentAssetPath;
   AgentHealthBar? healthBar;
   VisualComponent? _visual;
 
   // Vision-based rendering state
   StreamSubscription<Change>? _visionSubscription;
+  StreamSubscription<Change>? _renderableSubscription;
   VoidCallback? _observerChangeListener;
   int? _currentObserverId;
   Vector2? _lastSeenPosition;
@@ -31,10 +32,10 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   Agent({
     required this.world,
     required this.entity,
-    required this.assetPath,
+    required String assetPath,
     Vector2? position,
     Vector2? size,
-  }) {
+  }) : _currentAssetPath = assetPath {
     this.position = position ?? Vector2.zero();
     this.size = size ?? Vector2.all(32);
   }
@@ -42,62 +43,88 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   @override
   Future<void> onLoad() async {
     // Create the appropriate visual component based on file extension
-    _visual = _createVisualComponent(assetPath, size);
+    _visual = _createVisualComponent(_currentAssetPath, size);
     await add(_visual!);
-
-    // TODO convert this to something that can run in `update(dt)`
-    // world.eventBus.on<Dead>(entity.id).forEach((e) {
-    //   // isVisible = false;
-    //   // TODO figure out a better way to handle corpses.
-    //   add(ColorEffect(const Color(0xFF00FF00),   EffectController(duration: 1.5),
-    //     opacityFrom: 0.2,
-    //     opacityTo: 0.8,));
-    // });
-
-    // world.eventBus.on<DidMove>(entity.id).forEach((e) {
-    //   var didMove = e.value;
-    //
-    //   add(MoveToEffect(Vector2(didMove.to.x * 32.0, didMove.to.y * 32.0),
-    //       EffectController(duration: 0.1)));
-    // });
-
-    // world.eventBus.on<LocalPosition>(entity.id, [EventType.removed]).forEach((e) {
-    //   removeFromParent();
-    // });
-
-    // world.eventBus.on<Renderable>(entity.id, [EventType.removed]).forEach((e) {
-    //   removeFromParent();
-    // });
-
-    // world.eventBus.on<int>(entity.id, [EventType.removed]).forEach((e) {
-    //   removeFromParent();
-    // });
-
-    // world.eventBus.on<Dead>(entity.id).first.then((e) {
-    //   world.remove(entity.id);
-    // });
 
     healthBar = AgentHealthBar(
         entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3));
     add(healthBar!);
 
-
     // Set up vision-based rendering
     _setupVisionTracking();
+
+    // Set up renderable change tracking (for doors, etc.)
+    _setupRenderableTracking();
 
     return super.onLoad();
   }
 
   /// Creates the appropriate visual component based on file extension.
   VisualComponent _createVisualComponent(String assetPath, Vector2? size) {
+    final renderable = entity.get<Renderable>();
+    final flipH = renderable?.flipHorizontal ?? false;
+    final flipV = renderable?.flipVertical ?? false;
+    final rotation = renderable?.rotationDegrees ?? 0;
+
     if (assetPath.endsWith('.svg')) {
-      return SvgVisualComponent(svgAssetPath: assetPath, size: size);
+      return SvgVisualComponent(
+        svgAssetPath: assetPath,
+        size: size,
+        flipHorizontal: flipH,
+        flipVertical: flipV,
+        rotationDegrees: rotation,
+      );
     } else if (assetPath.endsWith('.png')) {
-      return PngVisualComponent(pngAssetPath: assetPath, size: size);
+      return PngVisualComponent(
+        pngAssetPath: assetPath,
+        size: size,
+        flipHorizontal: flipH,
+        flipVertical: flipV,
+        rotationDegrees: rotation,
+      );
     } else {
       // Default to SVG for backwards compatibility
-      return SvgVisualComponent(svgAssetPath: assetPath, size: size);
+      return SvgVisualComponent(
+        svgAssetPath: assetPath,
+        size: size,
+        flipHorizontal: flipH,
+        flipVertical: flipV,
+        rotationDegrees: rotation,
+      );
     }
+  }
+
+  /// Sets up tracking of Renderable changes to swap visuals (e.g., when doors open/close).
+  void _setupRenderableTracking() {
+    _renderableSubscription = world.componentChanges
+        .onEntityOnComponent<Renderable>(entity.id)
+        .listen((change) {
+      if (change.kind == ChangeKind.removed) return;
+
+      final renderable = entity.get<Renderable>();
+      if (renderable == null) return;
+
+      final newPath = '${renderable.svgAssetPath}';
+      if (newPath != _currentAssetPath) {
+        _swapVisual(newPath);
+      }
+    });
+  }
+
+  /// Swaps the current visual component for a new one with the given asset path.
+  Future<void> _swapVisual(String newAssetPath) async {
+    _currentAssetPath = newAssetPath;
+
+    // Store current opacity before removing
+    final currentOpacity = _visual?.opacity ?? 1.0;
+
+    // Remove old visual
+    _visual?.removeFromParent();
+
+    // Create and add new visual
+    _visual = _createVisualComponent(newAssetPath, size);
+    _visual!.opacity = currentOpacity;
+    await add(_visual!);
   }
 
   /// Sets up tracking of the observer entity to determine visibility and opacity.
@@ -248,8 +275,9 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
 
   @override
   void onRemove() {
-    // Clean up vision tracking subscriptions
+    // Clean up subscriptions
     _visionSubscription?.cancel();
+    _renderableSubscription?.cancel();
     final game = parent?.findGame() as GameArea?;
     if (game != null && _observerChangeListener != null) {
       game.observerEntityId.removeListener(_observerChangeListener!);

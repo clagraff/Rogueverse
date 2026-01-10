@@ -240,6 +240,195 @@ class EnumPropertyItem<T> extends PropertyItem {
   }
 }
 
+/// Asset path property with validation feedback.
+/// Shows a warning icon and error styling when the asset doesn't exist.
+class AssetPathPropertyItem extends PropertyItem {
+  final String value;
+  final String? hintText;
+  @override
+  final String? suffixText;
+  final ValueChanged<String>? onChanged;
+
+  const AssetPathPropertyItem({
+    required super.id,
+    required super.label,
+    required this.value,
+    this.onChanged,
+    this.hintText,
+    this.suffixText,
+    super.readOnly,
+  });
+
+  @override
+  Widget buildEditor(BuildContext context) {
+    return _AssetPathEditor(
+      value: value,
+      readOnly: readOnly,
+      hintText: hintText,
+      suffixText: suffixText,
+      onChanged: onChanged,
+    );
+  }
+}
+
+/// Editor widget for asset paths with validation.
+class _AssetPathEditor extends StatefulWidget {
+  final String value;
+  final bool readOnly;
+  final String? hintText;
+  final String? suffixText;
+  final ValueChanged<String>? onChanged;
+
+  const _AssetPathEditor({
+    required this.value,
+    required this.readOnly,
+    this.hintText,
+    this.suffixText,
+    this.onChanged,
+  });
+
+  @override
+  State<_AssetPathEditor> createState() => _AssetPathEditorState();
+}
+
+class _AssetPathEditorState extends State<_AssetPathEditor> {
+  late TextEditingController _controller;
+  bool? _assetExists;
+  String _currentPath = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+    _currentPath = widget.value;
+    _validateAsset(widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_AssetPathEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      _controller.text = widget.value;
+      _currentPath = widget.value;
+      _validateAsset(widget.value);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _validateAsset(String path) async {
+    if (path.isEmpty) {
+      setState(() => _assetExists = false);
+      return;
+    }
+
+    final assetPath = 'assets/$path';
+    try {
+      await DefaultAssetBundle.of(context).load(assetPath);
+      if (mounted && _currentPath == path) {
+        setState(() => _assetExists = true);
+      }
+    } catch (e) {
+      if (mounted && _currentPath == path) {
+        setState(() => _assetExists = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final isInvalid = _assetExists == false && _currentPath.isNotEmpty;
+
+    return Row(
+      children: [
+        Expanded(
+          child: TextFormField(
+            controller: _controller,
+            readOnly: widget.readOnly,
+            enabled: !widget.readOnly,
+            decoration: _assetInputDecoration(
+              context,
+              suffixText: widget.suffixText,
+              hintText: widget.hintText,
+              isError: isInvalid,
+            ),
+            style: TextStyle(
+              fontSize: 12,
+              color: isInvalid ? scheme.error : null,
+            ),
+            onChanged: (text) {
+              _currentPath = text;
+              _validateAsset(text);
+            },
+            onFieldSubmitted: widget.onChanged,
+          ),
+        ),
+        if (_assetExists == false && _currentPath.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Tooltip(
+              message: 'Asset not found: assets/$_currentPath',
+              child: Icon(
+                Icons.warning_amber_rounded,
+                size: 16,
+                color: scheme.error,
+              ),
+            ),
+          ),
+        if (_assetExists == true)
+          Padding(
+            padding: const EdgeInsets.only(left: 4),
+            child: Icon(
+              Icons.check_circle_outline,
+              size: 16,
+              color: scheme.primary.withValues(alpha: 0.7),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// Input decoration for asset path fields with error state support.
+InputDecoration _assetInputDecoration(
+  BuildContext context, {
+  String? suffixText,
+  String? hintText,
+  bool isError = false,
+}) {
+  final scheme = Theme.of(context).colorScheme;
+  final borderColor = isError ? scheme.error : scheme.outlineVariant;
+
+  return InputDecoration(
+    isDense: true,
+    hintText: hintText,
+    hintStyle: const TextStyle(fontSize: 12),
+    suffixText: suffixText,
+    suffixStyle: const TextStyle(fontSize: 12),
+    contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(4),
+      borderSide: BorderSide(color: borderColor),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(4),
+      borderSide: BorderSide(color: borderColor),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(4),
+      borderSide: BorderSide(
+        color: isError ? scheme.error : scheme.primary,
+        width: 1.2,
+      ),
+    ),
+  );
+}
+
 /// Read-only text
 class ReadonlyPropertyItem extends PropertyItem {
   final String value;
@@ -428,7 +617,7 @@ class _PropertySectionState extends State<PropertySection> {
           child: Container(
             height: 26,
             padding: const EdgeInsets.symmetric(horizontal: 8),
-            color: scheme.surfaceContainerHighest.withOpacity(0.6),
+            color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
             child: Row(
               children: [
                 Icon(
@@ -482,7 +671,7 @@ class PropertyRow extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final labelStyle = TextStyle(
       fontSize: 12,
-      color: scheme.onSurface.withOpacity(0.9),
+      color: scheme.onSurface.withValues(alpha: 0.9),
     );
 
     return Container(

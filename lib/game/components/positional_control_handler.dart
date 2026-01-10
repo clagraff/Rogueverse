@@ -88,8 +88,17 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
       return;
     }
 
-    // Priority 2: Check for obstacles at target position (same parent only)
-    final targetEntity = _findEntityAtPosition(entityParentId, targetX, targetY);
+    // Priority 2: Check for closed doors at target position (regardless of BlocksMovement)
+    final closedDoor = _findClosedDoorAtPosition(entityParentId, targetX, targetY);
+    if (closedDoor != null) {
+      _logger.finer("entity=$entity opening door: closedDoor=$closedDoor");
+      entity.upsert<OpenIntent>(OpenIntent(targetEntityId: closedDoor.id));
+      game.tickEcs();
+      return;
+    }
+
+    // Priority 3: Check for other obstacles at target position (same parent only)
+    final targetEntity = _findBlockingEntityAtPosition(entityParentId, targetX, targetY);
 
     if (targetEntity == null) {
       _logger.finer("entity=$entity setting MoveByIntent(dx: ${dv.x.truncate()}, dy:${dv.y.truncate()}) from $curr");
@@ -97,9 +106,9 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
       // Nothing obstructing movement, so move
       entity.upsert(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
     } else {
-      _logger.finer("checking if entity=$entity can attack: targetEntity=$targetEntity");
+      _logger.finer("checking interactions for blocked path: targetEntity=$targetEntity");
 
-      // Something is blocking the path - check if we can attack it
+      // Check if we can attack it
       final hasHealth = targetEntity.get<Health>() != null;
       if (hasHealth) {
         entity.upsert<AttackIntent>(AttackIntent(targetEntity.id));
@@ -114,9 +123,11 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
   /// Returns true if a portal intent was created, false otherwise.
   bool _tryUsePortal(Entity entity, int? entityParentId, int targetX, int targetY, int currentX, int currentY) {
     // Find portal at target position (same parent only)
-    final portalsAtTarget = Query()
-        .require<LocalPosition>((c) => c.x == targetX && c.y == targetY)
-        .require<HasParent>((p) => p.parentEntityId == entityParentId)
+    final query = Query()
+        .require<LocalPosition>((c) => c.x == targetX && c.y == targetY);
+    _applyParentFilter(query, entityParentId);
+
+    final portalsAtTarget = query
         .find(world)
         .where((e) => e.has<PortalToPosition>() || e.has<PortalToAnchor>());
 
@@ -126,7 +137,7 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
     // Check interaction range
     final portalToPos = portalAtTarget.get<PortalToPosition>();
     final portalToAnchor = portalAtTarget.get<PortalToAnchor>();
-    final interactionRange = portalToPos?.interactionRange ?? 
+    final interactionRange = portalToPos?.interactionRange ??
                              portalToAnchor?.interactionRange ?? 0;
 
     // Skip portals with range 0 (must be exactly on portal)
@@ -144,14 +155,36 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
     return false;
   }
 
+  /// Finds a closed Openable (door) at the specified position within the same parent.
+  /// Returns null if no closed door is found.
+  Entity? _findClosedDoorAtPosition(int? parentId, int x, int y) {
+    final query = Query()
+        .require<Openable>((o) => !o.isOpen)
+        .require<LocalPosition>((c) => c.x == x && c.y == y);
+    _applyParentFilter(query, parentId);
+    return query.first(world);
+  }
+
   /// Finds an entity with BlocksMovement at the specified position within the same parent.
   /// Returns null if no blocking entity is found.
-  Entity? _findEntityAtPosition(int? parentId, int x, int y) {
-    return Query()
+  Entity? _findBlockingEntityAtPosition(int? parentId, int x, int y) {
+    final query = Query()
         .require<BlocksMovement>()
-        .require<LocalPosition>((c) => c.x == x && c.y == y)
-        .require<HasParent>((p) => p.parentEntityId == parentId)
-        .first(world);
+        .require<LocalPosition>((c) => c.x == x && c.y == y);
+    _applyParentFilter(query, parentId);
+    return query.first(world);
+  }
+
+  /// Applies parent filtering to a query.
+  ///
+  /// If [parentId] is null, excludes entities with HasParent (root-level entities only).
+  /// If [parentId] is not null, requires HasParent with matching parentEntityId.
+  void _applyParentFilter(Query query, int? parentId) {
+    if (parentId == null) {
+      query.exclude<HasParent>();
+    } else {
+      query.require<HasParent>((p) => p.parentEntityId == parentId);
+    }
   }
 
   /// Handles entity action input (e.g., picking up items, taking control).
@@ -162,11 +195,11 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
         final entityParentId = entity.get<HasParent>()?.parentEntityId;
 
         // Priority 1: Check for EnablesControl at same position
-        final controlSeat = Query()
+        final controlQuery = Query()
             .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
-            .require<HasParent>((p) => p.parentEntityId == entityParentId)
-            .require<EnablesControl>()
-            .first(world);
+            .require<EnablesControl>();
+        _applyParentFilter(controlQuery, entityParentId);
+        final controlSeat = controlQuery.first(world);
 
         if (controlSeat != null) {
           _logger.finer("Found EnablesControl entity at position, adding WantsControlIntent");
@@ -176,12 +209,11 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
         }
 
         // Priority 2: Look for pickupable items at the entity's current position
-        final firstItemAtFeet = Query()
-            .require<LocalPosition>((c) {
-              return c.x == pos.x && c.y == pos.y;
-            })
-            .require<Pickupable>()
-            .first(world);
+        final pickupQuery = Query()
+            .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
+            .require<Pickupable>();
+        _applyParentFilter(pickupQuery, entityParentId);
+        final firstItemAtFeet = pickupQuery.first(world);
 
         if (firstItemAtFeet != null) {
           entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.id));

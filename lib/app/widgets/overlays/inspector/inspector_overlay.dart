@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:rogueverse/ecs/ecs.barrel.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_section.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/sections/sections.dart';
-import 'package:rogueverse/ecs/events.dart';
 
 /// Inspector overlay that displays and allows editing of entity component properties.
 ///
@@ -109,6 +108,14 @@ class _InspectorPanelState extends State<InspectorPanel> {
       ComponentRegistry.register(MoveByIntentMetadata());
       ComponentRegistry.register(DidMoveMetadata());
       ComponentRegistry.register(BlockedMoveMetadata());
+
+      // Lifecycle components
+      ComponentRegistry.register(LifetimeMetadata());
+      ComponentRegistry.register(BeforeTickMetadata());
+      ComponentRegistry.register(AfterTickMetadata());
+
+      // Grid components
+      ComponentRegistry.register(CellMetadata());
     }
   }
 
@@ -213,11 +220,10 @@ class _InspectorPanel extends StatelessWidget {
     );
   }
 
-  /// Builds the panel header with "Properties" title.
+  /// Builds the panel header with "Properties" title and save as template button.
   Widget _buildHeader(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -226,13 +232,136 @@ class _InspectorPanel extends StatelessWidget {
           ),
         ),
       ),
-      child: Text(
-        'Properties',
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+      child: Row(
+        children: [
+          const Text(
+            'Properties',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          _SaveAsTemplateButton(entity: entity),
+        ],
+      ),
+    );
+  }
+}
+
+/// Button that saves the current entity as a new template.
+class _SaveAsTemplateButton extends StatelessWidget {
+  final Entity entity;
+
+  const _SaveAsTemplateButton({required this.entity});
+
+  Future<void> _saveAsTemplate(BuildContext context) async {
+    // Get a default name from the entity's Name component if it has one
+    final nameComponent = entity.get<Name>();
+    final defaultName = nameComponent?.name ?? 'New Template';
+
+    final templateName = await showDialog<String>(
+      context: context,
+      builder: (context) => _TemplateNameDialog(defaultName: defaultName),
+    );
+
+    if (templateName == null || templateName.isEmpty) return;
+
+    final template = EntityTemplate.fromEntity(
+      id: TemplateRegistry.instance.generateId(),
+      displayName: templateName,
+      entity: entity,
+    );
+
+    await TemplateRegistry.instance.save(template);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Saved template "$templateName"'),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Save as Template',
+      child: InkWell(
+        onTap: () => _saveAsTemplate(context),
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.all(4),
+          child: Icon(
+            Icons.save_outlined,
+            size: 16,
+            color: Theme.of(context).colorScheme.primary,
+          ),
         ),
       ),
+    );
+  }
+}
+
+/// Dialog for entering the template name when saving.
+class _TemplateNameDialog extends StatefulWidget {
+  final String defaultName;
+
+  const _TemplateNameDialog({required this.defaultName});
+
+  @override
+  State<_TemplateNameDialog> createState() => _TemplateNameDialogState();
+}
+
+class _TemplateNameDialogState extends State<_TemplateNameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.defaultName);
+    // Select all text so user can easily replace it
+    _controller.selection = TextSelection(
+      baseOffset: 0,
+      extentOffset: widget.defaultName.length,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    Navigator.of(context).pop(_controller.text.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Save as Template'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        decoration: const InputDecoration(
+          labelText: 'Template Name',
+          border: OutlineInputBorder(),
+        ),
+        onSubmitted: (_) => _submit(),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: _submit,
+          child: const Text('Save'),
+        ),
+      ],
     );
   }
 }
@@ -261,7 +390,8 @@ class _AddComponentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final available = ComponentRegistry.getAvailable(entity);
+    final available = ComponentRegistry.getAvailable(entity)
+      ..sort((a, b) => a.componentName.compareTo(b.componentName));
 
     // Hide button if all components are already present
     if (available.isEmpty) {

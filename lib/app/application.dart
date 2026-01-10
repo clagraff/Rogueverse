@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/inspector_overlay.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
-import 'package:rogueverse/app/widgets/overlays/template_panel/template_panel.barrel.dart';
-import 'package:rogueverse/app/widgets/overlays/hierarchy_panel/hierarchy_panel.barrel.dart';
+import 'package:rogueverse/app/widgets/overlays/template_panel/entity_template_overlay.dart';
+import 'package:rogueverse/app/widgets/overlays/hierarchy_panel/hierarchy_panel.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
 
 class Application extends StatefulWidget {

@@ -49,7 +49,7 @@ class GridTapVisualizerComponent extends SvgVisualComponent with HasVisibility {
   GridTapVisualizerComponent(this.notifier)
       : super(
             svgAssetPath: 'images/crosshair.svg',
-            size: Vector2.all(GridCoordinates.TILE_SIZE),
+            size: Vector2.all(GridCoordinates.tileSize),
             position: Vector2(0, 0)) {
     notifier.addListener(onListen);
     isVisible = false;

@@ -22,6 +22,9 @@ class TemplateCard extends StatefulWidget {
   /// Callback when the edit button is pressed.
   final VoidCallback onEdit;
 
+  /// Callback when the duplicate button is pressed.
+  final VoidCallback onDuplicate;
+
   const TemplateCard({
     super.key,
     required this.template,
@@ -29,6 +32,7 @@ class TemplateCard extends StatefulWidget {
     required this.onTap,
     required this.onDelete,
     required this.onEdit,
+    required this.onDuplicate,
   });
 
   @override
@@ -109,57 +113,35 @@ class _TemplateCardState extends State<TemplateCard> {
                   ),
                 ],
               ),
-              // Edit button (shows on hover)
-              if (_isHovering)
-                Positioned(
-                  top: 2,
-                  right: 18,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: widget.onEdit,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface.withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.edit_outlined,
-                          size: 11,
-                          color: colorScheme.primary,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              // Delete button (shows on hover)
+              // Action buttons (show on hover)
               if (_isHovering)
                 Positioned(
                   top: 2,
                   right: 2,
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: () {
-                        // Prevent card selection when clicking delete
-                        widget.onDelete();
-                      },
-                      borderRadius: BorderRadius.circular(12),
-                      child: Container(
-                        padding: const EdgeInsets.all(2),
-                        decoration: BoxDecoration(
-                          color: colorScheme.surface.withValues(alpha: 0.9),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.delete_outline,
-                          size: 11,
-                          color: colorScheme.error,
-                        ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Duplicate button
+                      _ActionButton(
+                        icon: Icons.copy_outlined,
+                        color: colorScheme.secondary,
+                        onTap: widget.onDuplicate,
                       ),
-                    ),
+                      const SizedBox(width: 2),
+                      // Edit button
+                      _ActionButton(
+                        icon: Icons.edit_outlined,
+                        color: colorScheme.primary,
+                        onTap: widget.onEdit,
+                      ),
+                      const SizedBox(width: 2),
+                      // Delete button
+                      _ActionButton(
+                        icon: Icons.delete_outline,
+                        color: colorScheme.error,
+                        onTap: widget.onDelete,
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -189,6 +171,43 @@ class _TemplateCardState extends State<TemplateCard> {
     return _SafeSvgPicture(
       assetPath: renderable.svgAssetPath,
       fallbackIcon: Icons.image_not_supported,
+    );
+  }
+}
+
+/// A small circular action button for template card actions.
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: colorScheme.surface.withValues(alpha: 0.9),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            size: 11,
+            color: color,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -248,7 +267,7 @@ class _SafeSvgPicture extends StatelessWidget {
       // Try to load default.svg as fallback
       try {
         return SvgPicture.asset(
-          'sprites/default.svg',
+          'images/default.svg',
           width: 24,
           height: 24,
           fit: BoxFit.contain,

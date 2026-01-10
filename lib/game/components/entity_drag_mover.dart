@@ -96,7 +96,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
       _previewComponent = SvgVisualComponent(
         svgAssetPath: renderable.svgAssetPath,
         position: GridCoordinates.gridToScreen(_originalPosition!),
-        size: Vector2.all(GridCoordinates.TILE_SIZE),
+        size: Vector2.all(GridCoordinates.tileSize),
       );
       _previewComponent!.paint.color = Colors.blue.withValues(alpha: 0.6);
       add(_previewComponent!);

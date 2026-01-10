@@ -199,11 +199,20 @@ class Behavior with BehaviorMappable implements Component {
 }
 
 /// Component that provides a visual asset path for rendering the entity.
+/// Supports horizontal/vertical flipping and rotation.
 @MappableClass()
 class Renderable with RenderableMappable implements Component {
   final String svgAssetPath;
+  final bool flipHorizontal;
+  final bool flipVertical;
+  final double rotationDegrees;
 
-  Renderable(this.svgAssetPath);
+  Renderable(
+    this.svgAssetPath, {
+    this.flipHorizontal = false,
+    this.flipVertical = false,
+    this.rotationDegrees = 0,
+  });
 
   @override
   String get componentType => "Renderable";

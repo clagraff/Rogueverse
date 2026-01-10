@@ -1860,10 +1860,34 @@ class RenderableMapper extends SubClassMapperBase<Renderable> {
     'svgAssetPath',
     _$svgAssetPath,
   );
+  static bool _$flipHorizontal(Renderable v) => v.flipHorizontal;
+  static const Field<Renderable, bool> _f$flipHorizontal = Field(
+    'flipHorizontal',
+    _$flipHorizontal,
+    opt: true,
+    def: false,
+  );
+  static bool _$flipVertical(Renderable v) => v.flipVertical;
+  static const Field<Renderable, bool> _f$flipVertical = Field(
+    'flipVertical',
+    _$flipVertical,
+    opt: true,
+    def: false,
+  );
+  static double _$rotationDegrees(Renderable v) => v.rotationDegrees;
+  static const Field<Renderable, double> _f$rotationDegrees = Field(
+    'rotationDegrees',
+    _$rotationDegrees,
+    opt: true,
+    def: 0,
+  );
 
   @override
   final MappableFields<Renderable> fields = const {
     #svgAssetPath: _f$svgAssetPath,
+    #flipHorizontal: _f$flipHorizontal,
+    #flipVertical: _f$flipVertical,
+    #rotationDegrees: _f$rotationDegrees,
   };
 
   @override
@@ -1874,7 +1898,12 @@ class RenderableMapper extends SubClassMapperBase<Renderable> {
   late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
 
   static Renderable _instantiate(DecodingData data) {
-    return Renderable(data.dec(_f$svgAssetPath));
+    return Renderable(
+      data.dec(_f$svgAssetPath),
+      flipHorizontal: data.dec(_f$flipHorizontal),
+      flipVertical: data.dec(_f$flipVertical),
+      rotationDegrees: data.dec(_f$rotationDegrees),
+    );
   }
 
   @override
@@ -1938,7 +1967,12 @@ extension RenderableValueCopy<$R, $Out>
 abstract class RenderableCopyWith<$R, $In extends Renderable, $Out>
     implements ComponentCopyWith<$R, $In, $Out> {
   @override
-  $R call({String? svgAssetPath});
+  $R call({
+    String? svgAssetPath,
+    bool? flipHorizontal,
+    bool? flipVertical,
+    double? rotationDegrees,
+  });
   RenderableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -1951,12 +1985,26 @@ class _RenderableCopyWithImpl<$R, $Out>
   late final ClassMapperBase<Renderable> $mapper =
       RenderableMapper.ensureInitialized();
   @override
-  $R call({String? svgAssetPath}) => $apply(
-    FieldCopyWithData({if (svgAssetPath != null) #svgAssetPath: svgAssetPath}),
+  $R call({
+    String? svgAssetPath,
+    bool? flipHorizontal,
+    bool? flipVertical,
+    double? rotationDegrees,
+  }) => $apply(
+    FieldCopyWithData({
+      if (svgAssetPath != null) #svgAssetPath: svgAssetPath,
+      if (flipHorizontal != null) #flipHorizontal: flipHorizontal,
+      if (flipVertical != null) #flipVertical: flipVertical,
+      if (rotationDegrees != null) #rotationDegrees: rotationDegrees,
+    }),
   );
   @override
-  Renderable $make(CopyWithData data) =>
-      Renderable(data.get(#svgAssetPath, or: $value.svgAssetPath));
+  Renderable $make(CopyWithData data) => Renderable(
+    data.get(#svgAssetPath, or: $value.svgAssetPath),
+    flipHorizontal: data.get(#flipHorizontal, or: $value.flipHorizontal),
+    flipVertical: data.get(#flipVertical, or: $value.flipVertical),
+    rotationDegrees: data.get(#rotationDegrees, or: $value.rotationDegrees),
+  );
 
   @override
   RenderableCopyWith<$R2, Renderable, $Out2> $chain<$R2, $Out2>(

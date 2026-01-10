@@ -1,7 +1,7 @@
 // @MappableLib(generateInitializerForScope: InitializerScope.package, discriminatorKey: "__type")
 import 'package:dart_mappable/dart_mappable.dart';
 
-import 'package:meta/meta.dart' show mustCallSuper;
+import 'package:flutter/foundation.dart' show mustCallSuper;
 import 'package:rogueverse/ecs/entity.dart';
 
 part 'nodes.mapper.dart';

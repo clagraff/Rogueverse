@@ -36,7 +36,7 @@ class PlacementPreview extends PositionComponent {
       final preview = SvgVisualComponent(
         svgAssetPath: svgAssetPath!,
         position: GridCoordinates.gridToScreen(pos),
-        size: Vector2.all(GridCoordinates.TILE_SIZE),
+        size: Vector2.all(GridCoordinates.tileSize),
       );
 
       // Set color: red for removal, white for placement

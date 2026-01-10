@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:rogueverse/ecs/ecs.barrel.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
-import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the Openable component.
 class OpenableMetadata extends ComponentMetadata {
@@ -30,19 +29,13 @@ class OpenableMetadata extends ComponentMetadata {
                 id: "isOpen",
                 label: "Is Open",
                 value: openable.isOpen,
-                onChanged: (val) => entity.upsert(Openable(
-                  isOpen: val,
-                  openRenderablePath: openable.openRenderablePath,
-                  closedRenderablePath: openable.closedRenderablePath,
-                  blocksMovementWhenClosed: openable.blocksMovementWhenClosed,
-                  blocksVisionWhenClosed: openable.blocksVisionWhenClosed,
-                )),
+                onChanged: (val) => _setIsOpen(entity, openable, val),
               ),
               theme: _theme,
             ),
             PropertyRow(
               key: ValueKey('openable_openPath_${openable.openRenderablePath}'),
-              item: StringPropertyItem(
+              item: AssetPathPropertyItem(
                 id: "openRenderablePath",
                 label: "Open Renderable",
                 value: openable.openRenderablePath,
@@ -58,7 +51,7 @@ class OpenableMetadata extends ComponentMetadata {
             ),
             PropertyRow(
               key: ValueKey('openable_closedPath_${openable.closedRenderablePath}'),
-              item: StringPropertyItem(
+              item: AssetPathPropertyItem(
                 id: "closedRenderablePath",
                 label: "Closed Renderable",
                 value: openable.closedRenderablePath,
@@ -108,6 +101,46 @@ class OpenableMetadata extends ComponentMetadata {
         );
       },
     );
+  }
+
+  /// Sets the isOpen state and synchronizes related components.
+  ///
+  /// When opening: removes BlocksMovement/BlocksSight, updates Renderable to open path.
+  /// When closing: adds BlocksMovement/BlocksSight based on config, updates Renderable to closed path.
+  void _setIsOpen(Entity entity, Openable openable, bool isOpen) {
+    // Update the Openable component
+    entity.upsert(Openable(
+      isOpen: isOpen,
+      openRenderablePath: openable.openRenderablePath,
+      closedRenderablePath: openable.closedRenderablePath,
+      blocksMovementWhenClosed: openable.blocksMovementWhenClosed,
+      blocksVisionWhenClosed: openable.blocksVisionWhenClosed,
+    ));
+
+    // Update Renderable to show correct visual
+    final newPath = isOpen ? openable.openRenderablePath : openable.closedRenderablePath;
+    if (newPath.isNotEmpty) {
+      entity.upsert(Renderable(newPath));
+    }
+
+    // Sync blocking components
+    if (isOpen) {
+      // Opening: remove blockers
+      if (openable.blocksMovementWhenClosed) {
+        entity.remove<BlocksMovement>();
+      }
+      if (openable.blocksVisionWhenClosed) {
+        entity.remove<BlocksSight>();
+      }
+    } else {
+      // Closing: add blockers based on config
+      if (openable.blocksMovementWhenClosed) {
+        entity.upsert(BlocksMovement());
+      }
+      if (openable.blocksVisionWhenClosed) {
+        entity.upsert(BlocksSight());
+      }
+    }
   }
 
   @override

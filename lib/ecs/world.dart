@@ -9,11 +9,6 @@ import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 
-import 'package:rogueverse/ecs/systems.dart';
-import 'package:rogueverse/ecs/components.dart';
-import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/ecs/events.dart';
-
 part 'world.mapper.dart';
 
 /// A simple Event marker to be used to hook into pre-tick processing.

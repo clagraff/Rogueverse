@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:rogueverse/ecs/ecs.barrel.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
-import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the HasParent component, which links an entity to its parent in the hierarchy.
 class HasParentMetadata extends ComponentMetadata {

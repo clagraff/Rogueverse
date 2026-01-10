@@ -1,4 +1,3 @@
-import 'package:flame/components.dart';
 import 'package:flame_svg/flame_svg.dart';
 
 import 'package:rogueverse/game/components/visual_component.dart';
@@ -8,13 +7,18 @@ class SvgVisualComponent extends VisualComponent {
 
   final String svgAssetPath;
 
-  SvgVisualComponent(
-      {required this.svgAssetPath, Vector2? position, Vector2? size})
-      : super(position: position, size: size);
+  SvgVisualComponent({
+    required this.svgAssetPath,
+    super.position,
+    super.size,
+    super.flipHorizontal,
+    super.flipVertical,
+    super.rotationDegrees,
+  });
 
   @override
   Future<void> onLoad() async {
-    super.onLoad();
+    await super.onLoad();
     final svg = await Svg.load(svgAssetPath);
 
     _svg = SvgComponent(svg: svg, size: size, paint: paint);

@@ -67,5 +67,5 @@ extension DisposableFunction on void Function() {
 }
 
 
-T? cast<T>(x) => x is T ? x : null;
-void mustBe<T>(x) => x is T == false ? throw Exception("Invalid types") : '';
+T? cast<T>(Object? x) => x is T ? x : null;
+void mustBe<T>(Object? x) => x is T == false ? throw Exception("Invalid types") : '';

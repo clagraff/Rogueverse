@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:rogueverse/ecs/ecs.barrel.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
-import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the Behavior component (read-only display of behavior tree).
 class BehaviorMetadata extends ComponentMetadata {

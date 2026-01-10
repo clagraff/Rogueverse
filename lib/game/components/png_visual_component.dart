@@ -8,13 +8,18 @@ class PngVisualComponent extends VisualComponent {
 
   final String pngAssetPath;
 
-  PngVisualComponent(
-      {required this.pngAssetPath, Vector2? position, Vector2? size})
-      : super(position: position, size: size);
+  PngVisualComponent({
+    required this.pngAssetPath,
+    super.position,
+    super.size,
+    super.flipHorizontal,
+    super.flipVertical,
+    super.rotationDegrees,
+  });
 
   @override
   Future<void> onLoad() async {
-    super.onLoad();
+    await super.onLoad();
     final png = await Flame.images.load(pngAssetPath);
 
     _sprite = SpriteComponent(

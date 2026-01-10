@@ -4,6 +4,17 @@ library;
 
 import 'package:dart_mappable/dart_mappable.dart';
 
+export 'components.dart';
+export 'disposable.dart';
+export 'entity.dart';
+export 'entity_template.dart';
+export 'events.dart';
+export 'query.dart';
+export 'systems.dart';
+export 'template_registry.dart';
+export 'world.dart';
+export 'ai/ai.dart';
+
 extension HumanReadableDuration on Duration {
   String toHumanReadableString() {
     final micros = inMicroseconds;

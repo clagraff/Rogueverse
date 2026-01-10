@@ -5,6 +5,7 @@
 library;
 
 export 'behavior_section.dart';
+export 'cell_section.dart';
 export 'combat_sections.dart';
 export 'control_sections.dart';
 export 'direction_section.dart';
@@ -12,6 +13,7 @@ export 'event_sections.dart';
 export 'health_section.dart';
 export 'hierarchy_section.dart';
 export 'inventory_section.dart';
+export 'lifecycle_sections.dart';
 export 'marker_sections.dart';
 export 'name_section.dart';
 export 'openable_sections.dart';

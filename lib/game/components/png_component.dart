@@ -1,7 +1,6 @@
 
 import 'package:flame/components.dart';
 import 'package:flame/flame.dart';
-import 'package:flame_svg/flame_svg.dart';
 
 class PngTileComponent extends PositionComponent with HasPaint {
   late final SpriteComponent _sprite;

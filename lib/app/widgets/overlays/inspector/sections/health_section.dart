@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:rogueverse/ecs/ecs.barrel.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
-import 'package:rogueverse/ecs/events.dart';
 
 /// Metadata for the Health component, which tracks an entity's current and max health.
 class HealthMetadata extends ComponentMetadata {
