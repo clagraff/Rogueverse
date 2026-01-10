@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_section.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/sections/sections.dart';
 
-/// Inspector overlay that displays and allows editing of entity component properties.
+/// Editor overlay that displays and allows editing of entity component properties.
 ///
 /// This widget appears as a side panel showing all components attached to the currently
 /// selected entity. Components can be expanded to edit their properties, deleted, or
-/// added dynamically. The panel can be dismissed by pressing ESC.
+/// added dynamically. The panel can be dismissed by pressing ESC or Ctrl+E.
 class InspectorPanel extends StatefulWidget {
-  /// Notifier that tracks which entity (if any) is currently selected for inspection.
+  /// Notifier that tracks which entity (if any) is currently selected for editing.
   final ValueNotifier<Entity?> entityNotifier;
 
-  const InspectorPanel({super.key, required this.entityNotifier});
+  /// Callback to close the editor panel.
+  final VoidCallback onClose;
+
+  const InspectorPanel({super.key, required this.entityNotifier, required this.onClose});
 
   @override
   State<InspectorPanel> createState() => _InspectorPanelState();
@@ -146,16 +150,28 @@ class _InspectorPanelState extends State<InspectorPanel> {
           focusNode: _focusNode,
           autofocus: true,
           onKeyEvent: (event) {
-            // Process ESC key only on key down events to avoid duplicate handling
-            if (event is KeyDownEvent &&
-                event.logicalKey == LogicalKeyboardKey.escape) {
-              // Determine if a text input field or other focusable widget currently has focus
-              final currentFocus = FocusScope.of(context).focusedChild;
+            if (event is! KeyDownEvent) return;
 
-              // Allow text fields to handle ESC for unfocusing; otherwise dismiss the inspector panel
+            // Determine if a text input field or other focusable widget currently has focus
+            final currentFocus = FocusScope.of(context).focusedChild;
+            final isTextFieldFocused = currentFocus != null && currentFocus != _focusNode;
+
+            final keysPressed = HardwareKeyboard.instance.logicalKeysPressed;
+            final keybindings = KeyBindingService.instance;
+
+            // Process deselect action (ESC) - dismiss the panel
+            if (keybindings.matches('game.deselect', keysPressed)) {
+              // Allow text fields to handle ESC for unfocusing; otherwise dismiss the editor panel
               // This prevents closing the panel when the user is just trying to unfocus an input
-              if (currentFocus == null || currentFocus == _focusNode) {
+              if (!isTextFieldFocused) {
                 widget.entityNotifier.value = null;
+              }
+            }
+
+            // Process overlay.editor action to close the panel
+            if (keybindings.matches('overlay.editor', keysPressed)) {
+              if (!isTextFieldFocused) {
+                widget.onClose();
               }
             }
           },

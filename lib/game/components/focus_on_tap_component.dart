@@ -21,15 +21,14 @@ class FocusOnTapComponent extends PositionComponent with TapCallbacks {
   @override
   void onTapUp(TapUpEvent event) {
     event.continuePropagation = true;
-    var hasFocus = focusNode.hasFocus;
 
-    if (!hasFocus) {
-      focusNode.requestFocus();
-      Logger("FocusOnTapComponent").info("requested focus");
+    // Always request focus when game area is tapped.
+    // This ensures focus is taken from any open panels.
+    focusNode.requestFocus();
+    Logger("FocusOnTapComponent").info("requested focus");
 
-      if (onFocus != null) {
-       onFocus!();
-      }
+    if (onFocus != null) {
+      onFocus!();
     }
   }
 }

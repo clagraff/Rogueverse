@@ -3,12 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 
+import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/components.dart' hide Component;
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/game_area.dart';
-import 'package:rogueverse/game/utils/input_service.dart';
 
 /// Handles positional controls (WASD movement, E for interact) for the currently selected entity.
 ///
@@ -18,6 +18,7 @@ import 'package:rogueverse/game/utils/input_service.dart';
 class PositionalControlHandler extends PositionComponent with KeyboardHandler {
   final ValueNotifier<Entity?> selectedEntityNotifier;
   final World world;
+  final _keybindings = KeyBindingService.instance;
 
   final Logger _logger = Logger("PositionControlHandler");
 
@@ -40,44 +41,44 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
     final game = (parent?.findGame() as GameArea);
 
     // Check for movement controls
-    final movement = movementControls.resolve(keysPressed, event.logicalKey);
+    final movement = _resolveMovement(keysPressed);
     if (movement != null) {
       _handleMovement(movement, entity, game);
       return false;
     }
 
     // Check for entity action controls
-    final action = entityActionControls.resolve(keysPressed, event.logicalKey);
-    if (action != null) {
-      _handleAction(action, entity, game);
+    if (_keybindings.matches('entity.interact', keysPressed)) {
+      _handleInteract(entity, game);
       return false;
     }
 
     return true;
   }
 
+  /// Resolves movement direction from currently pressed keys.
+  Vector2? _resolveMovement(Set<LogicalKeyboardKey> keysPressed) {
+    if (_keybindings.matches('movement.up', keysPressed)) {
+      return Vector2(0, -1);
+    }
+    if (_keybindings.matches('movement.down', keysPressed)) {
+      return Vector2(0, 1);
+    }
+    if (_keybindings.matches('movement.left', keysPressed)) {
+      return Vector2(-1, 0);
+    }
+    if (_keybindings.matches('movement.right', keysPressed)) {
+      return Vector2(1, 0);
+    }
+    return null;
+  }
+
   /// Handles movement input by checking for portals, obstacles, and applying appropriate intents.
-  void _handleMovement(Movement movement, Entity entity, GameArea game) {
-    _logger.finer("handling movement: entity=$entity movement=$movement");
+  void _handleMovement(Vector2 dv, Entity entity, GameArea game) {
+    _logger.finer("handling movement: entity=$entity dv=$dv");
 
     final curr = entity.get<LocalPosition>()!;
     final entityParentId = entity.get<HasParent>()?.parentEntityId;
-    final dv = Vector2.zero();
-
-    switch (movement) {
-      case Movement.up:
-        dv.y = -1;
-        break;
-      case Movement.right:
-        dv.x = 1;
-        break;
-      case Movement.down:
-        dv.y = 1;
-        break;
-      case Movement.left:
-        dv.x = -1;
-        break;
-    }
 
     final targetX = curr.x + dv.x.truncate();
     final targetY = curr.y + dv.y.truncate();
@@ -187,42 +188,38 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
     }
   }
 
-  /// Handles entity action input (e.g., picking up items, taking control).
-  void _handleAction(EntityAction action, Entity entity, GameArea game) {
-    switch (action) {
-      case EntityAction.interact:
-        final pos = entity.get<LocalPosition>()!;
-        final entityParentId = entity.get<HasParent>()?.parentEntityId;
+  /// Handles interact action (e.g., picking up items, taking control).
+  void _handleInteract(Entity entity, GameArea game) {
+    final pos = entity.get<LocalPosition>()!;
+    final entityParentId = entity.get<HasParent>()?.parentEntityId;
 
-        // Priority 1: Check for EnablesControl at same position
-        final controlQuery = Query()
-            .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
-            .require<EnablesControl>();
-        _applyParentFilter(controlQuery, entityParentId);
-        final controlSeat = controlQuery.first(world);
+    // Priority 1: Check for EnablesControl at same position
+    final controlQuery = Query()
+        .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
+        .require<EnablesControl>();
+    _applyParentFilter(controlQuery, entityParentId);
+    final controlSeat = controlQuery.first(world);
 
-        if (controlSeat != null) {
-          _logger.finer("Found EnablesControl entity at position, adding WantsControlIntent");
-          entity.upsert(WantsControlIntent(targetEntityId: controlSeat.id));
-          game.tickEcs();
-          return;
-        }
-
-        // Priority 2: Look for pickupable items at the entity's current position
-        final pickupQuery = Query()
-            .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
-            .require<Pickupable>();
-        _applyParentFilter(pickupQuery, entityParentId);
-        final firstItemAtFeet = pickupQuery.first(world);
-
-        if (firstItemAtFeet != null) {
-          entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.id));
-          game.tickEcs();
-          return;
-        }
-
-        _logger.warning("interaction triggered but nothing happened");
-        break;
+    if (controlSeat != null) {
+      _logger.finer("Found EnablesControl entity at position, adding WantsControlIntent");
+      entity.upsert(WantsControlIntent(targetEntityId: controlSeat.id));
+      game.tickEcs();
+      return;
     }
+
+    // Priority 2: Look for pickupable items at the entity's current position
+    final pickupQuery = Query()
+        .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
+        .require<Pickupable>();
+    _applyParentFilter(pickupQuery, entityParentId);
+    final firstItemAtFeet = pickupQuery.first(world);
+
+    if (firstItemAtFeet != null) {
+      entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.id));
+      game.tickEcs();
+      return;
+    }
+
+    _logger.warning("interaction triggered but nothing happened");
   }
 }

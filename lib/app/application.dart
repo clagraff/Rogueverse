@@ -92,12 +92,12 @@ class _ApplicationState extends State<Application> {
             _game.overlays.clear();
             _game.overlays.add('visionObserverPanel');
           },
-          onEntityInspectorPressed: () {
-            // Toggle inspector panel
-            if (_game.overlays.isActive('inspectorPanel')) {
-              _game.overlays.remove('inspectorPanel');
+          onEntityEditorPressed: () {
+            // Toggle editor panel
+            if (_game.overlays.isActive('editorPanel')) {
+              _game.overlays.remove('editorPanel');
             } else {
-              _game.overlays.add('inspectorPanel');
+              _game.overlays.add('editorPanel');
             }
           },
           selectedEntityNotifier: _game.selectedEntity,
@@ -114,12 +114,15 @@ class _ApplicationState extends State<Application> {
                 focusNode: widget.gameAreaFocusNode,
                 game: _game,
                 overlayBuilderMap: {
-                  "inspectorPanel": (context, game) => Align(
+                  "editorPanel": (context, game) => Align(
                         alignment: Alignment.centerRight,
                         child: SizedBox(
                           width: 260,
                           child: InspectorPanel(
-                            entityNotifier: (_game).selectedEntity,
+                            entityNotifier: _game.selectedEntity,
+                            onClose: () {
+                              _game.overlays.remove('editorPanel');
+                            },
                           ),
                         ),
                       ),

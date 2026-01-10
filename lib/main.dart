@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/app/application.dart';
+import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/ecs.init.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:window_manager/window_manager.dart';
@@ -15,6 +16,7 @@ void main() async {
   initializeMappers(); // Required for the dart_mappable de/serialization.
 
   await TemplateRegistry.instance.load();
+  await KeyBindingService.instance.load();
 
   if (!kIsWeb) {
     await setupWindow();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/entity_template.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/template_panel/template_card.dart';
@@ -11,7 +12,7 @@ import 'package:rogueverse/app/widgets/overlays/template_panel/template_card.dar
 /// - Search/filter templates by name
 /// - Select a template for placement
 /// - Create new templates
-/// - Can be dismissed by pressing Ctrl+E
+/// - Can be dismissed by pressing Ctrl+T or ESC
 class TemplatePanel extends StatefulWidget {
   /// Notifier that tracks which template (if any) is currently selected for placement.
   final ValueNotifier<EntityTemplate?> selectedTemplateNotifier;
@@ -87,8 +88,11 @@ class _TemplatePanelState extends State<TemplatePanel> {
         final currentFocus = FocusScope.of(context).focusedChild;
         final isTextFieldFocused = currentFocus != null && currentFocus != _focusNode;
 
-        // Handle ESC key
-        if (event.logicalKey == LogicalKeyboardKey.escape) {
+        final keysPressed = HardwareKeyboard.instance.logicalKeysPressed;
+        final keybindings = KeyBindingService.instance;
+
+        // Handle deselect action (ESC)
+        if (keybindings.matches('game.deselect', keysPressed)) {
           // Don't handle ESC if a text field has focus (let it unfocus naturally)
           if (isTextFieldFocused) return;
 
@@ -101,10 +105,9 @@ class _TemplatePanelState extends State<TemplatePanel> {
           }
         }
 
-        // Process Ctrl+E to close the panel
-        if (event.logicalKey == LogicalKeyboardKey.keyE &&
-            (HardwareKeyboard.instance.isControlPressed)) {
-          // Allow text fields to handle Ctrl+E for unfocusing; otherwise close the panel
+        // Process overlay.templates action to close the panel
+        if (keybindings.matches('overlay.templates', keysPressed)) {
+          // Allow text fields to handle the key; otherwise close the panel
           if (!isTextFieldFocused) {
             widget.onClose();
           }

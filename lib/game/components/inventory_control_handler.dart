@@ -3,13 +3,13 @@ import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
+import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/overlays/overlay_helper.dart';
 import 'package:rogueverse/app/widgets/overlays/player_inventory_widget.dart';
 import 'package:rogueverse/ecs/components.dart' hide Component;
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/game_area.dart';
-import 'package:rogueverse/game/utils/input_service.dart';
 
 /// Handles inventory controls (Tab to toggle inventory) for the currently selected entity.
 ///
@@ -19,6 +19,7 @@ import 'package:rogueverse/game/utils/input_service.dart';
 class InventoryControlHandler extends PositionComponent with KeyboardHandler {
   final ValueNotifier<Entity?> selectedEntityNotifier;
   final World world;
+  final _keybindings = KeyBindingService.instance;
 
   Function()? _toggleInventoryOverlay;
 
@@ -38,28 +39,22 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
 
     final game = (parent?.findGame() as GameArea);
 
-    // Check for inventory controls
-    final action = inventoryControls.resolve(keysPressed, event.logicalKey);
-    if (action != null) {
-      _handleInventoryAction(action, entity, game);
+    // Check for inventory toggle
+    if (_keybindings.matches('inventory.toggle', keysPressed)) {
+      _toggleInventory(entity, game);
       return false;
     }
 
     return true;
   }
 
-  /// Handles inventory action input (showing/hiding inventory overlay).
-  void _handleInventoryAction(
-      InventoryAction action, Entity entity, FlameGame game) {
-    switch (action) {
-      case InventoryAction.toggleInventory:
-        if (_toggleInventoryOverlay == null) {
-          _showInventoryOverlay(entity, game);
-        } else {
-          _toggleInventoryOverlay!();
-          _toggleInventoryOverlay = null;
-        }
-        break;
+  /// Toggles the inventory overlay for the given entity.
+  void _toggleInventory(Entity entity, FlameGame game) {
+    if (_toggleInventoryOverlay == null) {
+      _showInventoryOverlay(entity, game);
+    } else {
+      _toggleInventoryOverlay!();
+      _toggleInventoryOverlay = null;
     }
   }
 

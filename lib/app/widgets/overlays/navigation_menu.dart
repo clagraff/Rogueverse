@@ -1,6 +1,7 @@
 import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
+import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart' show WorldSaves, World;
 
@@ -18,10 +19,10 @@ class NavigationDrawerContent extends StatelessWidget {
   /// Callback when "Vision Observer" is clicked.
   final VoidCallback onVisionObserverPressed;
 
-  /// Callback when "Entity Inspector" is clicked.
-  final VoidCallback onEntityInspectorPressed;
+  /// Callback when "Entity Editor" is clicked.
+  final VoidCallback onEntityEditorPressed;
 
-  /// Notifier for the currently selected entity (to enable/disable inspector).
+  /// Notifier for the currently selected entity (to enable/disable editor).
   final ValueNotifier<Entity?> selectedEntityNotifier;
 
   final World world;
@@ -31,7 +32,7 @@ class NavigationDrawerContent extends StatelessWidget {
       required this.onEntityTemplatesPressed,
       required this.onHierarchyNavigatorPressed,
       required this.onVisionObserverPressed,
-      required this.onEntityInspectorPressed,
+      required this.onEntityEditorPressed,
       required this.selectedEntityNotifier,
       required this.world});
 
@@ -62,7 +63,7 @@ class NavigationDrawerContent extends StatelessWidget {
                 _buildNavItem(
                   context: context,
                   icon: Icons.inventory_2_outlined,
-                  label: 'Entity Templates (Ctrl+T)',
+                  label: 'Entity Templates (${KeyBindingService.instance.getCombo('overlay.templates')?.toDisplayString() ?? 'Ctrl+T'})',
                   onTap: () {
                     Navigator.pop(context); // Close drawer
                     onEntityTemplatesPressed();
@@ -92,12 +93,12 @@ class NavigationDrawerContent extends StatelessWidget {
                     return _buildNavItem(
                       context: context,
                       icon: Icons.edit,
-                      label: 'Entity Inspector (Ctrl+E)',
+                      label: 'Entity Editor (${KeyBindingService.instance.getCombo('overlay.editor')?.toDisplayString() ?? 'Ctrl+E'})',
                       enabled: selectedEntity != null,
                       onTap: selectedEntity != null
                           ? () {
                               Navigator.pop(context); // Close drawer
-                              onEntityInspectorPressed();
+                              onEntityEditorPressed();
                             }
                           : () {}, // No-op when disabled
                     );

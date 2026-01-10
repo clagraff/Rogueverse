@@ -24,7 +24,7 @@ import 'package:rogueverse/game/components/inventory_control_handler.dart';
 import 'package:rogueverse/game/components/opponent.dart';
 import 'package:rogueverse/game/components/positional_control_handler.dart';
 import 'package:rogueverse/game/components/template_entity_spawner.dart';
-import 'package:rogueverse/game/components/template_panel_toggle.dart';
+import 'package:rogueverse/game/components/overlay_toggle.dart';
 import 'package:rogueverse/game/components/vision_cone.dart';
 import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/game/hud/health_bar.dart';
@@ -76,7 +76,7 @@ class GameScreen extends flame.World with Disposer {
     var gridNotifier = ValueNotifier<XY>(XY(0, 0));
     add(FocusOnTapComponent(gameFocusNode, () {
       Logger("game_screen").info("taking focus");
-      game.overlays.remove("inspectorPanel");
+      game.overlays.remove("editorPanel");
     }));
 
     add(GridTapComponent(32, gridNotifier));
@@ -88,7 +88,17 @@ class GameScreen extends flame.World with Disposer {
     add(FpsComponent());
     add(TimeTrackComponent());
 
-    add(TemplatePanelToggle());
+    // Add overlay toggles for keyboard shortcuts
+    add(OverlayToggle(
+      overlayName: 'templatePanel',
+      action: 'overlay.templates',
+      gameFocusNode: gameFocusNode,
+    ));
+    add(OverlayToggle(
+      overlayName: 'editorPanel',
+      action: 'overlay.editor',
+      gameFocusNode: gameFocusNode,
+    ));
     add(EntityHoverTracker(
       world: game.currentWorld,
       titleNotifier: game.title,
