@@ -2,9 +2,11 @@ import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:logging/logging.dart';
+import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/game/components/svg_visual_component.dart'
     show SvgVisualComponent;
+import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/game/utils/grid_coordinates.dart'
     show GridCoordinates;
 
@@ -15,6 +17,9 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   final ValueNotifier<int?> viewedParentNotifier;
   final double gridSize;
   final World world;
+
+  /// Whether this handler is enabled. Disabled in gameplay mode, enabled in editing mode.
+  bool isEnabled = false;
 
   final Logger _logger = Logger("EntityTapComponent");
 
@@ -41,6 +46,8 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   @override
   void onTapUp(TapUpEvent event) {
     event.continuePropagation = true;
+    if (!isEnabled) return;
+
     var screenPosition = event.localPosition;
     final gridPos = GridCoordinates.screenToGrid(screenPosition);
     var x = gridPos.x;
@@ -61,6 +68,12 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
       _logger.info("setting observed entity", {"entity": tappedEntity});
       observerEntityIdNotifier?.value = tappedEntity.id;
       matched = true;
+
+      // Open editor panel if not already showing
+      final game = findGame() as GameArea?;
+      if (game != null && !game.overlays.isActive(UnifiedEditorPanel.overlayName)) {
+        game.overlays.add(UnifiedEditorPanel.overlayName);
+      }
     }
 
     if (!matched && notifier.value != null) {

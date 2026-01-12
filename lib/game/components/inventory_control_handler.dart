@@ -21,6 +21,9 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
   final World world;
   final _keybindings = KeyBindingService.instance;
 
+  /// Whether this handler is enabled. Disabled in editing mode.
+  bool isEnabled = true;
+
   Function()? _toggleInventoryOverlay;
 
   InventoryControlHandler({
@@ -30,7 +33,7 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    if (event is! KeyDownEvent) return true;
+    if (!isEnabled || event is! KeyDownEvent) return true;
 
     final entity = selectedEntityNotifier.value;
     if (entity == null || !entity.has<Inventory>()) {

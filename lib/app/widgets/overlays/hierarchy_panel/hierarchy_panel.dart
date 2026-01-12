@@ -13,6 +13,9 @@ import 'package:rogueverse/ecs/world.dart';
 /// - Expand/collapse nodes to navigate the hierarchy
 /// - Toggle "All Entities" mode to disable filtering
 class HierarchyPanel extends StatefulWidget {
+  /// The overlay name used to register and toggle this panel.
+  static const String overlayName = 'hierarchyPanel';
+
   /// The ECS world containing all entities
   final World world;
 

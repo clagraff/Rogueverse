@@ -11,6 +11,9 @@ import 'package:rogueverse/ecs/world.dart';
 /// selecting one to use as the observer for vision-based rendering.
 /// Only shows entities within the currently viewed parent.
 class VisionObserverPanel extends StatefulWidget {
+  /// The overlay name used to register and toggle this panel.
+  static const String overlayName = 'visionObserverPanel';
+
   /// The ECS world containing all entities
   final World world;
 

@@ -16,6 +16,16 @@ import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
+import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
+
+/// The two main modes of the game: gameplay (playing) and editing (world building).
+enum GameMode {
+  /// Normal gameplay mode - controls active, vision restricted to observer.
+  gameplay,
+
+  /// Editing mode - controls disabled, full visibility, entity selection allowed.
+  editing,
+}
 
 /// The main game area component that manages the ECS world, camera controls,
 /// and entity/template selection for the game editor.
@@ -41,6 +51,11 @@ class GameArea extends FlameGame
   /// null = render all entities (no filtering, default behavior)
   /// Non-null = render only entities with HasParent(viewedParentId)
   final ValueNotifier<int?> viewedParentId = ValueNotifier(null);
+
+  /// The current game mode - gameplay (playing) or editing (world building).
+  /// In gameplay mode: controls active, vision restricted to observer.
+  /// In editing mode: controls disabled, full visibility, entity selection allowed.
+  final ValueNotifier<GameMode> gameMode = ValueNotifier(GameMode.gameplay);
 
   /// Temporary world used for editing templates in the inspector.
   World? _templateEditingWorld;
@@ -232,7 +247,7 @@ class GameArea extends FlameGame
 
     // Open inspector for editing
     selectedEntity.value = _templateEditingEntity;
-    overlays.add('inspectorPanel');
+    overlays.add(UnifiedEditorPanel.overlayName);
   }
 
   /// Sets up a listener to auto-save template changes.
@@ -278,7 +293,7 @@ class GameArea extends FlameGame
 
     // Open inspector for editing
     selectedEntity.value = _templateEditingEntity;
-    overlays.add('inspectorPanel');
+    overlays.add(UnifiedEditorPanel.overlayName);
   }
 
   /// Shows a dialog to input a template name.

@@ -26,6 +26,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   StreamSubscription<Change>? _visionSubscription;
   StreamSubscription<Change>? _renderableSubscription;
   VoidCallback? _observerChangeListener;
+  VoidCallback? _gameModeChangeListener;
   int? _currentObserverId;
   Vector2? _lastSeenPosition;
 
@@ -104,7 +105,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       final renderable = entity.get<Renderable>();
       if (renderable == null) return;
 
-      final newPath = '${renderable.svgAssetPath}';
+      final newPath = renderable.svgAssetPath;
       if (newPath != _currentAssetPath) {
         _swapVisual(newPath);
       }
@@ -142,6 +143,20 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     };
 
     game.observerEntityId.addListener(_observerChangeListener!);
+
+    // Listen for game mode changes to update visibility
+    _gameModeChangeListener = () {
+      if (game.gameMode.value == GameMode.editing) {
+        // In editing mode, all entities are fully visible
+        _visual?.opacity = 1.0;
+        healthBar?.isVisible = true;
+      } else if (_currentObserverId != null) {
+        // Re-apply vision filtering when switching back to gameplay
+        _updateVisibility(_currentObserverId!);
+      }
+    };
+
+    game.gameMode.addListener(_gameModeChangeListener!);
 
     // Initial setup
     if (game.observerEntityId.value != null) {
@@ -183,6 +198,14 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
 
   /// Updates this agent's opacity based on visibility from the observer's perspective.
   void _updateVisibility(int observerId) {
+    // In editing mode, all entities are fully visible
+    final game = parent?.findGame() as GameArea?;
+    if (game != null && game.gameMode.value == GameMode.editing) {
+      _visual?.opacity = 1.0;
+      healthBar?.isVisible = true;
+      return;
+    }
+
     final observer = world.getEntity(observerId);
     final visibleEntities = observer.get<VisibleEntities>();
     final visionMemory = observer.get<VisionMemory>();
@@ -260,6 +283,9 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     final game = parent?.findGame() as GameArea?;
     if (game == null) return true; // Default to updating if no game context
 
+    // In editing mode, always update positions
+    if (game.gameMode.value == GameMode.editing) return true;
+
     final observerId = game.observerEntityId.value;
     if (observerId == null) return true; // Default to updating if no observer
 
@@ -279,8 +305,13 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     _visionSubscription?.cancel();
     _renderableSubscription?.cancel();
     final game = parent?.findGame() as GameArea?;
-    if (game != null && _observerChangeListener != null) {
-      game.observerEntityId.removeListener(_observerChangeListener!);
+    if (game != null) {
+      if (_observerChangeListener != null) {
+        game.observerEntityId.removeListener(_observerChangeListener!);
+      }
+      if (_gameModeChangeListener != null) {
+        game.gameMode.removeListener(_gameModeChangeListener!);
+      }
     }
 
     disposeAll();

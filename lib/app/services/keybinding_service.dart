@@ -45,10 +45,46 @@ class KeyCombo with KeyComboMappable {
   }
 
   /// Checks if this combo matches the currently pressed keys.
+  ///
+  /// Normalizes modifier keys so that e.g. controlLeft and controlRight
+  /// both match the generic control key.
+  ///
+  /// TODO: Support non-normalized modifier matching for cases where leftCtrl+E
+  /// and rightCtrl+E should trigger different actions. Could add a `exactMatch`
+  /// flag to KeyCombo, or check if the combo uses a specific left/right variant
+  /// and only normalize when using the generic modifier.
   bool matches(Set<LogicalKeyboardKey> keysPressed) {
     final comboKeys = toKeys();
-    return comboKeys.length == keysPressed.length &&
-        comboKeys.every((key) => keysPressed.contains(key));
+    final normalizedCombo = comboKeys.map(_normalizeModifier).toSet();
+    final normalizedPressed = keysPressed.map(_normalizeModifier).toSet();
+
+    return normalizedCombo.length == normalizedPressed.length &&
+        normalizedCombo.every((key) => normalizedPressed.contains(key));
+  }
+
+  /// Normalizes left/right modifier variants to their generic form.
+  static LogicalKeyboardKey _normalizeModifier(LogicalKeyboardKey key) {
+    // Control variants
+    if (key == LogicalKeyboardKey.controlLeft ||
+        key == LogicalKeyboardKey.controlRight) {
+      return LogicalKeyboardKey.control;
+    }
+    // Shift variants
+    if (key == LogicalKeyboardKey.shiftLeft ||
+        key == LogicalKeyboardKey.shiftRight) {
+      return LogicalKeyboardKey.shift;
+    }
+    // Alt variants
+    if (key == LogicalKeyboardKey.altLeft ||
+        key == LogicalKeyboardKey.altRight) {
+      return LogicalKeyboardKey.alt;
+    }
+    // Meta variants (Windows/Command key)
+    if (key == LogicalKeyboardKey.metaLeft ||
+        key == LogicalKeyboardKey.metaRight) {
+      return LogicalKeyboardKey.meta;
+    }
+    return key;
   }
 
   /// Returns a human-readable string representation of this combo.
@@ -333,6 +369,7 @@ class KeyBindingService {
     // Game controls
     'game.advanceTick': KeyCombo.fromKeys([LogicalKeyboardKey.space]),
     'game.deselect': KeyCombo.fromKeys([LogicalKeyboardKey.escape]),
+    'game.toggleMode': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.backquote]),
 
     // Overlay toggles
     'overlay.editor': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyE]),

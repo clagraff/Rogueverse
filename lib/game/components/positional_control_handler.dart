@@ -20,6 +20,9 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
   final World world;
   final _keybindings = KeyBindingService.instance;
 
+  /// Whether this handler is enabled. Disabled in editing mode.
+  bool isEnabled = true;
+
   final Logger _logger = Logger("PositionControlHandler");
 
   PositionalControlHandler({
@@ -29,7 +32,7 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    if (event is! KeyDownEvent) return true;
+    if (!isEnabled || event is! KeyDownEvent) return true;
 
     final entity = selectedEntityNotifier.value;
     if (entity == null || !entity.has<LocalPosition>()) {

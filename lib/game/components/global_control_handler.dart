@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/game/game_area.dart';
@@ -16,11 +17,14 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
   final ValueNotifier<Entity?> selectedEntityNotifier;
   final _keybindings = KeyBindingService.instance;
 
+  /// Whether this handler is enabled. Disabled in editing mode.
+  bool isEnabled = true;
+
   GlobalControlHandler({required this.selectedEntityNotifier});
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    if (event is! KeyDownEvent) return true;
+    if (!isEnabled || event is! KeyDownEvent) return true;
 
     final game = (parent?.findGame() as GameArea);
 
@@ -34,6 +38,10 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
     }
 
     // Deselect/release control action
+    // TODO: Reconsider Esc behavior - should probably open a pause/menu overlay
+    // (save game, exit, settings, etc.) rather than releasing control. The current
+    // "release control" behavior may not be intuitive. For now, Esc does nothing
+    // in gameplay mode unless actively controlling another entity.
     if (_keybindings.matches('game.deselect', keysPressed)) {
       Logger("GlobalControlHandler").info("deselect pressed");
       final selected = selectedEntityNotifier.value;
@@ -52,11 +60,18 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
           }
         }
 
-        // Not being controlled - deselect entity
+        // In gameplay mode, don't deselect the player - Esc only releases control
+        // Deselection only makes sense in editing mode for stopping entity inspection
+        if (game.gameMode.value == GameMode.gameplay) {
+          Logger("GlobalControlHandler").info("in gameplay mode, not deselecting");
+          return false;
+        }
+
+        // Not being controlled and in editing mode - deselect entity
         Logger("GlobalControlHandler").info("deselecting entity");
         selectedEntityNotifier.value = null;
         game.observerEntityId.value = null;
-        game.overlays.remove('editorPanel');
+        game.overlays.remove(UnifiedEditorPanel.overlayName);
         return false;
       }
     }

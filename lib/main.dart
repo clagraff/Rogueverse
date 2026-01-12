@@ -48,7 +48,7 @@ void loggerSetup() {
 
   final supportsColors = !kIsWeb;
 
-  Logger.root.level = Level.FINEST;
+  Logger.root.level = Level.INFO;
   Logger.root.onRecord.listen((record) {
     var message = "[${record.level}:${record.loggerName}] ${record.message}";
     if (record.error != null) {

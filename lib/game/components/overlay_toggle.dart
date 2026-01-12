@@ -12,7 +12,7 @@ import 'package:rogueverse/app/services/keybinding_service.dart';
 /// Example usage:
 /// ```dart
 /// add(OverlayToggle(
-///   overlayName: 'editorPanel',
+///   overlayName: UnifiedEditorPanel.overlayName,
 ///   action: 'overlay.editor',
 ///   gameFocusNode: gameFocusNode,
 /// ));

@@ -1,10 +1,13 @@
+import 'package:collection/collection.dart';
 import 'package:flame/game.dart' hide Game;
 import 'package:flutter/gestures.dart'; // kMiddleMouseButton
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/ecs/components.dart' show Name, HasParent;
 import 'package:rogueverse/game/game_area.dart';
-import 'package:rogueverse/app/widgets/overlays/inspector/inspector_overlay.dart';
+import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
-import 'package:rogueverse/app/widgets/overlays/template_panel/entity_template_overlay.dart';
 import 'package:rogueverse/app/widgets/overlays/hierarchy_panel/hierarchy_panel.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
 
@@ -54,6 +57,61 @@ class _ApplicationState extends State<Application> {
     }
   }
 
+  /// Finds the Player entity and restores selection, observer, and view to it.
+  void _restorePlayerControl() {
+    final playerEntity = _game.currentWorld.entities().firstWhereOrNull(
+          (e) => e.get<Name>()?.name == "Player",
+        );
+
+    if (playerEntity != null) {
+      // Set the player as the selected/controlled entity
+      _game.selectedEntity.value = playerEntity;
+      // Set the player as the vision observer
+      _game.observerEntityId.value = playerEntity.id;
+      // Set the view to the player's parent (room/location)
+      final playerParent = playerEntity.get<HasParent>();
+      if (playerParent != null) {
+        _game.viewedParentId.value = playerParent.parentEntityId;
+      }
+    } else {
+      // No player found, just clear selection
+      _game.selectedEntity.value = null;
+      _game.observerEntityId.value = null;
+    }
+  }
+
+  /// Toggles between gameplay and editing modes.
+  void _toggleGameMode() {
+    if (_game.gameMode.value == GameMode.gameplay) {
+      _game.gameMode.value = GameMode.editing;
+      if (!_game.overlays.isActive(UnifiedEditorPanel.overlayName)) {
+        _game.overlays.add(UnifiedEditorPanel.overlayName);
+      }
+    } else {
+      _game.gameMode.value = GameMode.gameplay;
+      _game.overlays.remove(UnifiedEditorPanel.overlayName);
+      _restorePlayerControl();
+    }
+  }
+
+  /// Handles keyboard events at the application level for global shortcuts.
+  KeyEventResult _onKeyEvent(FocusNode node, KeyEvent event) {
+    if (event is! KeyDownEvent) {
+      return KeyEventResult.ignored;
+    }
+
+    // Get currently pressed keys
+    final keysPressed = HardwareKeyboard.instance.logicalKeysPressed;
+
+    // Check for mode toggle keybinding (works regardless of focus)
+    if (KeyBindingService.instance.matches('game.toggleMode', keysPressed)) {
+      _toggleGameMode();
+      return KeyEventResult.handled;
+    }
+
+    return KeyEventResult.ignored;
+  }
+
   @override
   Widget build(BuildContext context) {
     final darkColorScheme = const ColorScheme.dark();
@@ -69,8 +127,11 @@ class _ApplicationState extends State<Application> {
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
-      home: Scaffold(
-        appBar: AppBar(
+      home: Focus(
+        autofocus: true,
+        onKeyEvent: _onKeyEvent,
+        child: Scaffold(
+          appBar: AppBar(
           title: ValueListenableBuilder<String>(
             valueListenable: _game.title,
             builder: (context, name, child) => Text(name),
@@ -80,26 +141,20 @@ class _ApplicationState extends State<Application> {
           elevation: 2,
         ),
         drawer: NavigationDrawerContent(
-          onEntityTemplatesPressed: () {
+          onEditorPressed: () {
             _game.overlays.clear();
-            _game.overlays.add('templatePanel');
+            _game.overlays.add(UnifiedEditorPanel.overlayName);
           },
           onHierarchyNavigatorPressed: () {
             _game.overlays.clear();
-            _game.overlays.add('hierarchyPanel');
+            _game.overlays.add(HierarchyPanel.overlayName);
           },
           onVisionObserverPressed: () {
             _game.overlays.clear();
-            _game.overlays.add('visionObserverPanel');
+            _game.overlays.add(VisionObserverPanel.overlayName);
           },
-          onEntityEditorPressed: () {
-            // Toggle editor panel
-            if (_game.overlays.isActive('editorPanel')) {
-              _game.overlays.remove('editorPanel');
-            } else {
-              _game.overlays.add('editorPanel');
-            }
-          },
+          onToggleEditModePressed: _toggleGameMode,
+          gameModeNotifier: _game.gameMode,
           selectedEntityNotifier: _game.selectedEntity,
           world: _game.currentWorld,
         ),
@@ -114,38 +169,27 @@ class _ApplicationState extends State<Application> {
                 focusNode: widget.gameAreaFocusNode,
                 game: _game,
                 overlayBuilderMap: {
-                  "editorPanel": (context, game) => Align(
+                  UnifiedEditorPanel.overlayName: (context, game) => Align(
                         alignment: Alignment.centerRight,
                         child: SizedBox(
-                          width: 260,
-                          child: InspectorPanel(
+                          width: 280,
+                          child: UnifiedEditorPanel(
                             entityNotifier: _game.selectedEntity,
-                            onClose: () {
-                              _game.overlays.remove('editorPanel');
-                            },
-                          ),
-                        ),
-                      ),
-                  "templatePanel": (context, game) => Align(
-                        alignment: Alignment.centerLeft,
-                        child: SizedBox(
-                          width: 260,
-                          child: TemplatePanel(
                             selectedTemplateNotifier: _game.selectedTemplate,
+                            gameModeNotifier: _game.gameMode,
                             onCreateTemplate: () async {
                               await _game.startTemplateCreation(context);
                             },
                             onEditTemplate: (template) async {
-                              await _game.startTemplateEditing(
-                                  context, template);
+                              await _game.startTemplateEditing(context, template);
                             },
                             onClose: () {
-                              _game.overlays.remove('templatePanel');
+                              _game.overlays.remove(UnifiedEditorPanel.overlayName);
                             },
                           ),
                         ),
                       ),
-                  "hierarchyPanel": (context, game) => Align(
+                  HierarchyPanel.overlayName: (context, game) => Align(
                         alignment: Alignment.centerLeft,
                         child: SizedBox(
                           width: 320,
@@ -153,12 +197,12 @@ class _ApplicationState extends State<Application> {
                             world: _game.currentWorld,
                             viewedParentIdNotifier: _game.viewedParentId,
                             onClose: () {
-                              _game.overlays.remove('hierarchyPanel');
+                              _game.overlays.remove(HierarchyPanel.overlayName);
                             },
                           ),
                         ),
                       ),
-                  "visionObserverPanel": (context, game) => Align(
+                  VisionObserverPanel.overlayName: (context, game) => Align(
                         alignment: Alignment.centerLeft,
                         child: SizedBox(
                           width: 280,
@@ -167,7 +211,7 @@ class _ApplicationState extends State<Application> {
                             observerEntityIdNotifier: _game.observerEntityId,
                             viewedParentIdNotifier: _game.viewedParentId,
                             onClose: () {
-                              _game.overlays.remove('visionObserverPanel');
+                              _game.overlays.remove(VisionObserverPanel.overlayName);
                             },
                           ),
                         ),
@@ -176,6 +220,7 @@ class _ApplicationState extends State<Application> {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

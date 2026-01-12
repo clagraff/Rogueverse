@@ -8,6 +8,7 @@ import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/game/game_area.dart';
 
 /// Renders a vision cone overlay showing which tiles an entity can see.
 ///
@@ -22,6 +23,7 @@ class VisionConeComponent extends PositionComponent with HasPaint {
 
   StreamSubscription<Change>? _visionSubscription;
   VoidCallback? _observerChangeListener;
+  VoidCallback? _gameModeChangeListener;
   int? _currentObserverId;
 
   // Cached vision data for rendering
@@ -35,6 +37,8 @@ class VisionConeComponent extends PositionComponent with HasPaint {
 
   @override
   Future<void> onLoad() async {
+    final game = findGame() as GameArea?;
+
     // Listen for observer changes
     _observerChangeListener = () {
       final newObserverId = observerIdNotifier.value;
@@ -45,6 +49,14 @@ class VisionConeComponent extends PositionComponent with HasPaint {
     };
 
     observerIdNotifier.addListener(_observerChangeListener!);
+
+    // Listen for game mode changes - vision cone visibility is checked in render()
+    if (game != null) {
+      _gameModeChangeListener = () {
+        // Listener ensures render() is called when mode changes
+      };
+      game.gameMode.addListener(_gameModeChangeListener!);
+    }
 
     // Initial setup
     _currentObserverId = observerIdNotifier.value;
@@ -125,6 +137,10 @@ class VisionConeComponent extends PositionComponent with HasPaint {
   void render(Canvas canvas) {
     if (_visibleTiles.isEmpty || _observerPosition == null) return;
 
+    // Hide vision cone in editing mode
+    final game = findGame() as GameArea?;
+    if (game != null && game.gameMode.value == GameMode.editing) return;
+
     // Calculate max distance for gradient fade
     final maxDistance = _calculateMaxDistance();
 
@@ -179,6 +195,10 @@ class VisionConeComponent extends PositionComponent with HasPaint {
     _visionSubscription?.cancel();
     if (_observerChangeListener != null) {
       observerIdNotifier.removeListener(_observerChangeListener!);
+    }
+    if (_gameModeChangeListener != null) {
+      final game = findGame() as GameArea?;
+      game?.gameMode.removeListener(_gameModeChangeListener!);
     }
     super.onRemove();
   }
