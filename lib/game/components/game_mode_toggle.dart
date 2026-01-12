@@ -4,15 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
-import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
 import 'package:rogueverse/ecs/components.dart' show Name, HasParent;
 import 'package:rogueverse/game/game_area.dart';
 
 /// A Flame component that toggles between gameplay and editing modes.
 ///
 /// This component listens for the game.toggleMode keybinding (Ctrl+`) and
-/// switches the game mode. When entering editing mode, it shows the editor panel.
-/// When entering gameplay mode, it hides the editor panel and restores player control.
+/// switches the game mode. The dock panels are controlled by game mode in Flutter,
+/// so this component only needs to toggle the mode value.
 class GameModeToggle extends Component with KeyboardHandler {
   final _logger = Logger('GameModeToggle');
   final _keybindings = KeyBindingService.instance;
@@ -30,21 +29,16 @@ class GameModeToggle extends Component with KeyboardHandler {
     final game = findGame() as GameArea?;
     if (game == null) return true;
 
-    // Toggle the mode
+    // Toggle the mode (dock panels react to game mode changes automatically)
     if (game.gameMode.value == GameMode.gameplay) {
       _logger.info('switching to editing mode');
       game.gameMode.value = GameMode.editing;
-      // Show editor panel when entering editing mode
-      if (!game.overlays.isActive(UnifiedEditorPanel.overlayName)) {
-        game.overlays.add(UnifiedEditorPanel.overlayName);
-      }
+      // Clear any other overlays when entering edit mode
+      game.overlays.clear();
     } else {
       _logger.info('switching to gameplay mode');
       game.gameMode.value = GameMode.gameplay;
-      // Hide editor panel when entering gameplay mode
-      game.overlays.remove(UnifiedEditorPanel.overlayName);
-
-      // Restore player control - find Player entity and reset all notifiers
+      // Restore player control when exiting edit mode
       _restorePlayerControl(game);
     }
 

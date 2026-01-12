@@ -16,7 +16,6 @@ import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
-import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
 
 /// The two main modes of the game: gameplay (playing) and editing (world building).
 enum GameMode {
@@ -256,9 +255,8 @@ class GameArea extends FlameGame
     // Set up auto-save listener
     _setupTemplateAutoSave();
 
-    // Open inspector for editing
+    // Select entity for editing (Properties panel is already visible in editing mode)
     selectedEntities.value = {_templateEditingEntity!};
-    overlays.add(UnifiedEditorPanel.overlayName);
   }
 
   /// Sets up a listener to auto-save template changes.
@@ -302,9 +300,8 @@ class GameArea extends FlameGame
     // Set up auto-save listener (reuse existing method)
     _setupTemplateAutoSave();
 
-    // Open inspector for editing
+    // Select entity for editing (Properties panel is already visible in editing mode)
     selectedEntities.value = {_templateEditingEntity!};
-    overlays.add(UnifiedEditorPanel.overlayName);
   }
 
   /// Shows a dialog to input a template name.

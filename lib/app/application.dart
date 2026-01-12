@@ -6,7 +6,11 @@ import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/components.dart' show Name, HasParent;
 import 'package:rogueverse/game/game_area.dart';
-import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
+import 'package:rogueverse/app/widgets/panels/dock_panel.dart';
+import 'package:rogueverse/app/widgets/panels/panel_section.dart';
+import 'package:rogueverse/app/widgets/panels/entity_list_panel.dart';
+import 'package:rogueverse/app/widgets/panels/templates_panel.dart';
+import 'package:rogueverse/app/widgets/panels/properties_panel.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/hierarchy_panel/hierarchy_panel.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
@@ -84,12 +88,10 @@ class _ApplicationState extends State<Application> {
   void _toggleGameMode() {
     if (_game.gameMode.value == GameMode.gameplay) {
       _game.gameMode.value = GameMode.editing;
-      if (!_game.overlays.isActive(UnifiedEditorPanel.overlayName)) {
-        _game.overlays.add(UnifiedEditorPanel.overlayName);
-      }
+      // Clear any other overlays when entering edit mode
+      _game.overlays.clear();
     } else {
       _game.gameMode.value = GameMode.gameplay;
-      _game.overlays.remove(UnifiedEditorPanel.overlayName);
       _restorePlayerControl();
     }
   }
@@ -142,8 +144,11 @@ class _ApplicationState extends State<Application> {
         ),
         drawer: NavigationDrawerContent(
           onEditorPressed: () {
-            _game.overlays.clear();
-            _game.overlays.add(UnifiedEditorPanel.overlayName);
+            // Editor is now shown via dock panels in edit mode
+            if (_game.gameMode.value != GameMode.editing) {
+              _toggleGameMode();
+            }
+            Navigator.of(context).pop(); // Close drawer
           },
           onHierarchyNavigatorPressed: () {
             _game.overlays.clear();
@@ -158,68 +163,100 @@ class _ApplicationState extends State<Application> {
           selectedEntityNotifier: _game.selectedEntity,
           world: _game.currentWorld,
         ),
-        body: Stack(
-          children: [
-            Listener(
-              behavior: HitTestBehavior.opaque,
-              onPointerDown: _onPointerDown,
-              onPointerMove: _onPointerMove,
-              onPointerUp: _onPointerUp,
-              child: GameWidget(
-                focusNode: widget.gameAreaFocusNode,
-                game: _game,
-                overlayBuilderMap: {
-                  UnifiedEditorPanel.overlayName: (context, game) => Align(
-                        alignment: Alignment.centerRight,
-                        child: SizedBox(
-                          width: 280,
-                          child: UnifiedEditorPanel(
-                            entityNotifier: _game.selectedEntity,
-                            selectedTemplateNotifier: _game.selectedTemplate,
-                            gameModeNotifier: _game.gameMode,
-                            onCreateTemplate: () async {
-                              await _game.startTemplateCreation(context);
-                            },
-                            onEditTemplate: (template) async {
-                              await _game.startTemplateEditing(context, template);
-                            },
-                            onClose: () {
-                              _game.overlays.remove(UnifiedEditorPanel.overlayName);
-                            },
+        body: ValueListenableBuilder<GameMode>(
+          valueListenable: _game.gameMode,
+          builder: (context, gameMode, _) {
+            final isEditingMode = gameMode == GameMode.editing;
+
+            return Stack(
+              children: [
+                // Game area (center)
+                Listener(
+                  behavior: HitTestBehavior.opaque,
+                  onPointerDown: _onPointerDown,
+                  onPointerMove: _onPointerMove,
+                  onPointerUp: _onPointerUp,
+                  child: GameWidget(
+                    focusNode: widget.gameAreaFocusNode,
+                    game: _game,
+                    overlayBuilderMap: {
+                      HierarchyPanel.overlayName: (context, game) => Align(
+                            alignment: Alignment.centerLeft,
+                            child: SizedBox(
+                              width: 320,
+                              child: HierarchyPanel(
+                                world: _game.currentWorld,
+                                viewedParentIdNotifier: _game.viewedParentId,
+                                onClose: () {
+                                  _game.overlays.remove(HierarchyPanel.overlayName);
+                                },
+                              ),
+                            ),
                           ),
+                      VisionObserverPanel.overlayName: (context, game) => Align(
+                            alignment: Alignment.centerLeft,
+                            child: SizedBox(
+                              width: 280,
+                              child: VisionObserverPanel(
+                                world: _game.currentWorld,
+                                observerEntityIdNotifier: _game.observerEntityId,
+                                viewedParentIdNotifier: _game.viewedParentId,
+                                onClose: () {
+                                  _game.overlays.remove(VisionObserverPanel.overlayName);
+                                },
+                              ),
+                            ),
+                          ),
+                    },
+                  ),
+                ),
+
+                // Left dock (editing mode only)
+                if (isEditingMode)
+                  DockPanel(
+                    side: DockSide.left,
+                    width: 280,
+                    children: [
+                      PanelSection(
+                        title: 'Entities',
+                        child: EntityListPanel(
+                          world: _game.currentWorld,
+                          viewedParentIdNotifier: _game.viewedParentId,
+                          selectedEntitiesNotifier: _game.selectedEntities,
                         ),
                       ),
-                  HierarchyPanel.overlayName: (context, game) => Align(
-                        alignment: Alignment.centerLeft,
-                        child: SizedBox(
-                          width: 320,
-                          child: HierarchyPanel(
-                            world: _game.currentWorld,
-                            viewedParentIdNotifier: _game.viewedParentId,
-                            onClose: () {
-                              _game.overlays.remove(HierarchyPanel.overlayName);
-                            },
-                          ),
+                      PanelSection(
+                        title: 'Templates',
+                        child: TemplatesPanel(
+                          selectedTemplateNotifier: _game.selectedTemplate,
+                          onCreateTemplate: () async {
+                            await _game.startTemplateCreation(context);
+                          },
+                          onEditTemplate: (template) async {
+                            await _game.startTemplateEditing(context, template);
+                          },
                         ),
                       ),
-                  VisionObserverPanel.overlayName: (context, game) => Align(
-                        alignment: Alignment.centerLeft,
-                        child: SizedBox(
-                          width: 280,
-                          child: VisionObserverPanel(
-                            world: _game.currentWorld,
-                            observerEntityIdNotifier: _game.observerEntityId,
-                            viewedParentIdNotifier: _game.viewedParentId,
-                            onClose: () {
-                              _game.overlays.remove(VisionObserverPanel.overlayName);
-                            },
-                          ),
+                    ],
+                  ),
+
+                // Right dock (editing mode only)
+                if (isEditingMode)
+                  DockPanel(
+                    side: DockSide.right,
+                    width: 280,
+                    children: [
+                      PanelSection(
+                        title: 'Properties',
+                        child: PropertiesPanel(
+                          entityNotifier: _game.selectedEntity,
                         ),
                       ),
-                },
-              ),
-            ),
-          ],
+                    ],
+                  ),
+              ],
+            );
+          },
         ),
         ),
       ),
