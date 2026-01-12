@@ -65,7 +65,7 @@ class _ApplicationState extends State<Application> {
 
     if (playerEntity != null) {
       // Set the player as the selected/controlled entity
-      _game.selectedEntity.value = playerEntity;
+      _game.selectedEntities.value = {playerEntity};
       // Set the player as the vision observer
       _game.observerEntityId.value = playerEntity.id;
       // Set the view to the player's parent (room/location)
@@ -75,7 +75,7 @@ class _ApplicationState extends State<Application> {
       }
     } else {
       // No player found, just clear selection
-      _game.selectedEntity.value = null;
+      _game.selectedEntities.value = {};
       _game.observerEntityId.value = null;
     }
   }

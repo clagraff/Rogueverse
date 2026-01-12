@@ -12,7 +12,7 @@ import 'package:rogueverse/game/utils/grid_coordinates.dart'
 
 /// Handles tap events on the game grid to select entities at tapped positions.
 class EntityTapComponent extends PositionComponent with TapCallbacks {
-  final ValueNotifier<Entity?> notifier;
+  final ValueNotifier<Set<Entity>> notifier;
   final ValueNotifier<int?>? observerEntityIdNotifier;
   final ValueNotifier<int?> viewedParentNotifier;
   final double gridSize;
@@ -64,7 +64,7 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
     var tappedEntity = query.find(world).firstOrNull;
     if (tappedEntity != null) {
       _logger.info("entity tapped", {"entity": tappedEntity});
-      notifier.value = tappedEntity;
+      notifier.value = {tappedEntity};
       _logger.info("setting observed entity", {"entity": tappedEntity});
       observerEntityIdNotifier?.value = tappedEntity.id;
       matched = true;
@@ -76,9 +76,9 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
       }
     }
 
-    if (!matched && notifier.value != null) {
-      _logger.info("entity untapped", {"entityId": notifier.value!.id});
-      notifier.value = null;
+    if (!matched && notifier.value.isNotEmpty) {
+      _logger.info("entity untapped");
+      notifier.value = {};
       // Clear observer entity ID when deselecting
       _logger.info("clearing observed entity");
       observerEntityIdNotifier?.value = null;
@@ -86,40 +86,53 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   }
 }
 
-/// Displays a visual border around the currently selected entity.
-class EntityTapVisualizerComponent extends SvgVisualComponent with HasVisibility {
-  final ValueNotifier<Entity?> notifier;
+/// Displays visual borders around all currently selected entities.
+class EntityTapVisualizerComponent extends PositionComponent {
+  final ValueNotifier<Set<Entity>> notifier;
+  final List<SvgVisualComponent> _borders = [];
 
   /// Creates a visualizer that tracks entity selection changes.
   ///
-  /// [notifier] provides the currently selected entity. Instead of adding a
-  /// listener, we check the value each frame. This is so if the entity itself
-  /// moves, we need this component to match its movements.
-  EntityTapVisualizerComponent(this.notifier)
-      : super(
-            svgAssetPath: 'images/border.svg',
-            size: Vector2(32, 32),
-            position: Vector2(0, 0)) {
-    isVisible = false;
-  }
+  /// [notifier] provides the currently selected entities. Instead of adding a
+  /// listener, we check the value each frame. This is so if an entity
+  /// moves, we need the borders to match their movements.
+  EntityTapVisualizerComponent(this.notifier);
 
-  /// Updates the border position to match the selected entity's location.
+  /// Updates border positions to match the selected entities' locations.
   @override
   void update(double dt) {
-    var entity = notifier.value;
-    if (entity == null) {
-      isVisible = false;
-      return;
+    final entities = notifier.value.toList();
+
+    // Remove excess borders
+    while (_borders.length > entities.length) {
+      final border = _borders.removeLast();
+      border.removeFromParent();
     }
 
-    var lp = entity.get<LocalPosition>();
-    if (lp == null) {
-      isVisible = false;
-      return;
+    // Add borders if needed
+    while (_borders.length < entities.length) {
+      final border = SvgVisualComponent(
+        svgAssetPath: 'images/border.svg',
+        size: Vector2(32, 32),
+        position: Vector2(0, 0),
+      );
+      _borders.add(border);
+      add(border);
     }
 
-    position = GridCoordinates.gridToScreen(lp);
-    isVisible = true;
+    // Update positions (entities without LocalPosition get positioned offscreen)
+    for (var i = 0; i < entities.length; i++) {
+      final entity = entities[i];
+      final border = _borders[i];
+      final lp = entity.get<LocalPosition>();
+
+      if (lp != null) {
+        border.position = GridCoordinates.gridToScreen(lp);
+      } else {
+        // Move offscreen if no position
+        border.position = Vector2(-1000, -1000);
+      }
+    }
 
     super.update(dt);
   }

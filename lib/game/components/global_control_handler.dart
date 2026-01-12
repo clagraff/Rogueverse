@@ -9,13 +9,14 @@ import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/game/game_area.dart';
 
-/// Handles global game controls (Space to advance tick, ESC to deselect) that work regardless of entity selection.
+/// Handles global gameplay controls (Space to advance tick, ESC to deselect/release control).
 ///
-/// This component listens to keyboard input for game-level actions that should always be
-/// available, such as advancing the game tick and deselecting entities.
+/// This component listens to keyboard input for gameplay-level actions.
+/// Enabled in gameplay mode, disabled in editing mode.
 class GlobalControlHandler extends PositionComponent with KeyboardHandler {
-  final ValueNotifier<Entity?> selectedEntityNotifier;
+  final ValueNotifier<Set<Entity>> selectedEntityNotifier;
   final _keybindings = KeyBindingService.instance;
+  final _logger = Logger("GlobalControlHandler");
 
   /// Whether this handler is enabled. Disabled in editing mode.
   bool isEnabled = true;
@@ -28,11 +29,11 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
 
     final game = (parent?.findGame() as GameArea);
 
-    Logger("GlobalControlHandler").info("key event: logicalKey=${event.logicalKey.debugName}");
+    _logger.fine("key event: logicalKey=${event.logicalKey.debugName}");
 
     // Advance tick action
     if (_keybindings.matches('game.advanceTick', keysPressed)) {
-      Logger("GlobalControlHandler").info("advancing tick");
+      _logger.info("advancing tick");
       game.tickEcs();
       return false;
     }
@@ -43,19 +44,20 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
     // "release control" behavior may not be intuitive. For now, Esc does nothing
     // in gameplay mode unless actively controlling another entity.
     if (_keybindings.matches('game.deselect', keysPressed)) {
-      Logger("GlobalControlHandler").info("deselect pressed");
+      _logger.info("deselect pressed");
       final selected = selectedEntityNotifier.value;
 
-      if (selected != null) {
-        // Check if this entity is being controlled by someone
+      if (selected.isNotEmpty) {
+        // Check if any selected entity is being controlled by someone
         final world = game.currentWorld;
         final controllingMap = world.get<Controlling>();
+        final firstSelected = selected.first;
 
         for (final controlling in controllingMap.values) {
-          if (controlling.controlledEntityId == selected.id) {
+          if (controlling.controlledEntityId == firstSelected.id) {
             // This entity is being controlled - release it
-            Logger("GlobalControlHandler").info("releasing control of entity ${selected.id}");
-            selected.upsert(ReleasesControlIntent());
+            _logger.info("releasing control of entity ${firstSelected.id}");
+            firstSelected.upsert(ReleasesControlIntent());
             return false;
           }
         }
@@ -63,20 +65,20 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
         // In gameplay mode, don't deselect the player - Esc only releases control
         // Deselection only makes sense in editing mode for stopping entity inspection
         if (game.gameMode.value == GameMode.gameplay) {
-          Logger("GlobalControlHandler").info("in gameplay mode, not deselecting");
+          _logger.info("in gameplay mode, not deselecting");
           return false;
         }
 
-        // Not being controlled and in editing mode - deselect entity
-        Logger("GlobalControlHandler").info("deselecting entity");
-        selectedEntityNotifier.value = null;
+        // Not being controlled and in editing mode - deselect entities
+        _logger.info("deselecting entities");
+        selectedEntityNotifier.value = {};
         game.observerEntityId.value = null;
         game.overlays.remove(UnifiedEditorPanel.overlayName);
         return false;
       }
     }
 
-    Logger("GlobalControlHandler").info("not handling event");
+    _logger.info("not handling event");
     return true;
   }
 }

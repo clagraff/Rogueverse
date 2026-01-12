@@ -59,7 +59,7 @@ class GameModeToggle extends Component with KeyboardHandler {
 
     if (playerEntity != null) {
       // Set the player as the selected/controlled entity
-      game.selectedEntity.value = playerEntity;
+      game.selectedEntities.value = {playerEntity};
       // Set the player as the vision observer
       game.observerEntityId.value = playerEntity.id;
       // Set the view to the player's parent (room/location)
@@ -70,7 +70,7 @@ class GameModeToggle extends Component with KeyboardHandler {
       _logger.info('Restored player control: entity ${playerEntity.id}');
     } else {
       // No player found, just clear selection
-      game.selectedEntity.value = null;
+      game.selectedEntities.value = {};
       game.observerEntityId.value = null;
       _logger.warning('No Player entity found to restore control');
     }

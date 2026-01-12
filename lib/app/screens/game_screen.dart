@@ -11,9 +11,12 @@ import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/events.dart';
+import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';
+import 'package:rogueverse/game/components/drag_select_component.dart';
+import 'package:rogueverse/game/components/editor_control_handler.dart';
 import 'package:rogueverse/game/components/entity_drag_mover.dart';
 import 'package:rogueverse/game/components/entity_hover_tracker.dart';
 import 'package:rogueverse/game/components/entity_tap_component.dart';
@@ -28,6 +31,7 @@ import 'package:rogueverse/game/components/template_entity_spawner.dart';
 import 'package:rogueverse/game/components/overlay_toggle.dart';
 import 'package:rogueverse/game/components/vision_cone.dart';
 import 'package:rogueverse/game/game_area.dart';
+import 'package:rogueverse/game/utils/grid_coordinates.dart';
 import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
 import 'package:rogueverse/game/hud/health_bar.dart';
 
@@ -43,7 +47,9 @@ class GameScreen extends flame.World with Disposer {
   late PositionalControlHandler _positionalControlHandler;
   late GlobalControlHandler _globalControlHandler;
   late InventoryControlHandler _inventoryControlHandler;
+  late EditorControlHandler _editorControlHandler;
   late EntityTapComponent _entityTapComponent;
+  late DragSelectComponent _dragSelectComponent;
 
   GameScreen(FocusNode focusNode) {
     gameFocusNode = focusNode;
@@ -91,11 +97,44 @@ class GameScreen extends flame.World with Disposer {
     }));
 
     add(GridTapComponent(32, gridNotifier));
-    _entityTapComponent = EntityTapComponent(32, game.selectedEntity, game.currentWorld,
+    _entityTapComponent = EntityTapComponent(32, game.selectedEntities, game.currentWorld,
         observerEntityIdNotifier: game.observerEntityId, viewedParentNotifier: game.viewedParentId);
     add(_entityTapComponent);
-    add(EntityTapVisualizerComponent(game.selectedEntity));
+    add(EntityTapVisualizerComponent(game.selectedEntities));
     add(GridTapVisualizerComponent(gridNotifier));
+
+    // Add drag-select component for multi-select in editing mode
+    _dragSelectComponent = DragSelectComponent(
+      isEnabled: false, // Starts disabled, enabled in editing mode
+      focusNode: gameFocusNode, // Ensure focus stays on game area after drag
+      onSelectionComplete: (rect) {
+        // Query all entities with LocalPosition in the viewed parent
+        var query = Query().require<LocalPosition>();
+        final viewedParentId = game.viewedParentId.value;
+        if (viewedParentId != null) {
+          query = query.require<HasParent>((hp) => hp.parentEntityId == viewedParentId);
+        } else {
+          query = query.exclude<HasParent>();
+        }
+
+        final selected = <Entity>{};
+        for (final entity in query.find(game.currentWorld)) {
+          final lp = entity.get<LocalPosition>()!;
+          final screenPos = GridCoordinates.gridToScreen(lp);
+          // Check if entity center is within selection rectangle
+          final entityCenter = screenPos + flame.Vector2.all(16); // Half of 32px tile
+          if (rect.contains(Offset(entityCenter.x, entityCenter.y))) {
+            selected.add(entity);
+          }
+        }
+
+        if (selected.isNotEmpty) {
+          game.selectedEntities.value = selected;
+          _logger.info("Drag-selected ${selected.length} entities");
+        }
+      },
+    );
+    add(_dragSelectComponent);
 
     add(FpsComponent());
     add(TimeTrackComponent());
@@ -138,8 +177,12 @@ class GameScreen extends flame.World with Disposer {
     );
     add(_inventoryControlHandler);
 
-    _globalControlHandler = GlobalControlHandler(selectedEntityNotifier: game.selectedEntity);
+    _globalControlHandler = GlobalControlHandler(selectedEntityNotifier: game.selectedEntities);
     add(_globalControlHandler);
+
+    // Add editor control handler (DEL to delete, etc.) - enabled in editing mode
+    _editorControlHandler = EditorControlHandler(selectedEntitiesNotifier: game.selectedEntities);
+    add(_editorControlHandler);
 
     // Add game mode toggle (Ctrl+` to switch between gameplay and editing)
     add(GameModeToggle());
@@ -147,10 +190,14 @@ class GameScreen extends flame.World with Disposer {
     // Listen to game mode changes and update handler enabled states
     game.gameMode.addListener(() {
       final isGameplay = game.gameMode.value == GameMode.gameplay;
+      // Gameplay mode handlers
       _positionalControlHandler.isEnabled = isGameplay;
       _globalControlHandler.isEnabled = isGameplay;
       _inventoryControlHandler.isEnabled = isGameplay;
-      _entityTapComponent.isEnabled = !isGameplay; // Entity selection only in editing mode
+      // Editing mode handlers
+      _entityTapComponent.isEnabled = !isGameplay;
+      _dragSelectComponent.isEnabled = !isGameplay;
+      _editorControlHandler.isEnabled = !isGameplay;
       _logger.info("Game mode changed to ${game.gameMode.value}, gameplay controls ${isGameplay ? 'enabled' : 'disabled'}");
     });
 
@@ -216,7 +263,7 @@ class GameScreen extends flame.World with Disposer {
         );
     if (playerEntity != null) {
       // Set the player as the selected/controlled entity
-      game.selectedEntity.value = playerEntity;
+      game.selectedEntities.value = {playerEntity};
       // Set the player as the vision observer
       game.observerEntityId.value = playerEntity.id;
       // Set the view to the player's parent (room/location)

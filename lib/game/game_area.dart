@@ -34,7 +34,13 @@ class GameArea extends FlameGame
 
   final Logger _logger = Logger("GameArea");
 
+  /// The currently selected entities for inspection/editing in the inspector panel.
+  /// Supports multi-select for batch operations (delete, move, etc.).
+  final ValueNotifier<Set<Entity>> selectedEntities = ValueNotifier({});
+
   /// The currently selected entity for inspection/editing in the inspector panel.
+  /// This is a convenience notifier that stays in sync with selectedEntities.
+  /// Returns the first selected entity, or null if none selected.
   final ValueNotifier<Entity?> selectedEntity = ValueNotifier(null);
 
   /// The currently selected entity template in the template panel.
@@ -81,6 +87,11 @@ class GameArea extends FlameGame
   ///
   /// [gameFocusNode] - The focus node used to capture keyboard input for the game.
   GameArea(FocusNode gameFocusNode) {
+    // Sync selectedEntities → selectedEntity for backwards compatibility
+    selectedEntities.addListener(() {
+      selectedEntity.value = selectedEntities.value.firstOrNull;
+    });
+
     world = GameScreen(gameFocusNode);
     var systems = [
       HierarchySystem(), // Rebuild hierarchy cache FIRST (other systems may use it)
@@ -109,7 +120,7 @@ class GameArea extends FlameGame
 
       // TODO: need to check the JSON state AFTER we take control, to see if the planet has visible entities, a vision radius, etc.
       // Update which entity we are controlling and viewing based on which has just gained control.
-      selectedEntity.value = controlledEntity;
+      selectedEntities.value = {controlledEntity};
       observerEntityId.value = controlledEntity.id;
       viewedParentId.value = controlledEntity.get<HasParent>()?.parentEntityId;
 
@@ -120,19 +131,19 @@ class GameArea extends FlameGame
         .onComponentRemoved<Controlling>()
         .listen((change) {
       // Switch selectedEntity back to the actor
-      selectedEntity.value = currentWorld.getEntity(change.entityId);
+      selectedEntities.value = {currentWorld.getEntity(change.entityId)};
     });
 
     // Clear selected entity and observer when switching to a different parent view
     viewedParentId.addListener(() {
-      selectedEntity.value = null;
+      selectedEntities.value = {};
       observerEntityId.value = null;
     });
 
     // Clear selected entity and observer when entering template placement mode
     selectedTemplate.addListener(() {
       if (selectedTemplate.value != null) {
-        selectedEntity.value = null;
+        selectedEntities.value = {};
         observerEntityId.value = null;
       }
     });
@@ -246,7 +257,7 @@ class GameArea extends FlameGame
     _setupTemplateAutoSave();
 
     // Open inspector for editing
-    selectedEntity.value = _templateEditingEntity;
+    selectedEntities.value = {_templateEditingEntity!};
     overlays.add(UnifiedEditorPanel.overlayName);
   }
 
@@ -292,7 +303,7 @@ class GameArea extends FlameGame
     _setupTemplateAutoSave();
 
     // Open inspector for editing
-    selectedEntity.value = _templateEditingEntity;
+    selectedEntities.value = {_templateEditingEntity!};
     overlays.add(UnifiedEditorPanel.overlayName);
   }
 
