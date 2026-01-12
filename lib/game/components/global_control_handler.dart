@@ -25,16 +25,20 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    if (!isEnabled || event is! KeyDownEvent) return true;
+    // Handle both initial key press and key repeat (for continuous actions while holding)
+    if (!isEnabled || (event is! KeyDownEvent && event is! KeyRepeatEvent)) return true;
 
     final game = (parent?.findGame() as GameArea);
 
     _logger.fine("key event: logicalKey=${event.logicalKey.debugName}");
 
-    // Advance tick action
+    // Wait action (formerly advance tick - now queues a "do nothing" intent)
     if (_keybindings.matches('game.advanceTick', keysPressed)) {
-      _logger.info("advancing tick");
-      game.tickEcs();
+      final selected = selectedEntityNotifier.value;
+      if (selected.isNotEmpty) {
+        _logger.info("setting wait intent");
+        selected.first.setIntent(WaitIntent());
+      }
       return false;
     }
 
@@ -57,7 +61,7 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
           if (controlling.controlledEntityId == firstSelected.id) {
             // This entity is being controlled - release it
             _logger.info("releasing control of entity ${firstSelected.id}");
-            firstSelected.upsert(ReleasesControlIntent());
+            firstSelected.setIntent(ReleasesControlIntent());
             return false;
           }
         }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
@@ -22,10 +21,6 @@ class LocalPositionMetadata extends ComponentMetadata {
       builder: (context, snapshot) {
         final localPosition = entity.get<LocalPosition>();
         if (localPosition == null) return const SizedBox.shrink();
-
-        Logger("LocalPositionSection").info(
-          "Rebuilding content with x=${localPosition.x}, y=${localPosition.y}",
-        );
 
         return Column(
           children: [

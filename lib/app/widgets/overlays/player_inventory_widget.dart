@@ -2,7 +2,6 @@ import 'package:collection/collection.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:logging/logging.dart';
 
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -79,10 +78,8 @@ class _PlayerInventoryWidgetState extends State<PlayerInventoryWidget> {
       final entry = indexedEntry.value;
 
       onSelectChangedFn(s) {
-        Logger("player_inventory_widget").info("Tapped: $s");
         if (s == true) {
           setState(() {
-            Logger("player_inventory_widget").info("selected = $index");
             selected = index;
           });
         } else {

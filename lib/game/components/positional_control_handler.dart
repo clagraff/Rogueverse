@@ -32,9 +32,11 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
-    if (!isEnabled || event is! KeyDownEvent) return true;
+    // Handle both initial key press and key repeat (for continuous movement while holding)
+    if (!isEnabled || (event is! KeyDownEvent && event is! KeyRepeatEvent)) return true;
 
     final entity = selectedEntityNotifier.value;
+    _logger.info("onKeyEvent: isEnabled=$isEnabled, entity=$entity, hasLocalPosition=${entity?.has<LocalPosition>()}");
     if (entity == null || !entity.has<LocalPosition>()) {
       _logger.warning("no entity or entity has no local position");
       return true; // No entity selected or entity can't move
@@ -88,7 +90,6 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
 
     // Priority 1: Check for portal at target position
     if (_tryUsePortal(entity, entityParentId, targetX, targetY, curr.x, curr.y)) {
-      game.tickEcs();
       return;
     }
 
@@ -96,8 +97,7 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
     final closedDoor = _findClosedDoorAtPosition(entityParentId, targetX, targetY);
     if (closedDoor != null) {
       _logger.finer("entity=$entity opening door: closedDoor=$closedDoor");
-      entity.upsert<OpenIntent>(OpenIntent(targetEntityId: closedDoor.id));
-      game.tickEcs();
+      entity.setIntent(OpenIntent(targetEntityId: closedDoor.id));
       return;
     }
 
@@ -108,19 +108,16 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
       _logger.finer("entity=$entity setting MoveByIntent(dx: ${dv.x.truncate()}, dy:${dv.y.truncate()}) from $curr");
 
       // Nothing obstructing movement, so move
-      entity.upsert(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
+      entity.setIntent(MoveByIntent(dx: dv.x.truncate(), dy: dv.y.truncate()));
     } else {
       _logger.finer("checking interactions for blocked path: targetEntity=$targetEntity");
 
       // Check if we can attack it
       final hasHealth = targetEntity.get<Health>() != null;
       if (hasHealth) {
-        entity.upsert<AttackIntent>(AttackIntent(targetEntity.id));
+        entity.setIntent(AttackIntent(targetEntity.id));
       }
     }
-
-    // Always tick after movement input (even if movement was blocked)
-    game.tickEcs();
   }
 
   /// Checks for a portal at the target position and attempts to use it if found.
@@ -152,7 +149,7 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
 
     if (canUse) {
       _logger.finer("Setting UsePortalIntent on entity=$entity for portalEntityId=${portalAtTarget.id}");
-      entity.upsert(UsePortalIntent(portalEntityId: portalAtTarget.id));
+      entity.setIntent(UsePortalIntent(portalEntityId: portalAtTarget.id));
       return true;
     }
 
@@ -205,8 +202,7 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
 
     if (controlSeat != null) {
       _logger.finer("Found EnablesControl entity at position, adding WantsControlIntent");
-      entity.upsert(WantsControlIntent(targetEntityId: controlSeat.id));
-      game.tickEcs();
+      entity.setIntent(WantsControlIntent(targetEntityId: controlSeat.id));
       return;
     }
 
@@ -218,8 +214,7 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
     final firstItemAtFeet = pickupQuery.first(world);
 
     if (firstItemAtFeet != null) {
-      entity.upsert<PickupIntent>(PickupIntent(firstItemAtFeet.id));
-      game.tickEcs();
+      entity.setIntent(PickupIntent(firstItemAtFeet.id));
       return;
     }
 

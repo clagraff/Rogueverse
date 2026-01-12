@@ -158,10 +158,10 @@ class ComponentMapper extends ClassMapperBase<Component> {
       LifetimeMapper.ensureInitialized();
       BeforeTickMapper.ensureInitialized();
       AfterTickMapper.ensureInitialized();
+      IntentComponentMapper.ensureInitialized();
       CellMapper.ensureInitialized();
       NameMapper.ensureInitialized();
       LocalPositionMapper.ensureInitialized();
-      MoveByIntentMapper.ensureInitialized();
       DidMoveMapper.ensureInitialized();
       BlocksMovementMapper.ensureInitialized();
       BlockedMoveMapper.ensureInitialized();
@@ -169,7 +169,6 @@ class ComponentMapper extends ClassMapperBase<Component> {
       BehaviorMapper.ensureInitialized();
       RenderableMapper.ensureInitialized();
       HealthMapper.ensureInitialized();
-      AttackIntentMapper.ensureInitialized();
       DidAttackMapper.ensureInitialized();
       WasAttackedMapper.ensureInitialized();
       DeadMapper.ensureInitialized();
@@ -177,7 +176,6 @@ class ComponentMapper extends ClassMapperBase<Component> {
       InventoryMaxCountMapper.ensureInitialized();
       InventoryFullFailureMapper.ensureInitialized();
       PickupableMapper.ensureInitialized();
-      PickupIntentMapper.ensureInitialized();
       PickedUpMapper.ensureInitialized();
       BlocksSightMapper.ensureInitialized();
       VisionRadiusMapper.ensureInitialized();
@@ -187,20 +185,13 @@ class ComponentMapper extends ClassMapperBase<Component> {
       PortalToPositionMapper.ensureInitialized();
       PortalToAnchorMapper.ensureInitialized();
       PortalAnchorMapper.ensureInitialized();
-      UsePortalIntentMapper.ensureInitialized();
       DidPortalMapper.ensureInitialized();
       FailedToPortalMapper.ensureInitialized();
       ControllableMapper.ensureInitialized();
       ControllingMapper.ensureInitialized();
       EnablesControlMapper.ensureInitialized();
       DockedMapper.ensureInitialized();
-      WantsControlIntentMapper.ensureInitialized();
-      ReleasesControlIntentMapper.ensureInitialized();
-      DockIntentMapper.ensureInitialized();
-      UndockIntentMapper.ensureInitialized();
       OpenableMapper.ensureInitialized();
-      OpenIntentMapper.ensureInitialized();
-      CloseIntentMapper.ensureInitialized();
       DidOpenMapper.ensureInitialized();
       DidCloseMapper.ensureInitialized();
     }
@@ -624,15 +615,7 @@ class AfterTickMapper extends SubClassMapperBase<AfterTick> {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = AfterTickMapper._());
       LifetimeMapper.ensureInitialized().addSubMapper(_instance!);
-      MoveByIntentMapper.ensureInitialized();
-      PickupIntentMapper.ensureInitialized();
-      UsePortalIntentMapper.ensureInitialized();
-      WantsControlIntentMapper.ensureInitialized();
-      ReleasesControlIntentMapper.ensureInitialized();
-      DockIntentMapper.ensureInitialized();
-      UndockIntentMapper.ensureInitialized();
-      OpenIntentMapper.ensureInitialized();
-      CloseIntentMapper.ensureInitialized();
+      IntentComponentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -746,6 +729,208 @@ class _AfterTickCopyWithImpl<$R, $Out>
   AfterTickCopyWith<$R2, AfterTick, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _AfterTickCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class IntentComponentMapper extends SubClassMapperBase<IntentComponent> {
+  IntentComponentMapper._();
+
+  static IntentComponentMapper? _instance;
+  static IntentComponentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = IntentComponentMapper._());
+      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      WaitIntentMapper.ensureInitialized();
+      MoveByIntentMapper.ensureInitialized();
+      AttackIntentMapper.ensureInitialized();
+      PickupIntentMapper.ensureInitialized();
+      UsePortalIntentMapper.ensureInitialized();
+      WantsControlIntentMapper.ensureInitialized();
+      ReleasesControlIntentMapper.ensureInitialized();
+      DockIntentMapper.ensureInitialized();
+      UndockIntentMapper.ensureInitialized();
+      OpenIntentMapper.ensureInitialized();
+      CloseIntentMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'IntentComponent';
+
+  static int _$lifetime(IntentComponent v) => v.lifetime;
+  static const Field<IntentComponent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<IntentComponent> fields = const {#lifetime: _f$lifetime};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'IntentComponent';
+  @override
+  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+
+  static IntentComponent _instantiate(DecodingData data) {
+    throw MapperException.missingSubclass(
+      'IntentComponent',
+      '__type',
+      '${data.value['__type']}',
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static IntentComponent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<IntentComponent>(map);
+  }
+
+  static IntentComponent fromJson(String json) {
+    return ensureInitialized().decodeJson<IntentComponent>(json);
+  }
+}
+
+mixin IntentComponentMappable {
+  String toJson();
+  Map<String, dynamic> toMap();
+  IntentComponentCopyWith<IntentComponent, IntentComponent, IntentComponent>
+  get copyWith;
+}
+
+abstract class IntentComponentCopyWith<$R, $In extends IntentComponent, $Out>
+    implements
+        AfterTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  IntentComponentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class WaitIntentMapper extends SubClassMapperBase<WaitIntent> {
+  WaitIntentMapper._();
+
+  static WaitIntentMapper? _instance;
+  static WaitIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = WaitIntentMapper._());
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'WaitIntent';
+
+  static int _$lifetime(WaitIntent v) => v.lifetime;
+  static const Field<WaitIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<WaitIntent> fields = const {#lifetime: _f$lifetime};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'WaitIntent';
+  @override
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
+
+  static WaitIntent _instantiate(DecodingData data) {
+    return WaitIntent();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static WaitIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<WaitIntent>(map);
+  }
+
+  static WaitIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<WaitIntent>(json);
+  }
+}
+
+mixin WaitIntentMappable {
+  String toJson() {
+    return WaitIntentMapper.ensureInitialized().encodeJson<WaitIntent>(
+      this as WaitIntent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return WaitIntentMapper.ensureInitialized().encodeMap<WaitIntent>(
+      this as WaitIntent,
+    );
+  }
+
+  WaitIntentCopyWith<WaitIntent, WaitIntent, WaitIntent> get copyWith =>
+      _WaitIntentCopyWithImpl<WaitIntent, WaitIntent>(
+        this as WaitIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return WaitIntentMapper.ensureInitialized().stringifyValue(
+      this as WaitIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return WaitIntentMapper.ensureInitialized().equalsValue(
+      this as WaitIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return WaitIntentMapper.ensureInitialized().hashValue(this as WaitIntent);
+  }
+}
+
+extension WaitIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, WaitIntent, $Out> {
+  WaitIntentCopyWith<$R, WaitIntent, $Out> get $asWaitIntent =>
+      $base.as((v, t, t2) => _WaitIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class WaitIntentCopyWith<$R, $In extends WaitIntent, $Out>
+    implements IntentComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  WaitIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _WaitIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, WaitIntent, $Out>
+    implements WaitIntentCopyWith<$R, WaitIntent, $Out> {
+  _WaitIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<WaitIntent> $mapper =
+      WaitIntentMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  WaitIntent $make(CopyWithData data) => WaitIntent();
+
+  @override
+  WaitIntentCopyWith<$R2, WaitIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _WaitIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class CellMapper extends SubClassMapperBase<Cell> {
@@ -1082,7 +1267,7 @@ class MoveByIntentMapper extends SubClassMapperBase<MoveByIntent> {
   static MoveByIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = MoveByIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -1113,7 +1298,8 @@ class MoveByIntentMapper extends SubClassMapperBase<MoveByIntent> {
   @override
   final dynamic discriminatorValue = 'MoveByIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static MoveByIntent _instantiate(DecodingData data) {
     return MoveByIntent(dx: data.dec(_f$dx), dy: data.dec(_f$dy));
@@ -1180,9 +1366,7 @@ extension MoveByIntentValueCopy<$R, $Out>
 }
 
 abstract class MoveByIntentCopyWith<$R, $In extends MoveByIntent, $Out>
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call({int? dx, int? dy});
   MoveByIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -2131,7 +2315,7 @@ class AttackIntentMapper extends SubClassMapperBase<AttackIntent> {
   static AttackIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = AttackIntentMapper._());
-      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -2144,16 +2328,26 @@ class AttackIntentMapper extends SubClassMapperBase<AttackIntent> {
     'targetId',
     _$targetId,
   );
+  static int _$lifetime(AttackIntent v) => v.lifetime;
+  static const Field<AttackIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
 
   @override
-  final MappableFields<AttackIntent> fields = const {#targetId: _f$targetId};
+  final MappableFields<AttackIntent> fields = const {
+    #targetId: _f$targetId,
+    #lifetime: _f$lifetime,
+  };
 
   @override
   final String discriminatorKey = '__type';
   @override
   final dynamic discriminatorValue = 'AttackIntent';
   @override
-  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static AttackIntent _instantiate(DecodingData data) {
     return AttackIntent(data.dec(_f$targetId));
@@ -2220,7 +2414,7 @@ extension AttackIntentValueCopy<$R, $Out>
 }
 
 abstract class AttackIntentCopyWith<$R, $In extends AttackIntent, $Out>
-    implements ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetId});
   AttackIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -3159,7 +3353,7 @@ class PickupIntentMapper extends SubClassMapperBase<PickupIntent> {
   static PickupIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = PickupIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -3190,7 +3384,8 @@ class PickupIntentMapper extends SubClassMapperBase<PickupIntent> {
   @override
   final dynamic discriminatorValue = 'PickupIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static PickupIntent _instantiate(DecodingData data) {
     return PickupIntent(data.dec(_f$targetEntityId));
@@ -3257,9 +3452,7 @@ extension PickupIntentValueCopy<$R, $Out>
 }
 
 abstract class PickupIntentCopyWith<$R, $In extends PickupIntent, $Out>
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetEntityId});
   PickupIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -4587,7 +4780,7 @@ class UsePortalIntentMapper extends SubClassMapperBase<UsePortalIntent> {
   static UsePortalIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = UsePortalIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -4625,7 +4818,8 @@ class UsePortalIntentMapper extends SubClassMapperBase<UsePortalIntent> {
   @override
   final dynamic discriminatorValue = 'UsePortalIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static UsePortalIntent _instantiate(DecodingData data) {
     return UsePortalIntent(
@@ -4695,9 +4889,7 @@ extension UsePortalIntentValueCopy<$R, $Out>
 }
 
 abstract class UsePortalIntentCopyWith<$R, $In extends UsePortalIntent, $Out>
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call({int? portalEntityId, int? specificAnchorId});
   UsePortalIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
@@ -5572,7 +5764,7 @@ class WantsControlIntentMapper extends SubClassMapperBase<WantsControlIntent> {
   static WantsControlIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = WantsControlIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -5603,7 +5795,8 @@ class WantsControlIntentMapper extends SubClassMapperBase<WantsControlIntent> {
   @override
   final dynamic discriminatorValue = 'WantsControlIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static WantsControlIntent _instantiate(DecodingData data) {
     return WantsControlIntent(targetEntityId: data.dec(_f$targetEntityId));
@@ -5679,9 +5872,7 @@ abstract class WantsControlIntentCopyWith<
   $In extends WantsControlIntent,
   $Out
 >
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetEntityId});
   WantsControlIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
@@ -5722,7 +5913,7 @@ class ReleasesControlIntentMapper
   static ReleasesControlIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = ReleasesControlIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -5747,7 +5938,8 @@ class ReleasesControlIntentMapper
   @override
   final dynamic discriminatorValue = 'ReleasesControlIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static ReleasesControlIntent _instantiate(DecodingData data) {
     return ReleasesControlIntent();
@@ -5822,9 +6014,7 @@ abstract class ReleasesControlIntentCopyWith<
   $In extends ReleasesControlIntent,
   $Out
 >
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call();
   ReleasesControlIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
@@ -5858,7 +6048,7 @@ class DockIntentMapper extends SubClassMapperBase<DockIntent> {
   static DockIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = DockIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -5881,7 +6071,8 @@ class DockIntentMapper extends SubClassMapperBase<DockIntent> {
   @override
   final dynamic discriminatorValue = 'DockIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static DockIntent _instantiate(DecodingData data) {
     return DockIntent();
@@ -5946,9 +6137,7 @@ extension DockIntentValueCopy<$R, $Out>
 }
 
 abstract class DockIntentCopyWith<$R, $In extends DockIntent, $Out>
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call();
   DockIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -5980,7 +6169,7 @@ class UndockIntentMapper extends SubClassMapperBase<UndockIntent> {
   static UndockIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = UndockIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -6003,7 +6192,8 @@ class UndockIntentMapper extends SubClassMapperBase<UndockIntent> {
   @override
   final dynamic discriminatorValue = 'UndockIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static UndockIntent _instantiate(DecodingData data) {
     return UndockIntent();
@@ -6070,9 +6260,7 @@ extension UndockIntentValueCopy<$R, $Out>
 }
 
 abstract class UndockIntentCopyWith<$R, $In extends UndockIntent, $Out>
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call();
   UndockIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -6300,7 +6488,7 @@ class OpenIntentMapper extends SubClassMapperBase<OpenIntent> {
   static OpenIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = OpenIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -6331,7 +6519,8 @@ class OpenIntentMapper extends SubClassMapperBase<OpenIntent> {
   @override
   final dynamic discriminatorValue = 'OpenIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static OpenIntent _instantiate(DecodingData data) {
     return OpenIntent(targetEntityId: data.dec(_f$targetEntityId));
@@ -6396,9 +6585,7 @@ extension OpenIntentValueCopy<$R, $Out>
 }
 
 abstract class OpenIntentCopyWith<$R, $In extends OpenIntent, $Out>
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetEntityId});
   OpenIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
@@ -6436,7 +6623,7 @@ class CloseIntentMapper extends SubClassMapperBase<CloseIntent> {
   static CloseIntentMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = CloseIntentMapper._());
-      AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
     }
     return _instance!;
   }
@@ -6467,7 +6654,8 @@ class CloseIntentMapper extends SubClassMapperBase<CloseIntent> {
   @override
   final dynamic discriminatorValue = 'CloseIntent';
   @override
-  late final ClassMapperBase superMapper = AfterTickMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
 
   static CloseIntent _instantiate(DecodingData data) {
     return CloseIntent(targetEntityId: data.dec(_f$targetEntityId));
@@ -6532,9 +6720,7 @@ extension CloseIntentValueCopy<$R, $Out>
 }
 
 abstract class CloseIntentCopyWith<$R, $In extends CloseIntent, $Out>
-    implements
-        AfterTickCopyWith<$R, $In, $Out>,
-        ComponentCopyWith<$R, $In, $Out> {
+    implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
   $R call({int? targetEntityId});
   CloseIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);

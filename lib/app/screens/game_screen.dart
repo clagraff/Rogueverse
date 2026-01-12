@@ -38,7 +38,7 @@ import 'package:rogueverse/game/hud/health_bar.dart';
 class GameScreen extends flame.World with Disposer {
   late FocusNode gameFocusNode;
   final Set<int> _renderedEntities = {};
-  final Logger _logger = Logger("GameScreen");
+  static final _logger = Logger('GameScreen');
 
   StreamSubscription<Change>? _spawnListener;
   StreamSubscription<int?>? _viewedParentListener;
@@ -68,6 +68,8 @@ class GameScreen extends flame.World with Disposer {
     if (save != null) {
       //_initializeControlExample(game);
       game.currentWorld = save;
+      // Update tick scheduler to use the loaded world
+      game.tickScheduler.updateWorld(save);
     } else {
       //_initializeControlExample(game);
     }
@@ -89,7 +91,6 @@ class GameScreen extends flame.World with Disposer {
 
     var gridNotifier = ValueNotifier<XY>(XY(0, 0));
     add(FocusOnTapComponent(gameFocusNode, () {
-      Logger("game_screen").info("taking focus");
       // Only hide editor panel in gameplay mode - in editing mode, clicking selects entities
       if (game.gameMode.value == GameMode.gameplay) {
         game.overlays.remove(UnifiedEditorPanel.overlayName);
@@ -130,7 +131,7 @@ class GameScreen extends flame.World with Disposer {
 
         if (selected.isNotEmpty) {
           game.selectedEntities.value = selected;
-          _logger.info("Drag-selected ${selected.length} entities");
+          _logger.fine('drag-selected entities', {'count': selected.length});
         }
       },
     );
@@ -198,7 +199,7 @@ class GameScreen extends flame.World with Disposer {
       _entityTapComponent.isEnabled = !isGameplay;
       _dragSelectComponent.isEnabled = !isGameplay;
       _editorControlHandler.isEnabled = !isGameplay;
-      _logger.info("Game mode changed to ${game.gameMode.value}, gameplay controls ${isGameplay ? 'enabled' : 'disabled'}");
+      _logger.info('game mode changed', {'mode': game.gameMode.value.name});
     });
 
     // Setup a listener for when Renderable or LocalPosition are being added
@@ -212,8 +213,6 @@ class GameScreen extends flame.World with Disposer {
       // parent we are currently watching.
       if (change.componentType == Renderable('').componentType ||
           change.componentType == LocalPosition(x: 0, y: 0).componentType) {
-        Logger("game_screen").info(
-            "Entity(${change.entityId}) was given Renderable or LocalPosition");
         _spawnRenderableEntity(
           game,
           game.currentWorld.getEntity(change.entityId),
@@ -232,8 +231,7 @@ class GameScreen extends flame.World with Disposer {
           final newParent = changedEntity.get<HasParent>();
           if (newParent != null) {
             game.viewedParentId.value = newParent.parentEntityId;
-            Logger("game_screen").info(
-                "Selected entity parent changed - following to parent ${newParent.parentEntityId}");
+            _logger.info('following selected entity to new parent', {'parentId': newParent.parentEntityId});
           }
         }
       }
@@ -241,8 +239,6 @@ class GameScreen extends flame.World with Disposer {
 
     // TODO: why do we have this? Is this necessary? Dont we have a component that already does this?
     gridNotifier.addListener(() {
-      _logger.info("gridNotifier triggered", {"xy": gridNotifier.value});
-
       // var entities = game.currentWorld.get<LocalPosition>();
       // entities.forEach((id, comp) {
       //   if (comp.x == gridNotifier.value.x && comp.y == gridNotifier.value.y) {
@@ -271,7 +267,7 @@ class GameScreen extends flame.World with Disposer {
       if (playerParent != null) {
         game.viewedParentId.value = playerParent.parentEntityId;
       }
-      _logger.info("Auto-selected player entity: ${playerEntity.id}");
+      _logger.info('auto-selected player entity', {'id': playerEntity.id});
     }
 
     // Update the vision system on game-load for all observers.
@@ -287,7 +283,7 @@ class GameScreen extends flame.World with Disposer {
 
     // Listen to viewedParentId changes to filter rendered entities AND clear selection
     game.viewedParentId.addListener(() {
-      Logger("game_screen").info("viewedParentId changed to ${game.viewedParentId}");
+      _logger.fine('viewed parent changed', {'id': game.viewedParentId.value});
       _updateRenderedEntities(game);
 
       // Clear observer selection when changing viewed parent
@@ -297,17 +293,12 @@ class GameScreen extends flame.World with Disposer {
     // Listen to observerEntityId changes to immediately recalculate vision
     game.observerEntityId.addListener(() {
       final observerId = game.observerEntityId.value;
-      Logger("game_screen").info("Observer entity ID changed to: $observerId");
+      _logger.fine('observer entity changed', {'id': observerId});
       if (observerId != null) {
         // Find the VisionSystem and trigger immediate vision update
         final visionSystem =
             game.currentWorld.systems.whereType<VisionSystem>().firstOrNull;
-        Logger("game_screen")
-            .info("Vision system found: ${visionSystem != null}");
         if (visionSystem != null) {
-          Logger("game_screen")
-              .info("Updating vision for observer $observerId");
-
           // TODO: have to comment out the below line. Otherwise we can get into a ValueListener controller error when
           // we move Controls to a new entity, since would change our game.observerEntityId immediately and end up in here
           // before we are done processing, which somehow causes an issue.

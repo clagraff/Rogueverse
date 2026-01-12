@@ -117,6 +117,34 @@ class Entity {
     parentCell.notifyChange(Change(entityId: id, componentType: c.componentType, oldValue: existing?.value, newValue: c));
   }
 
+  /// Sets an intent on this entity, clearing any existing intents first.
+  ///
+  /// Only one [IntentComponent] should exist per entity at a time.
+  /// This method ensures that by removing all existing intents before
+  /// setting the new one.
+  void setIntent(IntentComponent intent) {
+    _logger.info("setIntent called on entity $id: ${intent.componentType}");
+
+    // Remove all existing IntentComponents
+    final componentsToRemove = <String>[];
+    parentCell.components.forEach((componentType, entitiesMap) {
+      if (entitiesMap.containsKey(id)) {
+        final component = entitiesMap[id];
+        if (component is IntentComponent) {
+          componentsToRemove.add(componentType);
+        }
+      }
+    });
+
+    for (final componentType in componentsToRemove) {
+      removeByName(componentType);
+    }
+
+    // Set the new intent
+    upsert(intent);
+    _logger.info("intent set successfully on entity $id");
+  }
+
   void remove<C>() {
     var entitiesWithComponent = parentCell.components.putIfAbsent(C.toString(), () => {});
     var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);

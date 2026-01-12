@@ -8,6 +8,7 @@ import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/game/components/vision_tile.dart';
 import 'package:rogueverse/game/game_area.dart';
 
 /// Renders a vision cone overlay showing which tiles an entity can see.
@@ -15,7 +16,7 @@ import 'package:rogueverse/game/game_area.dart';
 /// Updates automatically when the entity's VisibleEntities component changes.
 /// Tiles farther from the observer have less prominent fill color (gradient fade).
 /// Now dynamically updates based on GameArea.observerEntityId.
-class VisionConeComponent extends PositionComponent with HasPaint {
+class VisionConeComponent extends PositionComponent {
   static final _logger = Logger('VisionCone');
 
   final World world;
@@ -26,8 +27,10 @@ class VisionConeComponent extends PositionComponent with HasPaint {
   VoidCallback? _gameModeChangeListener;
   int? _currentObserverId;
 
-  // Cached vision data for rendering
-  Set<LocalPosition> _visibleTiles = {};
+  // Component pool for animated tiles
+  Set<LocalPosition> _previousVisibleTiles = {};
+  final Map<LocalPosition, VisionTile> _activeTiles = {};
+  final List<VisionTile> _pool = [];
   LocalPosition? _observerPosition;
 
   VisionConeComponent({
@@ -72,7 +75,7 @@ class VisionConeComponent extends PositionComponent with HasPaint {
 
     // Clear vision cone if no observer
     if (observedEntityId == null) {
-      _visibleTiles = {};
+      _fadeOutAllTiles();
       _observerPosition = null;
       return;
     }
@@ -80,7 +83,7 @@ class VisionConeComponent extends PositionComponent with HasPaint {
     // Check if observer has VisionRadius - if not, don't show vision cone
     final entity = world.getEntity(observedEntityId);
     if (!entity.has<VisionRadius>()) {
-      _visibleTiles = {};
+      _fadeOutAllTiles();
       _observerPosition = null;
       return;
     }
@@ -99,8 +102,8 @@ class VisionConeComponent extends PositionComponent with HasPaint {
   void _onVisionChanged(Change change) {
     _logger.fine('vision_changed: entity=$_currentObserverId, kind=${change.kind}');
     if (change.kind == ChangeKind.removed) {
-      // Entity lost vision - clear the cone
-      _visibleTiles = {};
+      // Entity lost vision - fade out all tiles
+      _fadeOutAllTiles();
       _observerPosition = null;
       return;
     }
@@ -109,7 +112,7 @@ class VisionConeComponent extends PositionComponent with HasPaint {
 
   void _regenerateVisionCone() {
     if (_currentObserverId == null) {
-      _visibleTiles = {};
+      _fadeOutAllTiles();
       _observerPosition = null;
       return;
     }
@@ -122,53 +125,85 @@ class VisionConeComponent extends PositionComponent with HasPaint {
         'vision_regenerated: entity=$_currentObserverId, tiles=${visibleEntities?.visibleTiles.length ?? 0}, position=(${position?.x},${position?.y})');
 
     if (visibleEntities == null || position == null) {
-      _visibleTiles = {};
+      _fadeOutAllTiles();
       _observerPosition = null;
       return;
     }
 
-    _visibleTiles = visibleEntities.visibleTiles;
+    final newTiles = visibleEntities.visibleTiles;
     _observerPosition = position;
 
-    // Flame will automatically call render() on next frame
+    // Hide vision cone in editing mode - fade out all tiles
+    final game = findGame() as GameArea?;
+    if (game != null && game.gameMode.value == GameMode.editing) {
+      _fadeOutAllTiles();
+      return;
+    }
+
+    // Tiles leaving visibility - fade out
+    final leavingTiles = _previousVisibleTiles.difference(newTiles);
+    for (final pos in leavingTiles) {
+      final tile = _activeTiles[pos];
+      if (tile != null) {
+        tile.hide(onComplete: () => _releaseTile(tile, pos));
+      }
+    }
+
+    // New tiles - acquire from pool, add as child, fade in
+    final newlyVisible = newTiles.difference(_previousVisibleTiles);
+    for (final pos in newlyVisible) {
+      final tile = _acquireTile();
+      _activeTiles[pos] = tile;
+      final targetAlpha = _calculateTargetAlpha(pos);
+      tile.show(
+        gridPosition: Vector2(pos.x * 32.0, pos.y * 32.0),
+        targetAlpha: targetAlpha,
+      );
+      add(tile);
+    }
+
+    // Existing tiles - update alpha if observer moved (distance changed)
+    final existingTiles = newTiles.intersection(_previousVisibleTiles);
+    for (final pos in existingTiles) {
+      final tile = _activeTiles[pos];
+      if (tile != null) {
+        tile.updateTargetAlpha(_calculateTargetAlpha(pos));
+      }
+    }
+
+    _previousVisibleTiles = Set.from(newTiles);
   }
 
-  @override
-  void render(Canvas canvas) {
-    if (_visibleTiles.isEmpty || _observerPosition == null) return;
-
-    // Hide vision cone in editing mode
-    final game = findGame() as GameArea?;
-    if (game != null && game.gameMode.value == GameMode.editing) return;
-
-    // Calculate max distance for gradient fade
-    final maxDistance = _calculateMaxDistance();
-
-    // Base color: semi-transparent yellow
-    const baseColor = Color(0xFFFFFF00); // Yellow
-
-    for (final tile in _visibleTiles) {
-      // Calculate distance from observer
-      final distance = _calculateDistance(_observerPosition!, tile);
-
-      // Calculate alpha: farther tiles are less prominent (fade out)
-      // Distance 0 (observer's tile) = max alpha (0.4)
-      // Max distance = min alpha (0.05)
-      final normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0.0;
-      final alpha = 0.4 - (normalizedDistance * 0.35); // Range: 0.4 -> 0.05
-
-      paint.color = baseColor.withValues(alpha: alpha.clamp(0.05, 0.4));
-      paint.style = PaintingStyle.fill;
-
-      // Draw tile as filled rectangle (32x32 grid)
-      final rect = Rect.fromLTWH(
-        tile.x * 32.0,
-        tile.y * 32.0,
-        32.0,
-        32.0,
-      );
-      canvas.drawRect(rect, paint);
+  /// Get a tile from pool or create new one.
+  VisionTile _acquireTile() {
+    if (_pool.isNotEmpty) {
+      return _pool.removeLast();
     }
+    return VisionTile();
+  }
+
+  /// Return tile to pool after fade-out completes.
+  void _releaseTile(VisionTile tile, LocalPosition pos) {
+    tile.removeFromParent();
+    _pool.add(tile);
+    _activeTiles.remove(pos);
+  }
+
+  /// Fade out all active tiles.
+  void _fadeOutAllTiles() {
+    for (final entry in _activeTiles.entries.toList()) {
+      entry.value.hide(onComplete: () => _releaseTile(entry.value, entry.key));
+    }
+    _previousVisibleTiles = {};
+  }
+
+  /// Calculate target alpha based on distance from observer.
+  double _calculateTargetAlpha(LocalPosition tile) {
+    if (_observerPosition == null) return 0.0;
+    final maxDistance = _calculateMaxDistance();
+    final distance = _calculateDistance(_observerPosition!, tile);
+    final normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0.0;
+    return (0.4 - (normalizedDistance * 0.35)).clamp(0.05, 0.4);
   }
 
   /// Calculate Euclidean distance between two positions
@@ -178,12 +213,12 @@ class VisionConeComponent extends PositionComponent with HasPaint {
     return sqrt(dx * dx + dy * dy);
   }
 
-  /// Find the maximum distance in the visible tiles set
+  /// Find the maximum distance in the active tiles set
   double _calculateMaxDistance() {
-    if (_visibleTiles.isEmpty || _observerPosition == null) return 0.0;
+    if (_activeTiles.isEmpty || _observerPosition == null) return 0.0;
 
     double max = 0.0;
-    for (final tile in _visibleTiles) {
+    for (final tile in _activeTiles.keys) {
       final distance = _calculateDistance(_observerPosition!, tile);
       if (distance > max) max = distance;
     }

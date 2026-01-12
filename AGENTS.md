@@ -56,4 +56,37 @@ dart run build_runner build --delete-conflicting-outputs
 ### Error Handling
 - Use exceptions for invalid state (e.g., `throw Exception("message")`)
 - Add TODO comments for future improvements
-- Use logging package for runtime logging: `Logger("ClassName").info("message")`
+
+### Logging
+Use the `logging` package for runtime logging. Logger setup is in `lib/main.dart`.
+
+**Logger instantiation:** Always declare a class-level logger field, never create loggers inline:
+```dart
+// GOOD - class-level static field (preferred for most classes)
+class MySystem {
+  static final _logger = Logger('MySystem');
+}
+
+// GOOD - instance field (when logger name needs runtime info)
+class MyComponent {
+  final _logger = Logger('MyComponent');
+}
+
+// BAD - creates new logger instance every call
+Logger('MySystem').info('message');
+```
+
+**Log levels** (from most to least verbose):
+- `finest` - Internal state details useful for deep debugging (loop iterations, cache hits)
+- `finer` - Detailed flow tracing (rarely needed)
+- `fine` - Operation tracking within a system (entity processed, step completed)
+- `info` - Significant state changes and events (game loaded, mode changed, save completed)
+- `warning` - Recoverable issues that may need attention (missing optional data, fallback used)
+- `severe` - Errors that affect functionality (failed to load, operation failed)
+
+**Guidelines:**
+- Log at entry points and significant state transitions, not every internal step
+- Include relevant context as a Map: `_logger.info('entity moved', {'id': e.id, 'to': pos})`
+- For `severe`, include error and stack trace: `_logger.severe('failed', error, stackTrace)`
+- Avoid duplicate logging - if a caller logs an event, callees shouldn't log the same event
+- Use `finest`/`fine` liberally for debugging, but keep `info` sparse for production clarity

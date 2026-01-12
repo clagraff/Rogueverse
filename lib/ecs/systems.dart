@@ -299,7 +299,7 @@ class CombatSystem extends System with CombatSystemMappable {
           target.upsert(Dead());
           target.remove<BlocksMovement>();
 
-          _logger.finer("target killed", {"attacker": source, "target":target});
+          _logger.fine('target killed', {'attacker': source, 'target': target});
         }
         target.upsert(WasAttacked(sourceId: sourceId, damage: 1));
         // TODO notify on health change?
@@ -530,18 +530,9 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
     if (change.componentType == 'BlocksSight') {
       final pos = entity.get<LocalPosition>();
       final parentId = entity.get<HasParent>()?.parentEntityId;
-      
+
       if (pos != null) {
-        _logger.fine("BlocksSight ${change.kind} detected - checking observers", {
-          "entityId": change.entityId,
-          "position": "(${pos.x}, ${pos.y})",
-          "parentId": parentId,
-        });
         _markObserversInRange(world, pos, parentId);
-      } else {
-        _logger.warning("BlocksSight ${change.kind} but entity has no LocalPosition", {
-          "entityId": change.entityId,
-        });
       }
     }
   }
@@ -646,11 +637,14 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       }
     }
     
-    _logger.fine("Observer scan for position (${pos.x}, ${pos.y}) parentId=$parentId", {
-      "totalObservers": observers.length,
-      "matchingParent": matchingParent,
-      "inRange": inRange,
-      "markedDirty": marked,
+    _logger.finest('observer scan for position', {
+      'x': pos.x,
+      'y': pos.y,
+      'parentId': parentId,
+      'totalObservers': observers.length,
+      'matchingParent': matchingParent,
+      'inRange': inRange,
+      'markedDirty': marked,
     });
   }
   
@@ -1353,5 +1347,29 @@ class PortalSystem extends System with PortalSystemMappable {
 
     _logger.warning(
         'portal_failed: entity=${traveler.id}, portal=$portalId, reason=$reason');
+  }
+}
+
+/// System that periodically saves the world state.
+///
+/// Saves every [saveIntervalTicks] ticks to avoid saving too frequently
+/// with periodic game ticks. Runs last (priority 200) to ensure all
+/// other systems have processed before saving.
+@MappableClass()
+class SaveSystem extends System with SaveSystemMappable {
+  static final _logger = Logger('SaveSystem');
+
+  /// Number of ticks between saves. With 600ms ticks, 10 = ~6 seconds.
+  static const int saveIntervalTicks = 10;
+
+  @override
+  int get priority => 200; // Run after all other systems
+
+  @override
+  void update(World world) {
+    if (world.tickId % saveIntervalTicks == 0) {
+      _logger.fine("periodic save triggered", {"tickId": world.tickId});
+      WorldSaves.writeSave(world);
+    }
   }
 }

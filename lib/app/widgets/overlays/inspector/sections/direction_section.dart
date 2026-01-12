@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
@@ -22,10 +21,6 @@ class DirectionMetadata extends ComponentMetadata {
       builder: (context, snapshot) {
         final direction = entity.get<Direction>();
         if (direction == null) return const SizedBox.shrink();
-
-        Logger("DirectionSection").info(
-          "Rebuilding content with facing=${direction.facing}",
-        );
 
         return Column(
           children: [

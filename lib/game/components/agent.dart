@@ -238,9 +238,23 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       healthBar?.isVisible = false;
     }
 
-    // Apply opacity to visual component
+    // Apply opacity to visual component with animation
     if (_visual != null) {
-      _visual!.opacity = targetOpacity;
+      final currentOpacity = _visual!.opacity;
+
+      // Only animate if opacity is changing significantly
+      if ((currentOpacity - targetOpacity).abs() > 0.01) {
+        // Remove existing opacity effects to prevent stacking
+        _visual!.children
+            .whereType<OpacityEffect>()
+            .forEach((e) => e.removeFromParent());
+
+        // Animate to target opacity (100ms to match movement animation)
+        _visual!.add(OpacityEffect.to(
+          targetOpacity,
+          EffectController(duration: 0.100),
+        ));
+      }
     }
   }
 
@@ -259,7 +273,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
         if (position != Vector2(dx, dy) &&
             !children.any((c) => c is MoveToEffect)) {
           add(MoveToEffect(Vector2(localPos.x * 32.0, localPos.y * 32.0),
-              EffectController(duration: 0.1)));
+              EffectController(duration: 0.100)));
         }
       }
     } else if (_lastSeenPosition != null && position != _lastSeenPosition) {

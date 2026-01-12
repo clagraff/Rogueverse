@@ -9,6 +9,7 @@ import 'package:logging/logging.dart' show Logger;
 
 import 'package:rogueverse/app/screens/game_screen.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/entity_template.dart';
 import 'package:rogueverse/ecs/events.dart';
@@ -16,6 +17,7 @@ import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
+import 'package:rogueverse/game/tick_scheduler.dart';
 
 /// The two main modes of the game: gameplay (playing) and editing (world building).
 enum GameMode {
@@ -62,6 +64,9 @@ class GameArea extends FlameGame
   /// In editing mode: controls disabled, full visibility, entity selection allowed.
   final ValueNotifier<GameMode> gameMode = ValueNotifier(GameMode.gameplay);
 
+  /// Manages periodic game ticks (OSRS-style 0.6s intervals).
+  late final TickScheduler tickScheduler;
+
   /// Temporary world used for editing templates in the inspector.
   World? _templateEditingWorld;
 
@@ -91,6 +96,14 @@ class GameArea extends FlameGame
       selectedEntity.value = selectedEntities.value.firstOrNull;
     });
 
+    // Sync selectedEntities → observerEntityId for TickScheduler
+    // This ensures the tick scheduler watches the correct entity for intents
+    selectedEntities.addListener(() {
+      final firstSelected = selectedEntities.value.firstOrNull;
+      _logger.info("selectedEntities changed: firstSelected=$firstSelected, setting observerEntityId to ${firstSelected?.id}");
+      observerEntityId.value = firstSelected?.id;
+    });
+
     world = GameScreen(gameFocusNode);
     var systems = [
       HierarchySystem(), // Rebuild hierarchy cache FIRST (other systems may use it)
@@ -103,9 +116,33 @@ class GameArea extends FlameGame
       InventorySystem(),
       CombatSystem(),
       OpenableSystem(),
+      SaveSystem(), // Periodic saves (runs last, priority 200)
     ];
 
     currentWorld = World(systems, {});
+
+    // Initialize tick scheduler (defaults to onPlayerIntent mode)
+    _logger.info("Creating TickScheduler with observerEntityId=${observerEntityId.value}");
+    tickScheduler = TickScheduler(
+      world: currentWorld,
+      playerEntityIdNotifier: observerEntityId,
+      onTick: () {
+        currentWorld.tick();
+      },
+    );
+
+    // Pause tick scheduler when entering editing mode, resume when in gameplay
+    gameMode.addListener(() {
+      if (gameMode.value == GameMode.editing) {
+        tickScheduler.pause();
+        // Force save when entering edit mode.
+        WorldSaves.writeSave(currentWorld);
+      } else {
+        // Force save when we are leaving edit mode.
+        WorldSaves.writeSave(currentWorld);
+        tickScheduler.resume();
+      }
+    });
 
     // Listen for Controlling component changes to update selectedEntity
     currentWorld.componentChanges
@@ -177,6 +214,11 @@ class GameArea extends FlameGame
         super.update(dt);
       });
 
+      // Update tick scheduler (triggers periodic ticks in gameplay mode)
+      if (gameMode.value == GameMode.gameplay) {
+        tickScheduler.updateSeconds(dt);
+      }
+
       // TODO: probably need to move this out from here for performance reasons.
       var budgetedSystems = Timeline.timeSync("GameArea: fetch systems", () {
         return currentWorld
@@ -222,12 +264,12 @@ class GameArea extends FlameGame
     }
   }
 
-  /// Processes one tick of the ECS world and saves the current world state.
+  /// Manually triggers a single ECS tick.
   ///
-  /// This should be called each game update to advance all systems and persist changes.
-  Future<void> tickEcs() async {
+  /// Note: With periodic ticks enabled, this is mainly useful for debugging.
+  /// Saving is handled by SaveSystem on a periodic basis.
+  void tickEcs() {
     currentWorld.tick();
-    await WorldSaves.writeSave(currentWorld);
   }
 
   /// Starts creating a new template by showing a name dialog and setting up temp world.

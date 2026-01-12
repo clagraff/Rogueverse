@@ -34,6 +34,8 @@ void initializeMappers() {
   p6.LifetimeMapper.ensureInitialized();
   p6.BeforeTickMapper.ensureInitialized();
   p6.AfterTickMapper.ensureInitialized();
+  p6.IntentComponentMapper.ensureInitialized();
+  p6.WaitIntentMapper.ensureInitialized();
   p6.CellMapper.ensureInitialized();
   p6.NameMapper.ensureInitialized();
   p6.LocalPositionMapper.ensureInitialized();
@@ -94,6 +96,7 @@ void initializeMappers() {
   p8.ControlSystemMapper.ensureInitialized();
   p8.OpenableSystemMapper.ensureInitialized();
   p8.PortalSystemMapper.ensureInitialized();
+  p8.SaveSystemMapper.ensureInitialized();
   p9.WorldMapper.ensureInitialized();
 }
 

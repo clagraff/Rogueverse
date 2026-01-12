@@ -93,6 +93,33 @@ class AfterTick extends Lifetime with AfterTickMappable implements Component {
   String get componentType => "AfterTick";
 }
 
+/// Base class for all player/AI action intents.
+///
+/// Only one IntentComponent should exist per entity at a time.
+/// Use [Entity.setIntent] to set an intent, which clears any existing intents.
+/// Cleared automatically at end of tick (extends AfterTick).
+@MappableClass()
+abstract class IntentComponent extends AfterTick
+    with IntentComponentMappable
+    implements Component {
+  IntentComponent() : super();
+
+  @override
+  String get componentType => "IntentComponent";
+}
+
+/// No-op intent for "skip turn" / waiting.
+///
+/// Clears any other intents on the entity without performing an action.
+/// Useful for tactically waiting (e.g., for an enemy to approach).
+@MappableClass()
+class WaitIntent extends IntentComponent with WaitIntentMappable {
+  WaitIntent();
+
+  @override
+  String get componentType => "WaitIntent";
+}
+
 @MappableClass()
 class Cell with CellMappable implements Component {
   List<int> entityIds = [];
@@ -138,9 +165,7 @@ extension LocalPositionExtension on LocalPosition {
 // TODO and have MoveBy do the same, with the source and target and deltas?
 /// Component that signals an intent to move the entity by a relative offset.
 @MappableClass()
-class MoveByIntent extends AfterTick
-    with MoveByIntentMappable
-    implements Component {
+class MoveByIntent extends IntentComponent with MoveByIntentMappable {
   final int dx, dy;
 
   MoveByIntent({required this.dx, required this.dy});
@@ -244,7 +269,7 @@ class Health with HealthMappable implements Component {
 }
 
 @MappableClass()
-class AttackIntent with AttackIntentMappable implements Component {
+class AttackIntent extends IntentComponent with AttackIntentMappable {
   final int targetId;
 
   AttackIntent(this.targetId);
@@ -325,9 +350,7 @@ class Pickupable with PickupableMappable implements Component {
 }
 
 @MappableClass()
-class PickupIntent extends AfterTick
-    with PickupIntentMappable
-    implements Component {
+class PickupIntent extends IntentComponent with PickupIntentMappable {
   final int targetEntityId;
 
   PickupIntent(this.targetEntityId);
@@ -514,9 +537,7 @@ class PortalAnchor with PortalAnchorMappable implements Component {
 
 /// Intent to use a portal (supports both PortalToPosition and PortalToAnchor).
 @MappableClass()
-class UsePortalIntent extends AfterTick
-    with UsePortalIntentMappable
-    implements Component {
+class UsePortalIntent extends IntentComponent with UsePortalIntentMappable {
   final int portalEntityId;
   final int?
       specificAnchorId; // Optional: for PortalToAnchor, specify which anchor
@@ -636,9 +657,7 @@ class Docked with DockedMappable implements Component {
 
 /// Intent to take control of an entity via an EnablesControl entity.
 @MappableClass()
-class WantsControlIntent extends AfterTick
-    with WantsControlIntentMappable
-    implements Component {
+class WantsControlIntent extends IntentComponent with WantsControlIntentMappable {
   final int targetEntityId; // Entity with EnablesControl component
 
   WantsControlIntent({required this.targetEntityId});
@@ -652,9 +671,8 @@ class WantsControlIntent extends AfterTick
 /// This intent is added to the controlled entity (e.g., vehicle), and the
 /// ControlSystem finds the actor with the matching Controlling component.
 @MappableClass()
-class ReleasesControlIntent extends AfterTick
-    with ReleasesControlIntentMappable
-    implements Component {
+class ReleasesControlIntent extends IntentComponent
+    with ReleasesControlIntentMappable {
   ReleasesControlIntent();
 
   @override
@@ -663,7 +681,7 @@ class ReleasesControlIntent extends AfterTick
 
 /// Intent to dock/land the entity.
 @MappableClass()
-class DockIntent extends AfterTick with DockIntentMappable implements Component {
+class DockIntent extends IntentComponent with DockIntentMappable {
   DockIntent();
 
   @override
@@ -672,9 +690,7 @@ class DockIntent extends AfterTick with DockIntentMappable implements Component 
 
 /// Intent to undock/takeoff the entity.
 @MappableClass()
-class UndockIntent extends AfterTick
-    with UndockIntentMappable
-    implements Component {
+class UndockIntent extends IntentComponent with UndockIntentMappable {
   UndockIntent();
 
   @override
@@ -712,7 +728,7 @@ class Openable with OpenableMappable implements Component {
 
 /// Intent to open an openable entity.
 @MappableClass()
-class OpenIntent extends AfterTick with OpenIntentMappable implements Component {
+class OpenIntent extends IntentComponent with OpenIntentMappable {
   final int targetEntityId;
 
   OpenIntent({required this.targetEntityId});
@@ -723,9 +739,7 @@ class OpenIntent extends AfterTick with OpenIntentMappable implements Component 
 
 /// Intent to close an openable entity.
 @MappableClass()
-class CloseIntent extends AfterTick
-    with CloseIntentMappable
-    implements Component {
+class CloseIntent extends IntentComponent with CloseIntentMappable {
   final int targetEntityId;
 
   CloseIntent({required this.targetEntityId});
