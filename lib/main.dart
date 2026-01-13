@@ -7,6 +7,7 @@ import 'package:rogueverse/app/application.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/ecs.init.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
+import 'package:rogueverse/ecs/world.dart';
 import 'package:window_manager/window_manager.dart';
 
 
@@ -17,6 +18,11 @@ void main() async {
 
   await TemplateRegistry.instance.load();
   await KeyBindingService.instance.load();
+
+  // Migrate existing save.json to initial.json if needed (layered save system)
+  if (!kIsWeb) {
+    await WorldSaves.migrateIfNeeded();
+  }
 
   if (!kIsWeb) {
     await setupWindow();

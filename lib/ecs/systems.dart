@@ -1369,7 +1369,7 @@ class SaveSystem extends System with SaveSystemMappable {
   void update(World world) {
     if (world.tickId % saveIntervalTicks == 0) {
       _logger.fine("periodic save triggered", {"tickId": world.tickId});
-      WorldSaves.writeSave(world);
+      WorldSaves.writeSavePatch(world);
     }
   }
 }

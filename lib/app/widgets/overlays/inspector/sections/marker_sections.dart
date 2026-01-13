@@ -87,3 +87,18 @@ class DeadMetadata extends MarkerComponentMetadata {
   @override
   void removeComponent(Entity entity) => entity.remove<Dead>();
 }
+
+/// Metadata for the Player marker component.
+class PlayerMetadata extends MarkerComponentMetadata {
+  @override
+  String get componentName => 'Player';
+
+  @override
+  bool hasComponent(Entity entity) => entity.has<Player>();
+
+  @override
+  Component createDefault() => Player();
+
+  @override
+  void removeComponent(Entity entity) => entity.remove<Player>();
+}

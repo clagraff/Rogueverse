@@ -149,7 +149,7 @@ class NavigationDrawerContent extends StatelessWidget {
                   label: 'Save & Quit',
                   onTap: () async {
                     Navigator.pop(context);
-                    await WorldSaves.writeSave(world);
+                    await WorldSaves.writeSavePatch(world);
                     exit(0);
                   },
                 ),

@@ -22,7 +22,7 @@ class VisionTile extends RectangleComponent {
     opacity = 0;
 
     // Remove any existing effects
-    children.whereType<OpacityEffect>().forEach((e) => e.removeFromParent());
+    children.whereType<OpacityEffect>().toList().forEach((e) => e.removeFromParent());
 
     // Fade in to target alpha
     add(OpacityEffect.to(
@@ -35,7 +35,7 @@ class VisionTile extends RectangleComponent {
   void updateTargetAlpha(double newTargetAlpha) {
     if ((_targetAlpha - newTargetAlpha).abs() > 0.01) {
       _targetAlpha = newTargetAlpha;
-      children.whereType<OpacityEffect>().forEach((e) => e.removeFromParent());
+      children.whereType<OpacityEffect>().toList().forEach((e) => e.removeFromParent());
       add(OpacityEffect.to(
         _targetAlpha,
         EffectController(duration: _animationDuration),
@@ -45,7 +45,7 @@ class VisionTile extends RectangleComponent {
 
   /// Fade out, then call onComplete when done.
   void hide({required VoidCallback onComplete}) {
-    children.whereType<OpacityEffect>().forEach((e) => e.removeFromParent());
+    children.whereType<OpacityEffect>().toList().forEach((e) => e.removeFromParent());
     add(OpacityEffect.to(
       0,
       EffectController(duration: _animationDuration),

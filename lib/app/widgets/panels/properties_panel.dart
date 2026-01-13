@@ -52,6 +52,7 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
       ComponentRegistry.register(BlocksMovementMetadata());
       ComponentRegistry.register(PickupableMetadata());
       ComponentRegistry.register(DeadMetadata());
+      ComponentRegistry.register(PlayerMetadata());
 
       // Vision components
       ComponentRegistry.register(VisionRadiusMetadata());

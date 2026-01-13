@@ -43,6 +43,7 @@ dependencies:
   window_manager: ^0.5.1
   xml: ^6.6.1
   path_provider: ^2.1.5
+  json_patch: ^3.0.0
 
 dev_dependencies:
   flutter_test:

@@ -213,6 +213,14 @@ class AiControlled with AiControlledMappable implements Component {
   String get componentType => "AiControlled";
 }
 
+/// Marker component identifying an entity as the player character.
+/// Used to restore player control when exiting editor mode.
+@MappableClass()
+class Player with PlayerMappable implements Component {
+  @override
+  String get componentType => "Player";
+}
+
 @MappableClass()
 class Behavior with BehaviorMappable implements Component {
   final Node behavior;

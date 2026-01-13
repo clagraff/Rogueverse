@@ -166,6 +166,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
       BlocksMovementMapper.ensureInitialized();
       BlockedMoveMapper.ensureInitialized();
       AiControlledMapper.ensureInitialized();
+      PlayerMapper.ensureInitialized();
       BehaviorMapper.ensureInitialized();
       RenderableMapper.ensureInitialized();
       HealthMapper.ensureInitialized();
@@ -1903,6 +1904,102 @@ class _AiControlledCopyWithImpl<$R, $Out>
   AiControlledCopyWith<$R2, AiControlled, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _AiControlledCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class PlayerMapper extends SubClassMapperBase<Player> {
+  PlayerMapper._();
+
+  static PlayerMapper? _instance;
+  static PlayerMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = PlayerMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Player';
+
+  @override
+  final MappableFields<Player> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Player';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Player _instantiate(DecodingData data) {
+    return Player();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Player fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Player>(map);
+  }
+
+  static Player fromJson(String json) {
+    return ensureInitialized().decodeJson<Player>(json);
+  }
+}
+
+mixin PlayerMappable {
+  String toJson() {
+    return PlayerMapper.ensureInitialized().encodeJson<Player>(this as Player);
+  }
+
+  Map<String, dynamic> toMap() {
+    return PlayerMapper.ensureInitialized().encodeMap<Player>(this as Player);
+  }
+
+  PlayerCopyWith<Player, Player, Player> get copyWith =>
+      _PlayerCopyWithImpl<Player, Player>(this as Player, $identity, $identity);
+  @override
+  String toString() {
+    return PlayerMapper.ensureInitialized().stringifyValue(this as Player);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return PlayerMapper.ensureInitialized().equalsValue(this as Player, other);
+  }
+
+  @override
+  int get hashCode {
+    return PlayerMapper.ensureInitialized().hashValue(this as Player);
+  }
+}
+
+extension PlayerValueCopy<$R, $Out> on ObjectCopyWith<$R, Player, $Out> {
+  PlayerCopyWith<$R, Player, $Out> get $asPlayer =>
+      $base.as((v, t, t2) => _PlayerCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class PlayerCopyWith<$R, $In extends Player, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  PlayerCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _PlayerCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Player, $Out>
+    implements PlayerCopyWith<$R, Player, $Out> {
+  _PlayerCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Player> $mapper = PlayerMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  Player $make(CopyWithData data) => Player();
+
+  @override
+  PlayerCopyWith<$R2, Player, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _PlayerCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class BehaviorMapper extends SubClassMapperBase<Behavior> {

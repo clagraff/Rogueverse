@@ -5,6 +5,7 @@ import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:dart_mappable/dart_mappable.dart';
+import 'package:json_patch/json_patch.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:rogueverse/ecs/ecs.dart';
@@ -207,6 +208,31 @@ class World with WorldMappable implements IWorldView {
     // TODO notify on deletion of an entity, separate from the component notifications?
   }
 
+  /// Reloads the world state from a JSON map, keeping the same World instance.
+  ///
+  /// This allows components holding references to this World to see the new state
+  /// without needing to be recreated. Used for editor mode switching.
+  void loadFrom(Map<String, dynamic> jsonMap) {
+    _logger.info("reloading world state from map");
+
+    // Clear current state
+    components.clear();
+    _entityCache.clear();
+
+    // Deserialize new state using the mapper
+    final newWorld = WorldMapper.fromMap(jsonMap);
+
+    // Copy state from the new world
+    components.addAll(newWorld.components);
+    tickId = newWorld.tickId;
+    lastId = newWorld.lastId;
+
+    // Rebuild hierarchy cache (also clears it internally)
+    hierarchyCache.rebuild(this);
+
+    _logger.info("world state reloaded", {"entityCount": entities().length});
+  }
+
   /// Executes a single ECS update tick.
     void tick() {
       Timeline.timeSync("World: tick", () {
@@ -295,44 +321,215 @@ class ComponentsHook extends MappingHook {
 class WorldSaves {
   static final Logger _logger = Logger("WorldSaves");
 
-  static Future<World?> loadSave() async {
+  /// In-memory copy of the initial state Map, used for computing save diffs.
+  /// Set during loadInitialState() or loadSaveWithPatch().
+  static Map<String, dynamic>? _cachedInitialState;
+
+  /// Simple lock to prevent concurrent write operations.
+  static bool _writeLock = false;
+
+  /// Returns a read-only reference to the cached initial state.
+  /// Throws if no initial state is loaded.
+  static Map<String, dynamic> get initialState {
+    if (_cachedInitialState == null) {
+      throw StateError(
+          'No initial state loaded. Call loadInitialState() or loadSaveWithPatch() first.');
+    }
+    return _cachedInitialState!;
+  }
+
+  /// Migrates existing save.json to initial.json if needed.
+  /// Call this once during app startup before loading.
+  static Future<void> migrateIfNeeded() async {
+    var supportDir = await getApplicationSupportDirectory();
+    var oldSaveFile = File("${supportDir.path}/save.json");
+    var newInitialFile = File("${supportDir.path}/initial.json");
+
+    // Only migrate if old file exists and new file doesn't
+    if (oldSaveFile.existsSync() && !newInitialFile.existsSync()) {
+      _logger.info("migrating save.json to initial.json");
+      await oldSaveFile.rename(newInitialFile.path);
+    }
+  }
+
+  /// Loads the initial state from initial.json.
+  /// Caches the Map in memory for future diff computations.
+  /// Returns null if initial.json doesn't exist.
+  static Future<World?> loadInitialState() async {
     var task = TimelineTask(filterKey: "fileio");
-    task.start("save: read");
+    task.start("save: read initial");
 
     try {
       var supportDir = await getApplicationSupportDirectory();
-      var saveGame = File("${supportDir.path}/save.json");
-      if (saveGame.existsSync()) {
-        _logger.info("loading save", {"path": "${supportDir.path}/save.json"});
-        var jsonContents = saveGame.readAsStringSync();
-        return WorldMapper.fromJson(jsonContents);
+      var initialFile = File("${supportDir.path}/initial.json");
+
+      if (!initialFile.existsSync()) {
+        _logger.info("no initial.json found");
+        return null;
       }
 
-      return null;
+      _logger.info(
+          "loading initial state", {"path": "${supportDir.path}/initial.json"});
+      var jsonContents = initialFile.readAsStringSync();
+
+      // Cache the parsed Map for diffing later
+      _cachedInitialState = jsonDecode(jsonContents) as Map<String, dynamic>;
+
+      return WorldMapper.fromJson(jsonContents);
     } finally {
       task.finish();
     }
   }
 
-  static Future<void> writeSave(World world, [bool indent = true]) async {
+  /// Loads the game by reading initial.json and applying save.patch.json.
+  ///
+  /// Flow:
+  /// 1. Load initial.json (caches in memory)
+  /// 2. If save.patch.json exists, apply it to get current state
+  /// 3. Return the resulting World
+  ///
+  /// Throws if patch application fails.
+  static Future<World?> loadSaveWithPatch() async {
     var task = TimelineTask(filterKey: "fileio");
-    task.start("save: write");
+    task.start("save: load with patch");
+
+    try {
+      var supportDir = await getApplicationSupportDirectory();
+      var initialFile = File("${supportDir.path}/initial.json");
+      var patchFile = File("${supportDir.path}/save.patch.json");
+
+      // Step 1: Load initial state
+      if (!initialFile.existsSync()) {
+        _logger.info("no initial.json found");
+        return null;
+      }
+
+      _logger.info("loading initial state", {"path": initialFile.path});
+      var initialJson =
+          jsonDecode(initialFile.readAsStringSync()) as Map<String, dynamic>;
+
+      // Cache initial state for future diff operations (deep copy)
+      _cachedInitialState =
+          jsonDecode(jsonEncode(initialJson)) as Map<String, dynamic>;
+
+      // Step 2: Apply patch if exists
+      Map<String, dynamic> finalState;
+      if (patchFile.existsSync()) {
+        _logger.info("applying save patch", {"path": patchFile.path});
+        var patchJson = jsonDecode(patchFile.readAsStringSync()) as List<dynamic>;
+        var patchOps = patchJson.cast<Map<String, dynamic>>();
+
+        // Apply RFC 6902 patch
+        finalState = JsonPatch.apply(initialJson, patchOps, strict: false)
+            as Map<String, dynamic>;
+      } else {
+        _logger.info("no save patch found, using initial state");
+        finalState = initialJson;
+      }
+
+      // Step 3: Deserialize to World
+      return WorldMapper.fromMap(finalState);
+    } finally {
+      task.finish();
+    }
+  }
+
+  /// Computes the diff between initial state and current world,
+  /// then writes the patch to save.patch.json.
+  ///
+  /// Uses the cached initial state from loadInitialState/loadSaveWithPatch.
+  /// Throws StateError if no initial state is cached.
+  static Future<void> writeSavePatch(World world) async {
+    if (_writeLock) {
+      _logger.warning("write operation already in progress, skipping");
+      return;
+    }
+    _writeLock = true;
+
+    var task = TimelineTask(filterKey: "fileio");
+    task.start("save: write patch");
+
+    try {
+      if (_cachedInitialState == null) {
+        throw StateError('Cannot write save patch: no initial state loaded.');
+      }
+
+      var supportDir = await getApplicationSupportDirectory();
+      var patchFile = File("${supportDir.path}/save.patch.json");
+
+      // Get current state as Map
+      var currentState = world.toMap();
+
+      // Compute RFC 6902 patch
+      var patchOps = JsonPatch.diff(_cachedInitialState!, currentState);
+
+      // Write patch to file
+      _logger.info("writing save patch",
+          {"path": patchFile.path, "opCount": patchOps.length});
+
+      var patchJson = JsonEncoder.withIndent("\t").convert(patchOps);
+      var writer = patchFile.openWrite();
+      writer.write(patchJson);
+      await writer.flush();
+      await writer.close();
+    } finally {
+      _writeLock = false;
+      task.finish();
+    }
+  }
+
+  /// Writes the complete world state to initial.json.
+  /// Used by the editor to save authored content.
+  /// Also updates the cached initial state.
+  static Future<void> writeInitialState(World world,
+      [bool indent = true]) async {
+    if (_writeLock) {
+      _logger.warning("write operation already in progress, skipping");
+      return;
+    }
+    _writeLock = true;
+
+    var task = TimelineTask(filterKey: "fileio");
+    task.start("save: write initial");
+
     try {
       var indentChar = indent ? "\t" : "";
-      var saveState = JsonEncoder.withIndent(indentChar).convert(world.toMap());
+      var worldMap = world.toMap();
+      var saveState = JsonEncoder.withIndent(indentChar).convert(worldMap);
       var supportDir = await getApplicationSupportDirectory();
-      var saveFile = File("${supportDir.path}/save.json");
+      var initialFile = File("${supportDir.path}/initial.json");
 
-      _logger.info("writing save", {"path": "${supportDir.path}/save.json"});
+      _logger.info("writing initial state", {"path": initialFile.path});
 
-      var writer = saveFile.openWrite();
+      var writer = initialFile.openWrite();
       writer.write(saveState);
       await writer.flush();
       await writer.close();
 
-      return;
+      // Update cached initial state (deep copy)
+      _cachedInitialState =
+          jsonDecode(jsonEncode(worldMap)) as Map<String, dynamic>;
     } finally {
+      _writeLock = false;
       task.finish();
     }
+  }
+
+  /// Clears the save patch file (used when editor changes make patch invalid).
+  static Future<void> clearSavePatch() async {
+    var supportDir = await getApplicationSupportDirectory();
+    var patchFile = File("${supportDir.path}/save.patch.json");
+
+    if (patchFile.existsSync()) {
+      _logger.info("clearing save patch", {"path": patchFile.path});
+      await patchFile.delete();
+    }
+  }
+
+  /// Legacy method - kept for backward compatibility during transition.
+  /// Prefer writeInitialState() for editor saves and writeSavePatch() for gameplay saves.
+  @Deprecated('Use writeInitialState() or writeSavePatch() instead')
+  static Future<void> writeSave(World world, [bool indent = true]) async {
+    await writeInitialState(world, indent);
   }
 }

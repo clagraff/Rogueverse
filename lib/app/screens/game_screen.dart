@@ -62,16 +62,17 @@ class GameScreen extends flame.World with Disposer {
   Future<void> onLoad() async {
     final game = parent!.findGame() as GameArea;
 
-    // Attempt to load world-state from local save file.
+    // Attempt to load world-state from local save file (initial + patch).
     // TODO this can only work when running on Desktop, not web!
-    var save = await WorldSaves.loadSave();
+    var save = await WorldSaves.loadSaveWithPatch();
     if (save != null) {
-      //_initializeControlExample(game);
       game.currentWorld = save;
       // Update tick scheduler to use the loaded world
       game.tickScheduler.updateWorld(save);
     } else {
-      //_initializeControlExample(game);
+      // No initial.json exists - write the current (empty) world as initial state.
+      // This ensures _cachedInitialState is set for the editor to function.
+      await WorldSaves.writeInitialState(game.currentWorld);
     }
 
     // Create template entity spawner (listens to template selection)
@@ -328,68 +329,6 @@ class GameScreen extends flame.World with Disposer {
         .forEach((entity) {
       _spawnRenderableEntity(game, game.currentWorld.getEntity(entity.id));
     });
-  }
-
-  void _initializeControlExample(GameArea game) {
-    var reg = game.currentWorld;
-
-    // Create hierarchical structure:
-    // Galaxy (abstract container)
-    //   └─ Spaceship Alpha
-    //       └─ Player
-    //   └─ Spaceship beta
-
-    final galaxy = reg.add([
-      Name(name: "Milky Way Galaxy"),
-    ]);
-
-    // Level 2: Star Systems (abstract parents - no position/renderable)
-    final spaceShipAlpha = reg.add([
-      Name(name: "Spaceship Alpha"),
-      HasParent(galaxy.id),
-
-      Renderable("images/ship.svg"),
-      Direction(CompassDirection.north),
-      LocalPosition(x: 0, y: 0),
-      Controllable(),
-      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
-      VisionMemory(),
-    ]);
-
-    reg.add([
-      Name(name: "Spaceship Beta"),
-      HasParent(galaxy.id),
-
-      Renderable("images/ship.svg"),
-      Direction(CompassDirection.north),
-      LocalPosition(x: 3, y: 4),
-      Controllable(), // TODO: lol this isnt a ship though but whatever.
-      VisionRadius(radius: 7, fieldOfViewDegrees: 360),
-      VisionMemory(),
-    ]);
-
-    // Level 4: Entities on Planet Surface
-    reg.add([
-      Name(name: "Player"),
-      Renderable('images/player.svg'),
-      LocalPosition(x: 0, y: 0),
-      BlocksMovement(),
-      Inventory([]),
-      InventoryMaxCount(5),
-      Health(4, 5),
-      VisionRadius(radius: 7, fieldOfViewDegrees: 90),
-      Direction(CompassDirection.north),
-      HasParent(spaceShipAlpha.id),
-    ]);
-
-
-    reg.add([
-      Name(name: "Spaceship controls"),
-      Renderable('images/control.svg'),
-      LocalPosition(x: 2, y: 3),
-      HasParent(spaceShipAlpha.id),
-      EnablesControl(controlledEntityId: spaceShipAlpha.id),
-    ]);
   }
 
   @override

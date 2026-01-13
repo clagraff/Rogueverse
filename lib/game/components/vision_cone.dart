@@ -186,7 +186,12 @@ class VisionConeComponent extends PositionComponent {
   void _releaseTile(VisionTile tile, LocalPosition pos) {
     tile.removeFromParent();
     _pool.add(tile);
-    _activeTiles.remove(pos);
+    // Only remove from _activeTiles if this is still the tracked tile for this position.
+    // Prevents race condition where a new tile was assigned to the same position
+    // before this callback fired.
+    if (_activeTiles[pos] == tile) {
+      _activeTiles.remove(pos);
+    }
   }
 
   /// Fade out all active tiles.

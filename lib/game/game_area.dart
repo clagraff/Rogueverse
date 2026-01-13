@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:developer';
 
+import 'package:collection/collection.dart';
 import 'package:flame/components.dart' hide World;
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -8,14 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:logging/logging.dart' show Logger;
 
 import 'package:rogueverse/app/screens/game_screen.dart';
-import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/ecs.dart';
-import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/ecs/entity_template.dart';
-import 'package:rogueverse/ecs/events.dart';
-import 'package:rogueverse/ecs/systems.dart';
-import 'package:rogueverse/ecs/template_registry.dart';
-import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
 import 'package:rogueverse/game/tick_scheduler.dart';
 
@@ -132,15 +126,14 @@ class GameArea extends FlameGame
     );
 
     // Pause tick scheduler when entering editing mode, resume when in gameplay
+    // This listener handles the layered save system:
+    // - On entering editor: save progress as patch, reload pure initial state
+    // - On exiting editor: save initial state, reload with patch applied
     gameMode.addListener(() {
       if (gameMode.value == GameMode.editing) {
-        tickScheduler.pause();
-        // Force save when entering edit mode.
-        WorldSaves.writeSave(currentWorld);
+        _onEnterEditorMode();
       } else {
-        // Force save when we are leaving edit mode.
-        WorldSaves.writeSave(currentWorld);
-        tickScheduler.resume();
+        _onExitEditorMode();
       }
     });
 
@@ -183,6 +176,74 @@ class GameArea extends FlameGame
         observerEntityId.value = null;
       }
     });
+  }
+
+  /// Handles entering editor mode: saves progress and reloads pure initial state.
+  Future<void> _onEnterEditorMode() async {
+    tickScheduler.pause();
+
+    // Save current progress as patch before entering editor
+    // This preserves player progress
+    await WorldSaves.writeSavePatch(currentWorld);
+
+    // Reload pure initial state for editing (without save patch applied)
+    // Using loadFrom() keeps the same World instance so components stay valid
+    currentWorld.loadFrom(WorldSaves.initialState);
+
+    // Clear selections since we've reloaded the world
+    selectedEntities.value = {};
+    selectedEntity.value = null;
+    observerEntityId.value = null;
+  }
+
+  /// Handles exiting editor mode: saves initial state, reloads with patch, resumes ticks.
+  Future<void> _onExitEditorMode() async {
+    // Save the edited world as the new initial state
+    await WorldSaves.writeInitialState(currentWorld);
+
+    // Reload initial state + apply save patch to restore player progress
+    try {
+      var worldWithPatch = await WorldSaves.loadSaveWithPatch();
+      if (worldWithPatch != null) {
+        // Load the patched state into the existing world instance
+        currentWorld.loadFrom(worldWithPatch.toMap());
+      }
+    } catch (e) {
+      _logger.severe("save patch could not be applied after editor changes", e);
+      // MVP: Just keep the initial state without patch
+      // Player loses their save progress
+      await WorldSaves.clearSavePatch();
+    }
+
+    // Restore player control after world reload
+    _restorePlayerControl();
+
+    tickScheduler.resume();
+  }
+
+  /// Finds the Player entity and restores selection, observer, and view to it.
+  void _restorePlayerControl() {
+    final playerEntity = currentWorld.entities().firstWhereOrNull(
+          (e) => e.has<Player>(),
+        );
+
+    if (playerEntity != null) {
+      // Set the player as the selected/controlled entity
+      selectedEntities.value = {playerEntity};
+      // Set the player as the vision observer
+      observerEntityId.value = playerEntity.id;
+      // Set the view to the player's parent (room/location)
+      final playerParent = playerEntity.get<HasParent>();
+      if (playerParent != null) {
+        viewedParentId.value = playerParent.parentEntityId;
+      }
+      _logger.info('Restored player control: entity ${playerEntity.id}');
+    } else {
+      // No player found, just clear selection
+      selectedEntities.value = {};
+      observerEntityId.value = null;
+      _logger.warning('No Player entity found to restore control');
+    }
   }
 
   /// Initializes the game area by setting up the camera anchor, camera controls,

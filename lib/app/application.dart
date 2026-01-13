@@ -145,10 +145,10 @@ class _ApplicationState extends State<Application> {
         drawer: NavigationDrawerContent(
           onEditorPressed: () {
             // Editor is now shown via dock panels in edit mode
+            // Note: drawer is already closed by NavigationDrawerContent before this callback
             if (_game.gameMode.value != GameMode.editing) {
               _toggleGameMode();
             }
-            Navigator.of(context).pop(); // Close drawer
           },
           onHierarchyNavigatorPressed: () {
             _game.overlays.clear();
