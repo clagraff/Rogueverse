@@ -212,8 +212,16 @@ class World with WorldMappable implements IWorldView {
   ///
   /// This allows components holding references to this World to see the new state
   /// without needing to be recreated. Used for editor mode switching.
+  ///
+  /// Emits change notifications for all affected components so listeners can update.
   void loadFrom(Map<String, dynamic> jsonMap) {
     _logger.info("reloading world state from map");
+
+    // Capture old state for change notifications
+    final oldComponents = <String, Map<int, Component>>{};
+    for (final entry in components.entries) {
+      oldComponents[entry.key] = Map.from(entry.value);
+    }
 
     // Clear current state
     components.clear();
@@ -230,7 +238,51 @@ class World with WorldMappable implements IWorldView {
     // Rebuild hierarchy cache (also clears it internally)
     hierarchyCache.rebuild(this);
 
+    // Reset and rebuild systems that maintain state (e.g., spatial indexes)
+    // Must happen before emitting changes so subscribers see fresh data
+    for (final system in systems) {
+      if (system is VisionSystem) {
+        system.resetState(this);
+      }
+    }
+
+    // Emit change notifications for all affected components
+    _emitLoadChanges(oldComponents, components);
+
     _logger.info("world state reloaded", {"entityCount": entities().length});
+  }
+
+  /// Emits change notifications comparing old and new component states.
+  void _emitLoadChanges(
+    Map<String, Map<int, Component>> oldComponents,
+    Map<String, Map<int, Component>> newComponents,
+  ) {
+    // Collect all component types from both old and new
+    final allTypes = {...oldComponents.keys, ...newComponents.keys};
+
+    for (final componentType in allTypes) {
+      final oldMap = oldComponents[componentType] ?? {};
+      final newMap = newComponents[componentType] ?? {};
+      final allEntityIds = {...oldMap.keys, ...newMap.keys};
+
+      for (final entityId in allEntityIds) {
+        final oldValue = oldMap[entityId];
+        final newValue = newMap[entityId];
+
+        // Skip only if both are null (no component existed before or after)
+        if (oldValue == null && newValue == null) continue;
+
+        // Emit change for all other cases (added, removed, or potentially updated)
+        // We don't check equality since deserialized objects may not have
+        // proper equality implementation, and it's safer to over-notify
+        notifyChange(Change(
+          entityId: entityId,
+          componentType: componentType,
+          oldValue: oldValue,
+          newValue: newValue,
+        ));
+      }
+    }
   }
 
   /// Executes a single ECS update tick.

@@ -22,6 +22,15 @@ enum GameMode {
   editing,
 }
 
+/// The target for edits when in editing mode.
+enum EditTarget {
+  /// Edit the initial world state (saved to initial.json).
+  initial,
+
+  /// Edit the save/patch state (saved to save.patch.json).
+  save,
+}
+
 /// The main game area component that manages the ECS world, camera controls,
 /// and entity/template selection for the game editor.
 class GameArea extends FlameGame
@@ -57,6 +66,11 @@ class GameArea extends FlameGame
   /// In gameplay mode: controls active, vision restricted to observer.
   /// In editing mode: controls disabled, full visibility, entity selection allowed.
   final ValueNotifier<GameMode> gameMode = ValueNotifier(GameMode.gameplay);
+
+  /// The target for edits when in editing mode.
+  /// Initial = edit initial.json (authored content).
+  /// Save = edit save.patch.json (player progress).
+  final ValueNotifier<EditTarget> editTarget = ValueNotifier(EditTarget.initial);
 
   /// Manages periodic game ticks (OSRS-style 0.6s intervals).
   late final TickScheduler tickScheduler;
@@ -137,6 +151,13 @@ class GameArea extends FlameGame
       }
     });
 
+    // Handle switching edit targets while already in edit mode
+    editTarget.addListener(() {
+      if (gameMode.value == GameMode.editing) {
+        _onEditTargetChanged();
+      }
+    });
+
     // Listen for Controlling component changes to update selectedEntity
     currentWorld.componentChanges
         .onComponentAdded<Controlling>()
@@ -178,47 +199,79 @@ class GameArea extends FlameGame
     });
   }
 
-  /// Handles entering editor mode: saves progress and reloads pure initial state.
+  /// Handles entering editor mode: saves progress and loads appropriate state.
   Future<void> _onEnterEditorMode() async {
     tickScheduler.pause();
 
-    // Save current progress as patch before entering editor
-    // This preserves player progress
-    await WorldSaves.writeSavePatch(currentWorld);
+    if (editTarget.value == EditTarget.initial) {
+      // Editing initial state: save current progress as patch, reload pure initial
+      await WorldSaves.writeSavePatch(currentWorld);
+      currentWorld.loadFrom(WorldSaves.initialState);
+    } else {
+      // Editing save state: save patch to preserve progress, keep current state
+      await WorldSaves.writeSavePatch(currentWorld);
+      // World already contains initial + patch, so no reload needed
+    }
 
-    // Reload pure initial state for editing (without save patch applied)
-    // Using loadFrom() keeps the same World instance so components stay valid
-    currentWorld.loadFrom(WorldSaves.initialState);
-
-    // Clear selections since we've reloaded the world
+    // Clear selections since we may have reloaded the world
     selectedEntities.value = {};
     selectedEntity.value = null;
     observerEntityId.value = null;
   }
 
-  /// Handles exiting editor mode: saves initial state, reloads with patch, resumes ticks.
+  /// Handles exiting editor mode: saves to appropriate target, restores gameplay.
   Future<void> _onExitEditorMode() async {
-    // Save the edited world as the new initial state
-    await WorldSaves.writeInitialState(currentWorld);
+    if (editTarget.value == EditTarget.initial) {
+      // Save the edited world as the new initial state
+      await WorldSaves.writeInitialState(currentWorld);
 
-    // Reload initial state + apply save patch to restore player progress
-    try {
-      var worldWithPatch = await WorldSaves.loadSaveWithPatch();
-      if (worldWithPatch != null) {
-        // Load the patched state into the existing world instance
-        currentWorld.loadFrom(worldWithPatch.toMap());
+      // Reload initial state + apply save patch to restore player progress
+      try {
+        var worldWithPatch = await WorldSaves.loadSaveWithPatch();
+        if (worldWithPatch != null) {
+          currentWorld.loadFrom(worldWithPatch.toMap());
+        }
+      } catch (e) {
+        _logger.severe("save patch could not be applied after editor changes", e);
+        await WorldSaves.clearSavePatch();
       }
-    } catch (e) {
-      _logger.severe("save patch could not be applied after editor changes", e);
-      // MVP: Just keep the initial state without patch
-      // Player loses their save progress
-      await WorldSaves.clearSavePatch();
+    } else {
+      // Save the edited world as a patch (diff from initial)
+      await WorldSaves.writeSavePatch(currentWorld);
+      // World is already in the correct state, no reload needed
     }
 
-    // Restore player control after world reload
+    // Restore player control after potential world reload
     _restorePlayerControl();
 
     tickScheduler.resume();
+  }
+
+  /// Handles switching edit targets while already in edit mode.
+  /// Always saves current state to the old target before loading the new one.
+  Future<void> _onEditTargetChanged() async {
+    if (editTarget.value == EditTarget.initial) {
+      // Switched TO initial editing (from save)
+      // Save current state as patch (we were editing the save state)
+      await WorldSaves.writeSavePatch(currentWorld);
+      // Load pure initial state for editing
+      currentWorld.loadFrom(WorldSaves.initialState);
+    } else {
+      // Switched TO save editing (from initial)
+      // Save current state as initial (we were editing the initial state)
+      await WorldSaves.writeInitialState(currentWorld);
+      // Load initial + patch for editing (creates empty patch if none exists)
+      var worldWithPatch = await WorldSaves.loadSaveWithPatch();
+      if (worldWithPatch != null) {
+        currentWorld.loadFrom(worldWithPatch.toMap());
+      }
+      // If no patch existed, worldWithPatch returns the initial state anyway
+    }
+
+    // Clear selections since we've reloaded the world
+    selectedEntities.value = {};
+    selectedEntity.value = null;
+    observerEntityId.value = null;
   }
 
   /// Finds the Player entity and restores selection, observer, and view to it.

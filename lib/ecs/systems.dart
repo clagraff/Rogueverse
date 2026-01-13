@@ -377,6 +377,26 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
 
   final Queue<Entity> queue = Queue<Entity>();
 
+  /// Resets the spatial index and rebuilds it immediately.
+  /// Also recalculates vision for all observers so VisibleEntities is fresh.
+  /// Call this when the world is fully reloaded to force a rebuild.
+  void resetState(World world) {
+    _positionIndex.clear();
+    _dirtyObservers.clear();
+    queue.clear();
+    // Cancel existing subscription to prevent processing stale changes
+    _changeSubscription?.cancel();
+    _changeSubscription = null;
+    _initialized = false;
+    // Immediately rebuild spatial index
+    _ensureInitialized(world);
+    // Force recalculate vision for all observers so VisibleEntities is fresh
+    final observers = world.get<VisionRadius>();
+    for (final observerId in observers.keys) {
+      _updateVisionForObserver(world, observerId);
+    }
+  }
+
   @override
   void update(World world) {
     Timeline.timeSync("VisionSystem: update", () {

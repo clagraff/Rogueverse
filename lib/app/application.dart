@@ -11,6 +11,7 @@ import 'package:rogueverse/app/widgets/panels/panel_section.dart';
 import 'package:rogueverse/app/widgets/panels/entity_list_panel.dart';
 import 'package:rogueverse/app/widgets/panels/templates_panel.dart';
 import 'package:rogueverse/app/widgets/panels/properties_panel.dart';
+import 'package:rogueverse/app/widgets/panels/editor_footer_bar.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/hierarchy_panel/hierarchy_panel.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
@@ -253,6 +254,17 @@ class _ApplicationState extends State<Application> {
                         ),
                       ),
                     ],
+                  ),
+
+                // Footer bar (editing mode only)
+                if (isEditingMode)
+                  Positioned(
+                    left: 280, // After left dock
+                    right: 280, // Before right dock
+                    bottom: 0,
+                    child: EditorFooterBar(
+                      editTargetNotifier: _game.editTarget,
+                    ),
                   ),
               ],
             );

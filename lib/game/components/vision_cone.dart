@@ -131,12 +131,25 @@ class VisionConeComponent extends PositionComponent {
     }
 
     final newTiles = visibleEntities.visibleTiles;
+    final oldPosition = _observerPosition;
     _observerPosition = position;
 
     // Hide vision cone in editing mode - fade out all tiles
     final game = findGame() as GameArea?;
     if (game != null && game.gameMode.value == GameMode.editing) {
       _fadeOutAllTiles();
+      return;
+    }
+
+    // Do a hard reset if:
+    // 1. Position changed at all (handles world reloads with stale tile state)
+    // 2. First render after re-attaching (oldPosition is null) - always start fresh
+    final positionChanged = oldPosition != null &&
+        (position.x != oldPosition.x || position.y != oldPosition.y);
+    final firstRenderAfterAttach = oldPosition == null;
+
+    if (positionChanged || firstRenderAfterAttach) {
+      _hardResetTiles(newTiles);
       return;
     }
 
@@ -202,6 +215,34 @@ class VisionConeComponent extends PositionComponent {
     _previousVisibleTiles = {};
   }
 
+  /// Hard reset: immediately remove all tiles and create fresh ones.
+  /// Use when position changes significantly (teleport, world reload).
+  void _hardResetTiles(Set<LocalPosition> newTiles) {
+    // Immediately remove all existing tiles (no fade animation)
+    for (final tile in _activeTiles.values) {
+      tile.removeFromParent();
+    }
+    _activeTiles.clear();
+    _pool.clear(); // Clear pool too since those tiles may have stale state
+    _previousVisibleTiles = {};
+
+    // Pre-calculate max distance for proper alpha calculation
+    final maxDistance = _calculateMaxDistanceFor(newTiles);
+
+    // Create all new tiles fresh
+    for (final pos in newTiles) {
+      final tile = VisionTile();
+      _activeTiles[pos] = tile;
+      final targetAlpha = _calculateTargetAlphaWith(pos, maxDistance);
+      tile.show(
+        gridPosition: Vector2(pos.x * 32.0, pos.y * 32.0),
+        targetAlpha: targetAlpha,
+      );
+      add(tile);
+    }
+    _previousVisibleTiles = Set.from(newTiles);
+  }
+
   /// Calculate target alpha based on distance from observer.
   double _calculateTargetAlpha(LocalPosition tile) {
     if (_observerPosition == null) return 0.0;
@@ -228,6 +269,28 @@ class VisionConeComponent extends PositionComponent {
       if (distance > max) max = distance;
     }
     return max;
+  }
+
+  /// Find the maximum distance for a given set of tiles.
+  /// Used by _hardResetTiles to pre-calculate before adding tiles.
+  double _calculateMaxDistanceFor(Set<LocalPosition> tiles) {
+    if (tiles.isEmpty || _observerPosition == null) return 0.0;
+
+    double max = 0.0;
+    for (final tile in tiles) {
+      final distance = _calculateDistance(_observerPosition!, tile);
+      if (distance > max) max = distance;
+    }
+    return max;
+  }
+
+  /// Calculate target alpha with a pre-computed maxDistance.
+  /// Used by _hardResetTiles to avoid incremental calculation issues.
+  double _calculateTargetAlphaWith(LocalPosition tile, double maxDistance) {
+    if (_observerPosition == null) return 0.0;
+    final distance = _calculateDistance(_observerPosition!, tile);
+    final normalizedDistance = maxDistance > 0 ? distance / maxDistance : 0.0;
+    return (0.4 - (normalizedDistance * 0.35)).clamp(0.05, 0.4);
   }
 
   @override
