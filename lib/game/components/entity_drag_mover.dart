@@ -3,7 +3,7 @@ import 'package:flame/events.dart' show DragCallbacks, DragStartEvent, DragUpdat
 import 'package:flame/game.dart' show FlameGame;
 import 'package:flutter/material.dart' show Colors, ValueNotifier;
 import 'package:logging/logging.dart' show Logger;
-import 'package:rogueverse/ecs/components.dart' show LocalPosition, Renderable, HasParent;
+import 'package:rogueverse/ecs/components.dart' show LocalPosition, Renderable, HasParent, ImageAsset;
 import 'package:rogueverse/ecs/entity.dart' show Entity;
 import 'package:rogueverse/ecs/entity_template.dart' show EntityTemplate;
 import 'package:rogueverse/ecs/query.dart' show Query;
@@ -90,11 +90,12 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
 
     _logger.info('started dragging entity', {"entityId": _draggedEntity!.id, "fromX": _originalPosition!.x, "fromY": _originalPosition!.y});
 
-    // Create preview component
+    // Create preview component (only for ImageAsset)
     final renderable = _draggedEntity!.get<Renderable>();
-    if (renderable != null) {
+    if (renderable != null && renderable.asset is ImageAsset) {
+      final imageAsset = renderable.asset as ImageAsset;
       _previewComponent = SvgVisualComponent(
-        svgAssetPath: renderable.svgAssetPath,
+        svgAssetPath: imageAsset.svgAssetPath,
         position: GridCoordinates.gridToScreen(_originalPosition!),
         size: Vector2.all(GridCoordinates.tileSize),
       );

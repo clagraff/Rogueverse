@@ -13,12 +13,13 @@ import 'package:rogueverse/game/components/agent_health_bar.dart';
 import 'package:rogueverse/game/components/visual_component.dart';
 import 'package:rogueverse/game/components/svg_visual_component.dart';
 import 'package:rogueverse/game/components/png_visual_component.dart';
+import 'package:rogueverse/game/components/text_visual_component.dart';
 import 'package:rogueverse/game/game_area.dart';
 
 class Agent extends PositionComponent with HasVisibility, Disposer {
   final World world;
   final Entity entity;
-  String _currentAssetPath;
+  RenderableAsset _currentAsset;
   AgentHealthBar? healthBar;
   VisualComponent? _visual;
 
@@ -33,18 +34,18 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   Agent({
     required this.world,
     required this.entity,
-    required String assetPath,
+    required RenderableAsset asset,
     Vector2? position,
     Vector2? size,
-  }) : _currentAssetPath = assetPath {
+  }) : _currentAsset = asset {
     this.position = position ?? Vector2.zero();
     this.size = size ?? Vector2.all(32);
   }
 
   @override
   Future<void> onLoad() async {
-    // Create the appropriate visual component based on file extension
-    _visual = _createVisualComponent(_currentAssetPath, size);
+    // Create the appropriate visual component based on asset type
+    _visual = _createVisualComponent(_currentAsset, size);
     await add(_visual!);
 
     healthBar = AgentHealthBar(
@@ -60,37 +61,48 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     return super.onLoad();
   }
 
-  /// Creates the appropriate visual component based on file extension.
-  VisualComponent _createVisualComponent(String assetPath, Vector2? size) {
-    final renderable = entity.get<Renderable>();
-    final flipH = renderable?.flipHorizontal ?? false;
-    final flipV = renderable?.flipVertical ?? false;
-    final rotation = renderable?.rotationDegrees ?? 0;
+  /// Creates the appropriate visual component based on asset type.
+  VisualComponent _createVisualComponent(RenderableAsset asset, Vector2? size) {
+    final tileCenter = (size ?? this.size) / 2; // Center of the tile
+    return switch (asset) {
+      ImageAsset img => _createImageVisual(img, size),
+      TextAsset txt => TextVisualComponent(
+        text: txt.text,
+        fontSize: txt.fontSize,
+        color: Color(txt.color),
+        position: tileCenter, // Center text in the tile
+      ),
+    };
+  }
+
+  /// Creates an image-based visual component (SVG or PNG).
+  VisualComponent _createImageVisual(ImageAsset img, Vector2? size) {
+    final assetPath = img.svgAssetPath;
 
     if (assetPath.endsWith('.svg')) {
       return SvgVisualComponent(
         svgAssetPath: assetPath,
         size: size,
-        flipHorizontal: flipH,
-        flipVertical: flipV,
-        rotationDegrees: rotation,
+        flipHorizontal: img.flipHorizontal,
+        flipVertical: img.flipVertical,
+        rotationDegrees: img.rotationDegrees,
       );
     } else if (assetPath.endsWith('.png')) {
       return PngVisualComponent(
         pngAssetPath: assetPath,
         size: size,
-        flipHorizontal: flipH,
-        flipVertical: flipV,
-        rotationDegrees: rotation,
+        flipHorizontal: img.flipHorizontal,
+        flipVertical: img.flipVertical,
+        rotationDegrees: img.rotationDegrees,
       );
     } else {
       // Default to SVG for backwards compatibility
       return SvgVisualComponent(
         svgAssetPath: assetPath,
         size: size,
-        flipHorizontal: flipH,
-        flipVertical: flipV,
-        rotationDegrees: rotation,
+        flipHorizontal: img.flipHorizontal,
+        flipVertical: img.flipVertical,
+        rotationDegrees: img.rotationDegrees,
       );
     }
   }
@@ -105,16 +117,34 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       final renderable = entity.get<Renderable>();
       if (renderable == null) return;
 
-      final newPath = renderable.svgAssetPath;
-      if (newPath != _currentAssetPath) {
-        _swapVisual(newPath);
+      final newAsset = renderable.asset;
+      if (!_assetsEqual(newAsset, _currentAsset)) {
+        _swapVisual(newAsset);
       }
     });
   }
 
-  /// Swaps the current visual component for a new one with the given asset path.
-  Future<void> _swapVisual(String newAssetPath) async {
-    _currentAssetPath = newAssetPath;
+  /// Compares two RenderableAssets for equality.
+  bool _assetsEqual(RenderableAsset a, RenderableAsset b) {
+    if (a.runtimeType != b.runtimeType) return false;
+
+    return switch ((a, b)) {
+      (ImageAsset imgA, ImageAsset imgB) =>
+        imgA.svgAssetPath == imgB.svgAssetPath &&
+        imgA.flipHorizontal == imgB.flipHorizontal &&
+        imgA.flipVertical == imgB.flipVertical &&
+        imgA.rotationDegrees == imgB.rotationDegrees,
+      (TextAsset txtA, TextAsset txtB) =>
+        txtA.text == txtB.text &&
+        txtA.fontSize == txtB.fontSize &&
+        txtA.color == txtB.color,
+      _ => false,
+    };
+  }
+
+  /// Swaps the current visual component for a new one with the given asset.
+  Future<void> _swapVisual(RenderableAsset newAsset) async {
+    _currentAsset = newAsset;
 
     // Store current opacity before removing
     final currentOpacity = _visual?.opacity ?? 1.0;
@@ -123,7 +153,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     _visual?.removeFromParent();
 
     // Create and add new visual
-    _visual = _createVisualComponent(newAssetPath, size);
+    _visual = _createVisualComponent(newAsset, size);
     _visual!.opacity = currentOpacity;
     await add(_visual!);
   }

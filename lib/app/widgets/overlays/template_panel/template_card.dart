@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:rogueverse/ecs/components.dart' show ImageAsset;
 import 'package:rogueverse/ecs/entity_template.dart';
 
 /// A card displaying a single entity template in the grid.
@@ -167,11 +168,22 @@ class _TemplateCardState extends State<TemplateCard> {
       );
     }
 
-    // Use Flutter SVG to display the asset with error handling
-    return _SafeSvgPicture(
-      assetPath: renderable.svgAssetPath,
-      fallbackIcon: Icons.image_not_supported,
-    );
+    // Handle different asset types
+    final asset = renderable.asset;
+    if (asset is ImageAsset) {
+      // Use Flutter SVG to display the asset with error handling
+      return _SafeSvgPicture(
+        assetPath: asset.svgAssetPath,
+        fallbackIcon: Icons.image_not_supported,
+      );
+    } else {
+      // TextAsset - show a generic text icon
+      return Icon(
+        Icons.text_fields,
+        size: 24,
+        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+      );
+    }
   }
 }
 

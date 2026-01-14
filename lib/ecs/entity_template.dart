@@ -18,7 +18,7 @@ part 'entity_template.mapper.dart';
 ///   displayName: 'Stone Wall',
 ///   components: [
 ///     Name(name: 'Wall'),
-///     Renderable('images/wall.svg'),
+///     Renderable(ImageAsset('images/wall.svg')),
 ///     BlocksMovement(),
 ///   ],
 /// );

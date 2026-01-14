@@ -46,6 +46,9 @@ void initializeMappers() {
   p6.AiControlledMapper.ensureInitialized();
   p6.PlayerMapper.ensureInitialized();
   p6.BehaviorMapper.ensureInitialized();
+  p6.RenderableAssetMapper.ensureInitialized();
+  p6.ImageAssetMapper.ensureInitialized();
+  p6.TextAssetMapper.ensureInitialized();
   p6.RenderableMapper.ensureInitialized();
   p6.HealthMapper.ensureInitialized();
   p6.AttackIntentMapper.ensureInitialized();

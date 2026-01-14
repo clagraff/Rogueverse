@@ -386,15 +386,17 @@ class _EntityListItem extends StatelessWidget {
               SizedBox(
                 width: 16,
                 height: 16,
-                child: renderable != null
+                child: renderable != null && renderable.asset is ImageAsset
                     ? SvgPicture.asset(
-                        'assets/${renderable.svgAssetPath}',
+                        'assets/${(renderable.asset as ImageAsset).svgAssetPath}',
                         width: 14,
                         height: 14,
                         fit: BoxFit.contain,
                       )
                     : Icon(
-                        Icons.widgets_outlined,
+                        renderable?.asset is TextAsset
+                            ? Icons.text_fields
+                            : Icons.widgets_outlined,
                         size: 14,
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),

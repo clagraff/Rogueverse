@@ -2121,42 +2121,96 @@ class _BehaviorCopyWithImpl<$R, $Out>
   ) => _BehaviorCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class RenderableMapper extends SubClassMapperBase<Renderable> {
-  RenderableMapper._();
+class RenderableAssetMapper extends ClassMapperBase<RenderableAsset> {
+  RenderableAssetMapper._();
 
-  static RenderableMapper? _instance;
-  static RenderableMapper ensureInitialized() {
+  static RenderableAssetMapper? _instance;
+  static RenderableAssetMapper ensureInitialized() {
     if (_instance == null) {
-      MapperContainer.globals.use(_instance = RenderableMapper._());
-      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      MapperContainer.globals.use(_instance = RenderableAssetMapper._());
+      ImageAssetMapper.ensureInitialized();
+      TextAssetMapper.ensureInitialized();
     }
     return _instance!;
   }
 
   @override
-  final String id = 'Renderable';
+  final String id = 'RenderableAsset';
 
-  static String _$svgAssetPath(Renderable v) => v.svgAssetPath;
-  static const Field<Renderable, String> _f$svgAssetPath = Field(
+  @override
+  final MappableFields<RenderableAsset> fields = const {};
+
+  static RenderableAsset _instantiate(DecodingData data) {
+    throw MapperException.missingSubclass(
+      'RenderableAsset',
+      '__type',
+      '${data.value['__type']}',
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static RenderableAsset fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<RenderableAsset>(map);
+  }
+
+  static RenderableAsset fromJson(String json) {
+    return ensureInitialized().decodeJson<RenderableAsset>(json);
+  }
+}
+
+mixin RenderableAssetMappable {
+  String toJson();
+  Map<String, dynamic> toMap();
+  RenderableAssetCopyWith<RenderableAsset, RenderableAsset, RenderableAsset>
+  get copyWith;
+}
+
+abstract class RenderableAssetCopyWith<$R, $In extends RenderableAsset, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  $R call();
+  RenderableAssetCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class ImageAssetMapper extends SubClassMapperBase<ImageAsset> {
+  ImageAssetMapper._();
+
+  static ImageAssetMapper? _instance;
+  static ImageAssetMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ImageAssetMapper._());
+      RenderableAssetMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'ImageAsset';
+
+  static String _$svgAssetPath(ImageAsset v) => v.svgAssetPath;
+  static const Field<ImageAsset, String> _f$svgAssetPath = Field(
     'svgAssetPath',
     _$svgAssetPath,
   );
-  static bool _$flipHorizontal(Renderable v) => v.flipHorizontal;
-  static const Field<Renderable, bool> _f$flipHorizontal = Field(
+  static bool _$flipHorizontal(ImageAsset v) => v.flipHorizontal;
+  static const Field<ImageAsset, bool> _f$flipHorizontal = Field(
     'flipHorizontal',
     _$flipHorizontal,
     opt: true,
     def: false,
   );
-  static bool _$flipVertical(Renderable v) => v.flipVertical;
-  static const Field<Renderable, bool> _f$flipVertical = Field(
+  static bool _$flipVertical(ImageAsset v) => v.flipVertical;
+  static const Field<ImageAsset, bool> _f$flipVertical = Field(
     'flipVertical',
     _$flipVertical,
     opt: true,
     def: false,
   );
-  static double _$rotationDegrees(Renderable v) => v.rotationDegrees;
-  static const Field<Renderable, double> _f$rotationDegrees = Field(
+  static double _$rotationDegrees(ImageAsset v) => v.rotationDegrees;
+  static const Field<ImageAsset, double> _f$rotationDegrees = Field(
     'rotationDegrees',
     _$rotationDegrees,
     opt: true,
@@ -2164,7 +2218,7 @@ class RenderableMapper extends SubClassMapperBase<Renderable> {
   );
 
   @override
-  final MappableFields<Renderable> fields = const {
+  final MappableFields<ImageAsset> fields = const {
     #svgAssetPath: _f$svgAssetPath,
     #flipHorizontal: _f$flipHorizontal,
     #flipVertical: _f$flipVertical,
@@ -2174,17 +2228,308 @@ class RenderableMapper extends SubClassMapperBase<Renderable> {
   @override
   final String discriminatorKey = '__type';
   @override
-  final dynamic discriminatorValue = 'Renderable';
+  final dynamic discriminatorValue = 'ImageAsset';
   @override
-  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+  late final ClassMapperBase superMapper =
+      RenderableAssetMapper.ensureInitialized();
 
-  static Renderable _instantiate(DecodingData data) {
-    return Renderable(
+  static ImageAsset _instantiate(DecodingData data) {
+    return ImageAsset(
       data.dec(_f$svgAssetPath),
       flipHorizontal: data.dec(_f$flipHorizontal),
       flipVertical: data.dec(_f$flipVertical),
       rotationDegrees: data.dec(_f$rotationDegrees),
     );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static ImageAsset fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<ImageAsset>(map);
+  }
+
+  static ImageAsset fromJson(String json) {
+    return ensureInitialized().decodeJson<ImageAsset>(json);
+  }
+}
+
+mixin ImageAssetMappable {
+  String toJson() {
+    return ImageAssetMapper.ensureInitialized().encodeJson<ImageAsset>(
+      this as ImageAsset,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return ImageAssetMapper.ensureInitialized().encodeMap<ImageAsset>(
+      this as ImageAsset,
+    );
+  }
+
+  ImageAssetCopyWith<ImageAsset, ImageAsset, ImageAsset> get copyWith =>
+      _ImageAssetCopyWithImpl<ImageAsset, ImageAsset>(
+        this as ImageAsset,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return ImageAssetMapper.ensureInitialized().stringifyValue(
+      this as ImageAsset,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ImageAssetMapper.ensureInitialized().equalsValue(
+      this as ImageAsset,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return ImageAssetMapper.ensureInitialized().hashValue(this as ImageAsset);
+  }
+}
+
+extension ImageAssetValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, ImageAsset, $Out> {
+  ImageAssetCopyWith<$R, ImageAsset, $Out> get $asImageAsset =>
+      $base.as((v, t, t2) => _ImageAssetCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class ImageAssetCopyWith<$R, $In extends ImageAsset, $Out>
+    implements RenderableAssetCopyWith<$R, $In, $Out> {
+  @override
+  $R call({
+    String? svgAssetPath,
+    bool? flipHorizontal,
+    bool? flipVertical,
+    double? rotationDegrees,
+  });
+  ImageAssetCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _ImageAssetCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, ImageAsset, $Out>
+    implements ImageAssetCopyWith<$R, ImageAsset, $Out> {
+  _ImageAssetCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<ImageAsset> $mapper =
+      ImageAssetMapper.ensureInitialized();
+  @override
+  $R call({
+    String? svgAssetPath,
+    bool? flipHorizontal,
+    bool? flipVertical,
+    double? rotationDegrees,
+  }) => $apply(
+    FieldCopyWithData({
+      if (svgAssetPath != null) #svgAssetPath: svgAssetPath,
+      if (flipHorizontal != null) #flipHorizontal: flipHorizontal,
+      if (flipVertical != null) #flipVertical: flipVertical,
+      if (rotationDegrees != null) #rotationDegrees: rotationDegrees,
+    }),
+  );
+  @override
+  ImageAsset $make(CopyWithData data) => ImageAsset(
+    data.get(#svgAssetPath, or: $value.svgAssetPath),
+    flipHorizontal: data.get(#flipHorizontal, or: $value.flipHorizontal),
+    flipVertical: data.get(#flipVertical, or: $value.flipVertical),
+    rotationDegrees: data.get(#rotationDegrees, or: $value.rotationDegrees),
+  );
+
+  @override
+  ImageAssetCopyWith<$R2, ImageAsset, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _ImageAssetCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class TextAssetMapper extends SubClassMapperBase<TextAsset> {
+  TextAssetMapper._();
+
+  static TextAssetMapper? _instance;
+  static TextAssetMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = TextAssetMapper._());
+      RenderableAssetMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'TextAsset';
+
+  static String _$text(TextAsset v) => v.text;
+  static const Field<TextAsset, String> _f$text = Field('text', _$text);
+  static double _$fontSize(TextAsset v) => v.fontSize;
+  static const Field<TextAsset, double> _f$fontSize = Field(
+    'fontSize',
+    _$fontSize,
+    opt: true,
+    def: 16,
+  );
+  static int _$color(TextAsset v) => v.color;
+  static const Field<TextAsset, int> _f$color = Field(
+    'color',
+    _$color,
+    opt: true,
+    def: 0xFFFFFFFF,
+  );
+
+  @override
+  final MappableFields<TextAsset> fields = const {
+    #text: _f$text,
+    #fontSize: _f$fontSize,
+    #color: _f$color,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'TextAsset';
+  @override
+  late final ClassMapperBase superMapper =
+      RenderableAssetMapper.ensureInitialized();
+
+  static TextAsset _instantiate(DecodingData data) {
+    return TextAsset(
+      text: data.dec(_f$text),
+      fontSize: data.dec(_f$fontSize),
+      color: data.dec(_f$color),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static TextAsset fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<TextAsset>(map);
+  }
+
+  static TextAsset fromJson(String json) {
+    return ensureInitialized().decodeJson<TextAsset>(json);
+  }
+}
+
+mixin TextAssetMappable {
+  String toJson() {
+    return TextAssetMapper.ensureInitialized().encodeJson<TextAsset>(
+      this as TextAsset,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return TextAssetMapper.ensureInitialized().encodeMap<TextAsset>(
+      this as TextAsset,
+    );
+  }
+
+  TextAssetCopyWith<TextAsset, TextAsset, TextAsset> get copyWith =>
+      _TextAssetCopyWithImpl<TextAsset, TextAsset>(
+        this as TextAsset,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return TextAssetMapper.ensureInitialized().stringifyValue(
+      this as TextAsset,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return TextAssetMapper.ensureInitialized().equalsValue(
+      this as TextAsset,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return TextAssetMapper.ensureInitialized().hashValue(this as TextAsset);
+  }
+}
+
+extension TextAssetValueCopy<$R, $Out> on ObjectCopyWith<$R, TextAsset, $Out> {
+  TextAssetCopyWith<$R, TextAsset, $Out> get $asTextAsset =>
+      $base.as((v, t, t2) => _TextAssetCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class TextAssetCopyWith<$R, $In extends TextAsset, $Out>
+    implements RenderableAssetCopyWith<$R, $In, $Out> {
+  @override
+  $R call({String? text, double? fontSize, int? color});
+  TextAssetCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _TextAssetCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, TextAsset, $Out>
+    implements TextAssetCopyWith<$R, TextAsset, $Out> {
+  _TextAssetCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<TextAsset> $mapper =
+      TextAssetMapper.ensureInitialized();
+  @override
+  $R call({String? text, double? fontSize, int? color}) => $apply(
+    FieldCopyWithData({
+      if (text != null) #text: text,
+      if (fontSize != null) #fontSize: fontSize,
+      if (color != null) #color: color,
+    }),
+  );
+  @override
+  TextAsset $make(CopyWithData data) => TextAsset(
+    text: data.get(#text, or: $value.text),
+    fontSize: data.get(#fontSize, or: $value.fontSize),
+    color: data.get(#color, or: $value.color),
+  );
+
+  @override
+  TextAssetCopyWith<$R2, TextAsset, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _TextAssetCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class RenderableMapper extends SubClassMapperBase<Renderable> {
+  RenderableMapper._();
+
+  static RenderableMapper? _instance;
+  static RenderableMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = RenderableMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      RenderableAssetMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Renderable';
+
+  static RenderableAsset _$asset(Renderable v) => v.asset;
+  static const Field<Renderable, RenderableAsset> _f$asset = Field(
+    'asset',
+    _$asset,
+  );
+
+  @override
+  final MappableFields<Renderable> fields = const {#asset: _f$asset};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Renderable';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Renderable _instantiate(DecodingData data) {
+    return Renderable(data.dec(_f$asset));
   }
 
   @override
@@ -2247,13 +2592,9 @@ extension RenderableValueCopy<$R, $Out>
 
 abstract class RenderableCopyWith<$R, $In extends Renderable, $Out>
     implements ComponentCopyWith<$R, $In, $Out> {
+  RenderableAssetCopyWith<$R, RenderableAsset, RenderableAsset> get asset;
   @override
-  $R call({
-    String? svgAssetPath,
-    bool? flipHorizontal,
-    bool? flipVertical,
-    double? rotationDegrees,
-  });
+  $R call({RenderableAsset? asset});
   RenderableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -2266,26 +2607,14 @@ class _RenderableCopyWithImpl<$R, $Out>
   late final ClassMapperBase<Renderable> $mapper =
       RenderableMapper.ensureInitialized();
   @override
-  $R call({
-    String? svgAssetPath,
-    bool? flipHorizontal,
-    bool? flipVertical,
-    double? rotationDegrees,
-  }) => $apply(
-    FieldCopyWithData({
-      if (svgAssetPath != null) #svgAssetPath: svgAssetPath,
-      if (flipHorizontal != null) #flipHorizontal: flipHorizontal,
-      if (flipVertical != null) #flipVertical: flipVertical,
-      if (rotationDegrees != null) #rotationDegrees: rotationDegrees,
-    }),
-  );
+  RenderableAssetCopyWith<$R, RenderableAsset, RenderableAsset> get asset =>
+      $value.asset.copyWith.$chain((v) => call(asset: v));
   @override
-  Renderable $make(CopyWithData data) => Renderable(
-    data.get(#svgAssetPath, or: $value.svgAssetPath),
-    flipHorizontal: data.get(#flipHorizontal, or: $value.flipHorizontal),
-    flipVertical: data.get(#flipVertical, or: $value.flipVertical),
-    rotationDegrees: data.get(#rotationDegrees, or: $value.rotationDegrees),
-  );
+  $R call({RenderableAsset? asset}) =>
+      $apply(FieldCopyWithData({if (asset != null) #asset: asset}));
+  @override
+  Renderable $make(CopyWithData data) =>
+      Renderable(data.get(#asset, or: $value.asset));
 
   @override
   RenderableCopyWith<$R2, Renderable, $Out2> $chain<$R2, $Out2>(

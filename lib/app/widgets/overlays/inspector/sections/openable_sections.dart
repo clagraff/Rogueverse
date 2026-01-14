@@ -120,7 +120,7 @@ class OpenableMetadata extends ComponentMetadata {
     // Update Renderable to show correct visual
     final newPath = isOpen ? openable.openRenderablePath : openable.closedRenderablePath;
     if (newPath.isNotEmpty) {
-      entity.upsert(Renderable(newPath));
+      entity.upsert(Renderable(ImageAsset(newPath)));
     }
 
     // Sync blocking components

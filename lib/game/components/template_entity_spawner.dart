@@ -53,7 +53,8 @@ class TemplateEntitySpawner extends PositionComponent
   }
 
   EntityTemplate? get _template => templateNotifier.value;
-  bool get _isActive => _preview != null; // Active when preview exists (placement or removal mode)
+  // Active when a template is selected (placement mode) or preview exists (removal mode)
+  bool get _isActive => _template != null || _preview != null;
 
   @override
   Future<void> onLoad() async {
@@ -77,7 +78,7 @@ class TemplateEntitySpawner extends PositionComponent
 
       final renderable = template.components.whereType<Renderable>().firstOrNull;
       if (renderable != null) {
-        _preview = PlacementPreview(svgAssetPath: renderable.svgAssetPath);
+        _preview = PlacementPreview(asset: renderable.asset);
         add(_preview!);
       }
     } else {
@@ -182,7 +183,7 @@ class TemplateEntitySpawner extends PositionComponent
     templateNotifier.value = null;
 
     // Create removal mode preview
-    _preview = PlacementPreview(svgAssetPath: 'images/cross.svg');
+    _preview = PlacementPreview.fromPath('images/cross.svg');
     add(_preview!);
 
     event.handled = true;

@@ -29,7 +29,9 @@ class NavigationDrawerContent extends StatelessWidget {
   /// Notifier for the currently selected entity.
   final ValueNotifier<Entity?> selectedEntityNotifier;
 
-  final World world;
+  /// Getter for the current world (called at action time, not build time).
+  /// This ensures we always get the current world, even if it was replaced after build.
+  final World Function() worldGetter;
 
   const NavigationDrawerContent({
     super.key,
@@ -39,7 +41,7 @@ class NavigationDrawerContent extends StatelessWidget {
     required this.onToggleEditModePressed,
     required this.gameModeNotifier,
     required this.selectedEntityNotifier,
-    required this.world,
+    required this.worldGetter,
   });
 
   @override
@@ -149,7 +151,7 @@ class NavigationDrawerContent extends StatelessWidget {
                   label: 'Save & Quit',
                   onTap: () async {
                     Navigator.pop(context);
-                    await WorldSaves.writeSavePatch(world);
+                    await WorldSaves.writeSavePatch(worldGetter());
                     exit(0);
                   },
                 ),

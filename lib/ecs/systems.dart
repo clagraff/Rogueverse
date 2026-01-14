@@ -997,7 +997,7 @@ class OpenableSystem extends System with OpenableSystemMappable {
 
         // Open the entity
         openable.isOpen = true;
-        target.upsert(Renderable(openable.openRenderablePath));
+        target.upsert(Renderable(ImageAsset(openable.openRenderablePath)));
 
         // Remove blocking components
         if (openable.blocksMovementWhenClosed) {
@@ -1037,7 +1037,7 @@ class OpenableSystem extends System with OpenableSystemMappable {
 
         // Close the entity
         openable.isOpen = false;
-        target.upsert(Renderable(openable.closedRenderablePath));
+        target.upsert(Renderable(ImageAsset(openable.closedRenderablePath)));
 
         // Add blocking components based on configuration
         if (openable.blocksMovementWhenClosed) {

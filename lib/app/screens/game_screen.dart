@@ -66,6 +66,10 @@ class GameScreen extends flame.World with Disposer {
     // TODO this can only work when running on Desktop, not web!
     var save = await WorldSaves.loadSaveWithPatch();
     if (save != null) {
+      _logger.info("DEBUG replacing currentWorld", {
+        "oldWorldDebugId": game.currentWorld.debugId,
+        "newWorldDebugId": save.debugId,
+      });
       game.currentWorld = save;
       // Update tick scheduler to use the loaded world
       game.tickScheduler.updateWorld(save);
@@ -212,7 +216,7 @@ class GameScreen extends flame.World with Disposer {
 
       // TODO: need to tweak this so we only spawn renderable entities if they belong to the same
       // parent we are currently watching.
-      if (change.componentType == Renderable('').componentType ||
+      if (change.componentType == Renderable(ImageAsset('')).componentType ||
           change.componentType == LocalPosition(x: 0, y: 0).componentType) {
         _spawnRenderableEntity(
           game,
@@ -418,14 +422,14 @@ class GameScreen extends flame.World with Disposer {
       component = Opponent(
         world: game.currentWorld,
         entity: game.currentWorld.getEntity(entity.id),
-        assetPath: renderable.svgAssetPath,
+        asset: renderable.asset,
         position: position,
       );
     } else {
       component = Agent(
         world: game.currentWorld,
         entity: game.currentWorld.getEntity(entity.id),
-        assetPath: renderable.svgAssetPath,
+        asset: renderable.asset,
         position: position,
       );
     }

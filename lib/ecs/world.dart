@@ -109,7 +109,12 @@ class HierarchyCache {
 @MappableClass()
 class World with WorldMappable implements IWorldView {
   static final _logger = Logger('World');
-  
+
+  // DEBUG: Unique ID for each World instance to track which one is used where
+  static int _nextDebugId = 0;
+  final int _debugId = _nextDebugId++;
+  int get debugId => _debugId;
+
   int tickId = 0; // TODO not de/serializing to json/map?
   int lastId = 0; // TODO not de/serializing to json/map?
   final List<System> systems;
@@ -134,7 +139,9 @@ class World with WorldMappable implements IWorldView {
   /// Not serialized - Entity objects are lightweight wrappers around data
   final Map<int, Entity> _entityCache = {};
 
-  World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]);
+  World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]) {
+    _logger.info("DEBUG World created", {"debugId": _debugId, "componentTypes": components.keys.toList()});
+  }
 
   @override
   Entity getEntity(int entityId) {
@@ -346,23 +353,66 @@ class World with WorldMappable implements IWorldView {
 class ComponentsHook extends MappingHook {
   const ComponentsHook();
 
-  /// Receives the ecoded value before decoding.
+  /// Receives the encoded value before decoding.
+  /// Converts JSON string keys to integers and decodes components.
   @override
   Object? beforeDecode(Object? value) {
-    //var comps = value as Map<String, Map<int, Component>>;
     var comps = value as Map<String, dynamic>;
-    return comps.map((type, entityMap) {
-      return MapEntry(
-          type,
-          entityMap.map((id, comp) =>
-              MapEntry(id.toString(), MapperContainer.globals.fromMap(comp))));
-    });
+    final logger = Logger('ComponentsHook');
+
+    logger.info("beforeDecode input types: ${comps.keys.toList()}");
+
+    final result = <String, Map<int, Component>>{};
+
+    for (final typeEntry in comps.entries) {
+      final componentType = typeEntry.key;
+      final entityMap = typeEntry.value as Map<String, dynamic>;
+      final decodedMap = <int, Component>{};
+
+      for (final entityEntry in entityMap.entries) {
+        final entityId = int.parse(entityEntry.key);
+        final compData = entityEntry.value as Map<String, dynamic>;
+
+        try {
+          final component = MapperContainer.globals.fromMap<Component>(compData);
+          decodedMap[entityId] = component;
+        } catch (e, stack) {
+          logger.severe("Failed to decode $componentType for entity $entityId: $e");
+          logger.severe("Component data: $compData");
+          logger.severe("Stack: $stack");
+        }
+      }
+
+      if (decodedMap.isNotEmpty) {
+        result[componentType] = decodedMap;
+      }
+
+      logger.info("beforeDecode $componentType: ${entityMap.length} input -> ${decodedMap.length} decoded");
+    }
+
+    return result;
   }
 
   /// Receives the decoded value before encoding.
   @override
   Object? beforeEncode(Object? value) {
     var comps = value as Map<String, Map<int, Component>>;
+
+    // DEBUG: Log what's being encoded
+    final logger = Logger('ComponentsHook');
+    logger.info("beforeEncode input types: ${comps.keys.toList()}");
+    if (comps.containsKey('Renderable')) {
+      final renderables = comps['Renderable']!;
+      logger.info("beforeEncode Renderable count: ${renderables.length}");
+      if (renderables.isNotEmpty) {
+        final firstEntry = renderables.entries.first;
+        logger.info("beforeEncode first Renderable: ${firstEntry.key} -> ${firstEntry.value}");
+      }
+    } else {
+      logger.warning("beforeEncode: NO Renderable key in components!");
+      logger.info("beforeEncode all keys: ${comps.keys.toList()}");
+    }
+
     return comps.map((type, entityMap) => MapEntry(
         type,
         entityMap.map((id, comp) =>
@@ -480,7 +530,16 @@ class WorldSaves {
       }
 
       // Step 3: Deserialize to World
-      return WorldMapper.fromMap(finalState);
+      final world = WorldMapper.fromMap(finalState);
+
+      // DEBUG: Check what's in world.components right after loading
+      _logger.info("DEBUG after WorldMapper.fromMap", {
+        "worldDebugId": world.debugId,
+        "componentTypes": world.components.keys.toList(),
+        "componentCounts": world.components.map((k, v) => MapEntry(k, v.length)),
+      });
+
+      return world;
     } finally {
       task.finish();
     }
@@ -492,6 +551,12 @@ class WorldSaves {
   /// Uses the cached initial state from loadInitialState/loadSaveWithPatch.
   /// Throws StateError if no initial state is cached.
   static Future<void> writeSavePatch(World world) async {
+    // DEBUG: Log which world instance we're saving
+    _logger.info("DEBUG writeSavePatch called", {
+      "worldDebugId": world.debugId,
+      "worldComponentTypes": world.components.keys.toList(),
+    });
+
     if (_writeLock) {
       _logger.warning("write operation already in progress, skipping");
       return;
@@ -511,6 +576,21 @@ class WorldSaves {
 
       // Get current state as Map
       var currentState = world.toMap();
+
+      // DEBUG: Check what's in the Renderable components
+      var currentComponents = currentState['components'] as Map<String, dynamic>?;
+      var currentRenderables = currentComponents?['Renderable'];
+      var initialComponents = _cachedInitialState!['components'] as Map<String, dynamic>?;
+      var initialRenderables = initialComponents?['Renderable'];
+      _logger.info("DEBUG save diff", {
+        "currentRenderableCount": currentRenderables?.length ?? 0,
+        "initialRenderableCount": initialRenderables?.length ?? 0,
+        "currentRenderableKeys": currentRenderables?.keys.toList(),
+        "initialRenderableKeys": initialRenderables?.keys.toList(),
+        "allCurrentComponentTypes": currentComponents?.keys.toList(),
+        "worldComponentTypes": world.components.keys.toList(),
+        "worldRenderableCount": world.components['Renderable']?.length ?? 0,
+      });
 
       // Compute RFC 6902 patch
       var patchOps = JsonPatch.diff(_cachedInitialState!, currentState);

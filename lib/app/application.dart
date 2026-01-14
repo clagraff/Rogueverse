@@ -162,7 +162,7 @@ class _ApplicationState extends State<Application> {
           onToggleEditModePressed: _toggleGameMode,
           gameModeNotifier: _game.gameMode,
           selectedEntityNotifier: _game.selectedEntity,
-          world: _game.currentWorld,
+          worldGetter: () => _game.currentWorld,
         ),
         body: ValueListenableBuilder<GameMode>(
           valueListenable: _game.gameMode,

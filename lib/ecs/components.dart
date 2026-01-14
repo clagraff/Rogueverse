@@ -231,21 +231,51 @@ class Behavior with BehaviorMappable implements Component {
   String get componentType => "Behavior";
 }
 
-/// Component that provides a visual asset path for rendering the entity.
-/// Supports horizontal/vertical flipping and rotation.
+// ============================================================================
+// Renderable Asset Types
+// ============================================================================
+
+/// Base class for renderable assets. Either an image or text.
 @MappableClass()
-class Renderable with RenderableMappable implements Component {
+sealed class RenderableAsset with RenderableAssetMappable {}
+
+/// Image-based renderable asset with SVG/PNG path and transform options.
+@MappableClass()
+class ImageAsset extends RenderableAsset with ImageAssetMappable {
   final String svgAssetPath;
   final bool flipHorizontal;
   final bool flipVertical;
   final double rotationDegrees;
 
-  Renderable(
+  ImageAsset(
     this.svgAssetPath, {
     this.flipHorizontal = false,
     this.flipVertical = false,
     this.rotationDegrees = 0,
   });
+}
+
+/// Text-based renderable asset for in-world text display.
+@MappableClass()
+class TextAsset extends RenderableAsset with TextAssetMappable {
+  final String text;
+  final double fontSize;
+  final int color; // ARGB int for serialization
+
+  TextAsset({
+    required this.text,
+    this.fontSize = 16,
+    this.color = 0xFFFFFFFF, // White default
+  });
+}
+
+/// Component that provides visual rendering for an entity.
+/// Contains either an ImageAsset or TextAsset.
+@MappableClass()
+class Renderable with RenderableMappable implements Component {
+  final RenderableAsset asset;
+
+  Renderable(this.asset);
 
   @override
   String get componentType => "Renderable";
