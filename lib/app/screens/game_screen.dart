@@ -184,7 +184,10 @@ class GameScreen extends flame.World with Disposer {
     add(_globalControlHandler);
 
     // Add editor control handler (DEL to delete, etc.) - enabled in editing mode
-    _editorControlHandler = EditorControlHandler(selectedEntitiesNotifier: game.selectedEntities);
+    _editorControlHandler = EditorControlHandler(
+      selectedEntitiesNotifier: game.selectedEntities,
+      viewedParentIdNotifier: game.viewedParentId,
+    );
     add(_editorControlHandler);
 
     // Add game mode toggle (Ctrl+` to switch between gameplay and editing)
@@ -342,16 +345,20 @@ class GameScreen extends flame.World with Disposer {
   /// Determines if an entity should be rendered based on the viewed parent filter.
   ///
   /// Returns true if:
-  /// - viewedParentId is null (show all entities)
-  /// - Entity has HasParent component with parentEntityId matching viewedParentId
+  /// - viewedParentId is null: show only root-level entities (no HasParent)
+  /// - viewedParentId is set: show only entities with HasParent matching that ID
   bool _shouldRenderEntity(Entity entity, int? viewedParentId) {
+    // Check HasParent directly from component map for reliable lookup
+    final hasParentMap = entity.parentCell.get<HasParent>();
+    final hasParent = hasParentMap[entity.id];
+
     if (viewedParentId == null) {
-      return true; // Show all entities
+      // At root level, only show entities WITHOUT HasParent
+      return hasParent == null;
     }
 
-    final hasParent = entity.get<HasParent>();
     if (hasParent == null) {
-      return false; // Entity has no parent, don't show when filtering
+      return false; // Entity has no parent, don't show when filtering by parent
     }
 
     return hasParent.parentEntityId == viewedParentId;

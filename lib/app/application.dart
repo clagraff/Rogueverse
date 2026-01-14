@@ -13,7 +13,6 @@ import 'package:rogueverse/app/widgets/panels/templates_panel.dart';
 import 'package:rogueverse/app/widgets/panels/properties_panel.dart';
 import 'package:rogueverse/app/widgets/panels/editor_footer_bar.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
-import 'package:rogueverse/app/widgets/overlays/hierarchy_panel/hierarchy_panel.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
 
 class Application extends StatefulWidget {
@@ -151,10 +150,6 @@ class _ApplicationState extends State<Application> {
               _toggleGameMode();
             }
           },
-          onHierarchyNavigatorPressed: () {
-            _game.overlays.clear();
-            _game.overlays.add(HierarchyPanel.overlayName);
-          },
           onVisionObserverPressed: () {
             _game.overlays.clear();
             _game.overlays.add(VisionObserverPanel.overlayName);
@@ -181,19 +176,6 @@ class _ApplicationState extends State<Application> {
                     focusNode: widget.gameAreaFocusNode,
                     game: _game,
                     overlayBuilderMap: {
-                      HierarchyPanel.overlayName: (context, game) => Align(
-                            alignment: Alignment.centerLeft,
-                            child: SizedBox(
-                              width: 320,
-                              child: HierarchyPanel(
-                                world: _game.currentWorld,
-                                viewedParentIdNotifier: _game.viewedParentId,
-                                onClose: () {
-                                  _game.overlays.remove(HierarchyPanel.overlayName);
-                                },
-                              ),
-                            ),
-                          ),
                       VisionObserverPanel.overlayName: (context, game) => Align(
                             alignment: Alignment.centerLeft,
                             child: SizedBox(

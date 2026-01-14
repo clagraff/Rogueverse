@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -5,18 +6,22 @@ import 'package:logging/logging.dart';
 
 import 'package:rogueverse/ecs/entity.dart';
 
-/// Handles keyboard controls specific to editing mode (DEL to delete, etc.).
+/// Handles keyboard controls specific to editing mode (DEL to delete, Enter to navigate, etc.).
 ///
 /// This component is enabled only in editing mode and handles editor-specific
-/// actions like deleting selected entities.
+/// actions like deleting selected entities and navigating into entities.
 class EditorControlHandler extends Component with KeyboardHandler {
   final ValueNotifier<Set<Entity>> selectedEntitiesNotifier;
+  final ValueNotifier<int?> viewedParentIdNotifier;
   final _logger = Logger("EditorControlHandler");
 
   /// Whether this handler is enabled. Enabled in editing mode only.
   bool isEnabled = false;
 
-  EditorControlHandler({required this.selectedEntitiesNotifier});
+  EditorControlHandler({
+    required this.selectedEntitiesNotifier,
+    required this.viewedParentIdNotifier,
+  });
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
@@ -35,6 +40,16 @@ class EditorControlHandler extends Component with KeyboardHandler {
         return false;
       } else {
         _logger.fine("DEL pressed but no entities selected");
+      }
+    }
+
+    // Enter to navigate into selected entity (set as viewed parent)
+    if (event.logicalKey == LogicalKeyboardKey.enter) {
+      final selected = selectedEntitiesNotifier.value.firstOrNull;
+      if (selected != null) {
+        _logger.info("entering entity ${selected.id}");
+        viewedParentIdNotifier.value = selected.id;
+        return false;
       }
     }
 

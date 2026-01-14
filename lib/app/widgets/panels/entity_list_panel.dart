@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 
-/// Panel for browsing, searching, and selecting entities under the current viewed parent.
+import 'entity_tree_node.dart';
+
+/// Panel for browsing, searching, and selecting entities in a tree hierarchy.
 ///
 /// Features:
-/// - Search bar to filter by entity ID or name
-/// - Checkbox multi-select that syncs with selectedEntitiesNotifier
-/// - Toolbar with Select All, Deselect All, Delete buttons
-/// - Click entity row to single-select for editing
+/// - Breadcrumb navigation for parent traversal
+/// - Tree view showing entity hierarchy with expand/collapse
+/// - Search bar to filter by entity ID or name (shows flat list when active)
+/// - Checkbox multi-select for entities under the current viewed parent
+/// - Double-click on parent entities to navigate into them
 class EntityListPanel extends StatefulWidget {
   final World world;
   final ValueNotifier<int?> viewedParentIdNotifier;
@@ -28,6 +31,7 @@ class EntityListPanel extends StatefulWidget {
 class _EntityListPanelState extends State<EntityListPanel> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  final Map<int, bool> _expandedNodes = {};
 
   @override
   void initState() {
@@ -37,23 +41,81 @@ class _EntityListPanelState extends State<EntityListPanel> {
         _searchQuery = _searchController.text.toLowerCase();
       });
     });
+
+    // Listen for external selection changes to auto-expand path
+    widget.selectedEntitiesNotifier.addListener(_onExternalSelectionChanged);
+    // Ensure rebuild when viewed parent changes
+    widget.viewedParentIdNotifier.addListener(_onViewedParentChanged);
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    widget.selectedEntitiesNotifier.removeListener(_onExternalSelectionChanged);
+    widget.viewedParentIdNotifier.removeListener(_onViewedParentChanged);
     super.dispose();
   }
 
+  void _onViewedParentChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  void _onExternalSelectionChanged() {
+    final selected = widget.selectedEntitiesNotifier.value;
+    if (selected.isNotEmpty) {
+      // Auto-expand path to the first selected entity
+      final firstSelected = selected.first;
+      _expandPathToEntity(firstSelected.id);
+    }
+  }
+
+  /// Expand all ancestor nodes to make the given entity visible
+  void _expandPathToEntity(int entityId) {
+    var currentId = widget.world.hierarchyCache.getParent(entityId);
+    var needsRebuild = false;
+
+    while (currentId != null) {
+      if (_expandedNodes[currentId] != true) {
+        _expandedNodes[currentId] = true;
+        needsRebuild = true;
+      }
+      currentId = widget.world.hierarchyCache.getParent(currentId);
+    }
+
+    if (needsRebuild && mounted) {
+      setState(() {});
+    }
+  }
+
+  /// Build the path from root to the given entity ID
+  List<int> _buildPathToRoot(int? entityId) {
+    if (entityId == null) return [];
+
+    final path = <int>[];
+    int? currentId = entityId;
+
+    while (currentId != null) {
+      path.insert(0, currentId);
+      currentId = widget.world.hierarchyCache.getParent(currentId);
+    }
+
+    return path;
+  }
+
   List<Entity> _getFilteredEntities(int? viewedParentId) {
+    // Get the HasParent component map directly from the world
+    final hasParentMap = widget.world.get<HasParent>();
+
     // Get all entities under the viewed parent
     var entities = widget.world.entities().where((e) {
+      final hasParent = hasParentMap[e.id];
       if (viewedParentId == null) {
         // Show entities without a parent
-        return !e.has<HasParent>();
+        return hasParent == null;
       } else {
         // Show entities with matching parent
-        final hasParent = e.get<HasParent>();
         return hasParent != null && hasParent.parentEntityId == viewedParentId;
       }
     }).toList();
@@ -68,6 +130,27 @@ class _EntityListPanelState extends State<EntityListPanel> {
     }
 
     // Sort by name, then by ID
+    entities.sort((a, b) {
+      final aName = a.get<Name>()?.name ?? '';
+      final bName = b.get<Name>()?.name ?? '';
+      if (aName.isNotEmpty && bName.isNotEmpty) {
+        return aName.compareTo(bName);
+      }
+      return a.id.compareTo(b.id);
+    });
+
+    return entities;
+  }
+
+  /// Get all root entities (no parent)
+  List<Entity> _getRootEntities() {
+    // Get all entity IDs that have a HasParent component
+    final hasParentMap = widget.world.get<HasParent>();
+    final entitiesWithParent = hasParentMap.keys.toSet();
+
+    // Root entities are those NOT in the hasParent map
+    var entities = widget.world.entities().where((e) => !entitiesWithParent.contains(e.id)).toList();
+
     entities.sort((a, b) {
       final aName = a.get<Name>()?.name ?? '';
       final bName = b.get<Name>()?.name ?? '';
@@ -109,6 +192,16 @@ class _EntityListPanelState extends State<EntityListPanel> {
     widget.selectedEntitiesNotifier.value = {};
   }
 
+  void _toggleExpand(int entityId) {
+    setState(() {
+      _expandedNodes[entityId] = !(_expandedNodes[entityId] ?? false);
+    });
+  }
+
+  void _handleNavigate(int? parentId) {
+    widget.viewedParentIdNotifier.value = parentId;
+  }
+
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int?>(
@@ -117,25 +210,94 @@ class _EntityListPanelState extends State<EntityListPanel> {
         return ValueListenableBuilder<Set<Entity>>(
           valueListenable: widget.selectedEntitiesNotifier,
           builder: (context, selectedEntities, _) {
-            final entities = _getFilteredEntities(viewedParentId);
+            final selectableEntities = _getFilteredEntities(viewedParentId);
 
             return Column(
               children: [
+                // Breadcrumb navigation
+                _buildBreadcrumb(context, viewedParentId),
                 // Search bar
                 _buildSearchBar(context),
                 // Toolbar
-                _buildToolbar(context, entities, selectedEntities),
-                // Entity list
+                _buildToolbar(context, selectableEntities, selectedEntities),
+                // Entity tree or list
                 Expanded(
-                  child: entities.isEmpty
-                      ? _buildEmptyState(context)
-                      : _buildEntityList(context, entities, selectedEntities),
+                  child: _searchQuery.isNotEmpty
+                      ? _buildFlatList(context, selectableEntities, selectedEntities)
+                      : _buildTreeView(context, viewedParentId, selectedEntities),
                 ),
               ],
             );
           },
         );
       },
+    );
+  }
+
+  Widget _buildBreadcrumb(BuildContext context, int? viewedParentId) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final path = _buildPathToRoot(viewedParentId);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.account_tree_outlined,
+            size: 14,
+            color: colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+          const SizedBox(width: 4),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  // Root button
+                  _BreadcrumbSegment(
+                    label: 'Root',
+                    isActive: viewedParentId == null,
+                    onTap: () => _handleNavigate(null),
+                  ),
+                  // Path segments
+                  ...path.map((entityId) {
+                    final entity = widget.world.getEntity(entityId);
+                    final name = entity.get<Name>()?.name ?? '#$entityId';
+                    final isCurrent = entityId == viewedParentId;
+
+                    return Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          ' > ',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colorScheme.onSurface.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        _BreadcrumbSegment(
+                          label: name,
+                          isActive: isCurrent,
+                          onTap: () => _handleNavigate(entityId),
+                        ),
+                      ],
+                    );
+                  }),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -259,7 +421,36 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildEntityList(BuildContext context, List<Entity> entities, Set<Entity> selectedEntities) {
+  Widget _buildTreeView(BuildContext context, int? viewedParentId, Set<Entity> selectedEntities) {
+    final rootEntities = _getRootEntities();
+
+    if (rootEntities.isEmpty) {
+      return _buildEmptyState(context);
+    }
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      children: rootEntities.map((entity) {
+        return EntityTreeNode(
+          entity: entity,
+          world: widget.world,
+          viewedParentId: viewedParentId,
+          selectedEntities: selectedEntities,
+          expandedNodes: _expandedNodes,
+          depth: 0,
+          onToggleExpand: _toggleExpand,
+          onToggleSelection: (e) => _toggleEntitySelection(e, selectedEntities),
+          onNavigate: _handleNavigate,
+        );
+      }).toList(),
+    );
+  }
+
+  Widget _buildFlatList(BuildContext context, List<Entity> entities, Set<Entity> selectedEntities) {
+    if (entities.isEmpty) {
+      return _buildEmptyState(context);
+    }
+
     return ListView.builder(
       padding: const EdgeInsets.symmetric(vertical: 2),
       itemCount: entities.length,
@@ -300,6 +491,41 @@ class _EntityListPanelState extends State<EntityListPanel> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BreadcrumbSegment extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final VoidCallback onTap;
+
+  const _BreadcrumbSegment({
+    required this.label,
+    required this.isActive,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            color: isActive
+                ? colorScheme.primary
+                : colorScheme.onSurface.withValues(alpha: 0.7),
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+          ),
         ),
       ),
     );

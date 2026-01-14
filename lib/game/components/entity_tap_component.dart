@@ -9,6 +9,8 @@ import 'package:rogueverse/game/utils/grid_coordinates.dart'
     show GridCoordinates;
 
 /// Handles tap events on the game grid to select entities at tapped positions.
+///
+/// Single tap: Select the entity at that position
 class EntityTapComponent extends PositionComponent with TapCallbacks {
   final ValueNotifier<Set<Entity>> notifier;
   final ValueNotifier<int?>? observerEntityIdNotifier;
@@ -27,6 +29,7 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
   /// [notifier] updates with the selected entity or null.
   /// [world] provides access to entity data.
   /// [observerEntityIdNotifier] updates with the selected entity's ID for vision tracking.
+  /// [viewedParentNotifier] is read to determine which parent's children to query.
   EntityTapComponent(this.gridSize, this.notifier, this.world,
       {this.observerEntityIdNotifier, required this.viewedParentNotifier});
 
@@ -77,6 +80,7 @@ class EntityTapComponent extends PositionComponent with TapCallbacks {
       observerEntityIdNotifier?.value = null;
     }
   }
+
 }
 
 /// Displays visual borders around all currently selected entities.

@@ -14,9 +14,6 @@ class NavigationDrawerContent extends StatelessWidget {
   /// Callback when "Editor" is clicked.
   final VoidCallback onEditorPressed;
 
-  /// Callback when "Hierarchy Navigator" is clicked.
-  final VoidCallback onHierarchyNavigatorPressed;
-
   /// Callback when "Vision Observer" is clicked.
   final VoidCallback onVisionObserverPressed;
 
@@ -36,7 +33,6 @@ class NavigationDrawerContent extends StatelessWidget {
   const NavigationDrawerContent({
     super.key,
     required this.onEditorPressed,
-    required this.onHierarchyNavigatorPressed,
     required this.onVisionObserverPressed,
     required this.onToggleEditModePressed,
     required this.gameModeNotifier,
@@ -124,15 +120,6 @@ class NavigationDrawerContent extends StatelessWidget {
                   onTap: () {
                     Navigator.pop(context);
                     onEditorPressed();
-                  },
-                ),
-                _buildNavItem(
-                  context: context,
-                  icon: Icons.account_tree,
-                  label: 'Hierarchy Navigator',
-                  onTap: () {
-                    Navigator.pop(context);
-                    onHierarchyNavigatorPressed();
                   },
                 ),
                 _buildNavItem(
