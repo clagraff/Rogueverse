@@ -66,10 +66,6 @@ class GameScreen extends flame.World with Disposer {
     // TODO this can only work when running on Desktop, not web!
     var save = await WorldSaves.loadSaveWithPatch();
     if (save != null) {
-      _logger.info("DEBUG replacing currentWorld", {
-        "oldWorldDebugId": game.currentWorld.debugId,
-        "newWorldDebugId": save.debugId,
-      });
       game.currentWorld = save;
       // Update tick scheduler to use the loaded world
       game.tickScheduler.updateWorld(save);
