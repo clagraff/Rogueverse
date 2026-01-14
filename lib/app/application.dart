@@ -230,6 +230,7 @@ class _ApplicationState extends State<Application> {
                         title: 'Templates',
                         child: TemplatesPanel(
                           selectedTemplateNotifier: _game.selectedTemplate,
+                          blankEntityModeNotifier: _game.blankEntityMode,
                           onCreateTemplate: () async {
                             await _game.startTemplateCreation(context);
                           },

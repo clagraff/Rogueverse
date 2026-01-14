@@ -303,17 +303,18 @@ class _SaveAsTemplateButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return Tooltip(
-      message: 'Save as Template',
+      message: 'Copy to Template',
       child: InkWell(
         onTap: () => _saveAsTemplate(context),
         borderRadius: BorderRadius.circular(4),
         child: Padding(
           padding: const EdgeInsets.all(4),
           child: Icon(
-            Icons.save_outlined,
+            Icons.copy_outlined,
             size: 16,
-            color: Theme.of(context).colorScheme.primary,
+            color: colorScheme.secondary,
           ),
         ),
       ),

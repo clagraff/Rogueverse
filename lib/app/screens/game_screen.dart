@@ -75,10 +75,11 @@ class GameScreen extends flame.World with Disposer {
       await WorldSaves.writeInitialState(game.currentWorld);
     }
 
-    // Create template entity spawner (listens to template selection)
+    // Create template entity spawner (listens to template selection and blank entity mode)
     add(TemplateEntitySpawner(
       world: game.currentWorld,
       templateNotifier: game.selectedTemplate,
+      blankEntityModeNotifier: game.blankEntityMode,
       viewedParentNotifier: game.viewedParentId,
     ));
 

@@ -8,12 +8,14 @@ import 'package:rogueverse/app/widgets/overlays/template_panel/template_card.dar
 /// in the game world.
 class TemplatesPanel extends StatefulWidget {
   final ValueNotifier<EntityTemplate?> selectedTemplateNotifier;
+  final ValueNotifier<bool>? blankEntityModeNotifier;
   final void Function(EntityTemplate)? onEditTemplate;
   final VoidCallback? onCreateTemplate;
 
   const TemplatesPanel({
     super.key,
     required this.selectedTemplateNotifier,
+    this.blankEntityModeNotifier,
     this.onEditTemplate,
     this.onCreateTemplate,
   });
@@ -58,9 +60,8 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
             },
           ),
         ),
-        // Create template button
-        if (widget.onCreateTemplate != null)
-          _buildCreateButton(context),
+        // Bottom action buttons
+        _buildBottomActions(context),
       ],
     );
   }
@@ -166,8 +167,11 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     );
   }
 
-  Widget _buildCreateButton(BuildContext context) {
+  Widget _buildBottomActions(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final hasAnyAction = widget.blankEntityModeNotifier != null || widget.onCreateTemplate != null;
+
+    if (!hasAnyAction) return const SizedBox.shrink();
 
     return Container(
       padding: const EdgeInsets.all(6.0),
@@ -179,17 +183,45 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
           ),
         ),
       ),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: widget.onCreateTemplate,
-          icon: const Icon(Icons.add, size: 14),
-          label: const Text('Create Template', style: TextStyle(fontSize: 11)),
-          style: ElevatedButton.styleFrom(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
-            minimumSize: const Size(0, 28),
-          ),
-        ),
+      child: Row(
+        children: [
+          // Quick-add blank entity button
+          if (widget.blankEntityModeNotifier != null)
+            ValueListenableBuilder<bool>(
+              valueListenable: widget.blankEntityModeNotifier!,
+              builder: (context, isActive, _) {
+                return Tooltip(
+                  message: 'Place blank entity',
+                  child: IconButton(
+                    onPressed: () {
+                      widget.blankEntityModeNotifier!.value = !isActive;
+                    },
+                    icon: const Icon(Icons.add_box_outlined, size: 18),
+                    style: IconButton.styleFrom(
+                      backgroundColor: isActive ? colorScheme.primaryContainer : null,
+                      foregroundColor: isActive ? colorScheme.onPrimaryContainer : null,
+                      minimumSize: const Size(28, 28),
+                      padding: EdgeInsets.zero,
+                    ),
+                  ),
+                );
+              },
+            ),
+          const SizedBox(width: 6),
+          // Create template button
+          if (widget.onCreateTemplate != null)
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: widget.onCreateTemplate,
+                icon: const Icon(Icons.add, size: 14),
+                label: const Text('Create Template', style: TextStyle(fontSize: 11)),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 10),
+                  minimumSize: const Size(0, 28),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

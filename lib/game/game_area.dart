@@ -50,6 +50,11 @@ class GameArea extends FlameGame
   /// The currently selected entity template in the template panel.
   final ValueNotifier<EntityTemplate?> selectedTemplate = ValueNotifier(null);
 
+  /// Whether blank entity placement mode is active.
+  /// When true, clicking in the game area places a default entity without a template.
+  /// Mutually exclusive with selectedTemplate.
+  final ValueNotifier<bool> blankEntityMode = ValueNotifier(false);
+
   /// The current title displayed in the app bar.
   final ValueNotifier<String> title = ValueNotifier('');
 
@@ -195,6 +200,18 @@ class GameArea extends FlameGame
       if (selectedTemplate.value != null) {
         selectedEntities.value = {};
         observerEntityId.value = null;
+        // Mutually exclusive with blank entity mode
+        blankEntityMode.value = false;
+      }
+    });
+
+    // Clear selected entity and observer when entering blank entity mode
+    blankEntityMode.addListener(() {
+      if (blankEntityMode.value) {
+        selectedEntities.value = {};
+        observerEntityId.value = null;
+        // Mutually exclusive with template selection
+        selectedTemplate.value = null;
       }
     });
   }
