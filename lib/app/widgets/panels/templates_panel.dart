@@ -48,6 +48,8 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        // Top action buttons
+        _buildTopActions(context),
         // Search bar
         _buildSearchBar(context),
         // Template grid
@@ -60,8 +62,6 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
             },
           ),
         ),
-        // Bottom action buttons
-        _buildBottomActions(context),
       ],
     );
   }
@@ -167,7 +167,7 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     );
   }
 
-  Widget _buildBottomActions(BuildContext context) {
+  Widget _buildTopActions(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final hasAnyAction = widget.blankEntityModeNotifier != null || widget.onCreateTemplate != null;
 
@@ -177,7 +177,7 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
       padding: const EdgeInsets.all(6.0),
       decoration: BoxDecoration(
         border: Border(
-          top: BorderSide(
+          bottom: BorderSide(
             color: colorScheme.outlineVariant,
             width: 0.5,
           ),

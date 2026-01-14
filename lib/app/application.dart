@@ -234,6 +234,7 @@ class _ApplicationState extends State<Application> {
                         title: 'Properties',
                         child: PropertiesPanel(
                           entityNotifier: _game.selectedEntity,
+                          selectedEntitiesNotifier: _game.selectedEntities,
                         ),
                       ),
                     ],

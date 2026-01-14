@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 
 import 'entity_tree_node.dart';
+
+/// Sort column for entity list
+enum _SortColumn { name, id }
 
 /// Panel for browsing, searching, and selecting entities in a tree hierarchy.
 ///
@@ -10,7 +15,7 @@ import 'entity_tree_node.dart';
 /// - Breadcrumb navigation for parent traversal
 /// - Tree view showing entity hierarchy with expand/collapse
 /// - Search bar to filter by entity ID or name (shows flat list when active)
-/// - Checkbox multi-select for entities under the current viewed parent
+/// - Sortable columns (Name, ID)
 /// - Double-click on parent entities to navigate into them
 class EntityListPanel extends StatefulWidget {
   final World world;
@@ -32,6 +37,9 @@ class _EntityListPanelState extends State<EntityListPanel> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   final Map<int, bool> _expandedNodes = {};
+  StreamSubscription<Change>? _entityChangeSubscription;
+  _SortColumn _sortColumn = _SortColumn.id;
+  bool _sortAscending = true;
 
   @override
   void initState() {
@@ -46,14 +54,26 @@ class _EntityListPanelState extends State<EntityListPanel> {
     widget.selectedEntitiesNotifier.addListener(_onExternalSelectionChanged);
     // Ensure rebuild when viewed parent changes
     widget.viewedParentIdNotifier.addListener(_onViewedParentChanged);
+    // Listen for entity creation/deletion to update the list
+    _entityChangeSubscription = widget.world.componentChanges.listen(_onEntityChanged);
   }
 
   @override
   void dispose() {
+    _entityChangeSubscription?.cancel();
     _searchController.dispose();
     widget.selectedEntitiesNotifier.removeListener(_onExternalSelectionChanged);
     widget.viewedParentIdNotifier.removeListener(_onViewedParentChanged);
     super.dispose();
+  }
+
+  void _onEntityChanged(Change change) {
+    // Rebuild when Name or HasParent components change (entity created/destroyed/reparented)
+    if (change.componentType == 'Name' || change.componentType == 'HasParent') {
+      if (mounted) {
+        setState(() {});
+      }
+    }
   }
 
   void _onViewedParentChanged() {
@@ -104,6 +124,23 @@ class _EntityListPanelState extends State<EntityListPanel> {
     return path;
   }
 
+  /// Sort entities based on current sort column and direction
+  void _sortEntities(List<Entity> entities) {
+    entities.sort((a, b) {
+      int result;
+      if (_sortColumn == _SortColumn.name) {
+        final aName = a.get<Name>()?.name ?? '';
+        final bName = b.get<Name>()?.name ?? '';
+        result = aName.compareTo(bName);
+        // If names are equal, fall back to ID
+        if (result == 0) result = a.id.compareTo(b.id);
+      } else {
+        result = a.id.compareTo(b.id);
+      }
+      return _sortAscending ? result : -result;
+    });
+  }
+
   List<Entity> _getFilteredEntities(int? viewedParentId) {
     // Get the HasParent component map directly from the world
     final hasParentMap = widget.world.get<HasParent>();
@@ -129,16 +166,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
       }).toList();
     }
 
-    // Sort by name, then by ID
-    entities.sort((a, b) {
-      final aName = a.get<Name>()?.name ?? '';
-      final bName = b.get<Name>()?.name ?? '';
-      if (aName.isNotEmpty && bName.isNotEmpty) {
-        return aName.compareTo(bName);
-      }
-      return a.id.compareTo(b.id);
-    });
-
+    _sortEntities(entities);
     return entities;
   }
 
@@ -151,38 +179,19 @@ class _EntityListPanelState extends State<EntityListPanel> {
     // Root entities are those NOT in the hasParent map
     var entities = widget.world.entities().where((e) => !entitiesWithParent.contains(e.id)).toList();
 
-    entities.sort((a, b) {
-      final aName = a.get<Name>()?.name ?? '';
-      final bName = b.get<Name>()?.name ?? '';
-      if (aName.isNotEmpty && bName.isNotEmpty) {
-        return aName.compareTo(bName);
-      }
-      return a.id.compareTo(b.id);
-    });
-
+    _sortEntities(entities);
     return entities;
   }
 
-  void _toggleEntitySelection(Entity entity, Set<Entity> currentSelection) {
-    final newSelection = Set<Entity>.from(currentSelection);
-    if (newSelection.contains(entity)) {
-      newSelection.remove(entity);
+  void _selectEntity(Entity entity) {
+    final current = widget.selectedEntitiesNotifier.value;
+    // If clicking the only selected entity, deselect it
+    if (current.length == 1 && current.contains(entity)) {
+      widget.selectedEntitiesNotifier.value = {};
     } else {
-      newSelection.add(entity);
+      // Otherwise, select just this entity (clears any multi-selection)
+      widget.selectedEntitiesNotifier.value = {entity};
     }
-    widget.selectedEntitiesNotifier.value = newSelection;
-  }
-
-  void _selectSingleEntity(Entity entity) {
-    widget.selectedEntitiesNotifier.value = {entity};
-  }
-
-  void _selectAll(List<Entity> entities) {
-    widget.selectedEntitiesNotifier.value = entities.toSet();
-  }
-
-  void _deselectAll() {
-    widget.selectedEntitiesNotifier.value = {};
   }
 
   void _deleteSelected(Set<Entity> selected) {
@@ -220,6 +229,8 @@ class _EntityListPanelState extends State<EntityListPanel> {
                 _buildSearchBar(context),
                 // Toolbar
                 _buildToolbar(context, selectableEntities, selectedEntities),
+                // Column headers
+                _buildColumnHeaders(context),
                 // Entity tree or list
                 Expanded(
                   child: _searchQuery.isNotEmpty
@@ -296,6 +307,28 @@ class _EntityListPanelState extends State<EntityListPanel> {
               ),
             ),
           ),
+          // Go up button (when not at root)
+          if (viewedParentId != null) ...[
+            const SizedBox(width: 4),
+            Tooltip(
+              message: 'Go up',
+              child: InkWell(
+                onTap: () {
+                  final parentOfCurrent = widget.world.hierarchyCache.getParent(viewedParentId);
+                  _handleNavigate(parentOfCurrent);
+                },
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    Icons.arrow_upward,
+                    size: 14,
+                    color: colorScheme.onSurface.withValues(alpha: 0.7),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -333,8 +366,6 @@ class _EntityListPanelState extends State<EntityListPanel> {
   Widget _buildToolbar(BuildContext context, List<Entity> entities, Set<Entity> selectedEntities) {
     final colorScheme = Theme.of(context).colorScheme;
     final hasSelection = selectedEntities.isNotEmpty;
-    final allSelected = entities.isNotEmpty &&
-        entities.every((e) => selectedEntities.contains(e));
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -356,40 +387,75 @@ class _EntityListPanelState extends State<EntityListPanel> {
               color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
-          if (hasSelection) ...[
-            Text(
-              ' (${selectedEntities.length} selected)',
-              style: TextStyle(
-                fontSize: 10,
-                color: colorScheme.primary,
-              ),
-            ),
-          ],
           const Spacer(),
-          // Select all / Deselect all
-          if (entities.isNotEmpty) ...[
-            _ToolbarButton(
-              icon: allSelected ? Icons.deselect : Icons.select_all,
-              tooltip: allSelected ? 'Deselect All' : 'Select All',
-              onPressed: () {
-                if (allSelected) {
-                  _deselectAll();
-                } else {
-                  _selectAll(entities);
-                }
-              },
-            ),
-          ],
-          // Delete selected
-          if (hasSelection) ...[
-            const SizedBox(width: 4),
+          // Delete selected (single entity)
+          if (hasSelection)
             _ToolbarButton(
               icon: Icons.delete_outline,
-              tooltip: 'Delete Selected',
+              tooltip: 'Delete',
               color: colorScheme.error,
               onPressed: () => _showDeleteConfirmation(context, selectedEntities),
             ),
-          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildColumnHeaders(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        border: Border(
+          bottom: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            width: 0.5,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          // Spacer for expand arrow and icon
+          const SizedBox(width: 44),
+          // Name column header
+          Expanded(
+            child: _SortableColumnHeader(
+              label: 'Name',
+              isActive: _sortColumn == _SortColumn.name,
+              ascending: _sortAscending,
+              onTap: () {
+                setState(() {
+                  if (_sortColumn == _SortColumn.name) {
+                    _sortAscending = !_sortAscending;
+                  } else {
+                    _sortColumn = _SortColumn.name;
+                    _sortAscending = true;
+                  }
+                });
+              },
+            ),
+          ),
+          // ID column header
+          SizedBox(
+            width: 50,
+            child: _SortableColumnHeader(
+              label: 'ID',
+              isActive: _sortColumn == _SortColumn.id,
+              ascending: _sortAscending,
+              onTap: () {
+                setState(() {
+                  if (_sortColumn == _SortColumn.id) {
+                    _sortAscending = !_sortAscending;
+                  } else {
+                    _sortColumn = _SortColumn.id;
+                    _sortAscending = true;
+                  }
+                });
+              },
+            ),
+          ),
         ],
       ),
     );
@@ -439,7 +505,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
           expandedNodes: _expandedNodes,
           depth: 0,
           onToggleExpand: _toggleExpand,
-          onToggleSelection: (e) => _toggleEntitySelection(e, selectedEntities),
+          onSelect: _selectEntity,
           onNavigate: _handleNavigate,
         );
       }).toList(),
@@ -460,8 +526,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
         return _EntityListItem(
           entity: entity,
           isSelected: isSelected,
-          onCheckboxChanged: () => _toggleEntitySelection(entity, selectedEntities),
-          onTap: () => _selectSingleEntity(entity),
+          onTap: () => _selectEntity(entity),
         );
       },
     );
@@ -532,6 +597,56 @@ class _BreadcrumbSegment extends StatelessWidget {
   }
 }
 
+class _SortableColumnHeader extends StatelessWidget {
+  final String label;
+  final bool isActive;
+  final bool ascending;
+  final VoidCallback onTap;
+
+  const _SortableColumnHeader({
+    required this.label,
+    required this.isActive,
+    required this.ascending,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+                color: isActive
+                    ? colorScheme.primary
+                    : colorScheme.onSurface.withValues(alpha: 0.6),
+              ),
+            ),
+            if (isActive) ...[
+              const SizedBox(width: 2),
+              Icon(
+                ascending ? Icons.arrow_upward : Icons.arrow_downward,
+                size: 12,
+                color: colorScheme.primary,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ToolbarButton extends StatelessWidget {
   final IconData icon;
   final String tooltip;
@@ -570,13 +685,11 @@ class _ToolbarButton extends StatelessWidget {
 class _EntityListItem extends StatelessWidget {
   final Entity entity;
   final bool isSelected;
-  final VoidCallback onCheckboxChanged;
   final VoidCallback onTap;
 
   const _EntityListItem({
     required this.entity,
     required this.isSelected,
-    required this.onCheckboxChanged,
     required this.onTap,
   });
 
@@ -593,21 +706,9 @@ class _EntityListItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           child: Row(
             children: [
-              // Checkbox
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isSelected,
-                  onChanged: (_) => onCheckboxChanged(),
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  visualDensity: VisualDensity.compact,
-                ),
-              ),
-              const SizedBox(width: 4),
               // Icon from Renderable asset or generic fallback
               SizedBox(
                 width: 16,
@@ -627,7 +728,7 @@ class _EntityListItem extends StatelessWidget {
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: 6),
               // Name
               Expanded(
                 child: Text(

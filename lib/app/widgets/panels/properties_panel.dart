@@ -10,10 +10,12 @@ import 'package:rogueverse/app/widgets/overlays/inspector/sections/sections.dart
 /// and provides buttons to add new components or save as template.
 class PropertiesPanel extends StatefulWidget {
   final ValueNotifier<Entity?> entityNotifier;
+  final ValueNotifier<Set<Entity>>? selectedEntitiesNotifier;
 
   const PropertiesPanel({
     super.key,
     required this.entityNotifier,
+    this.selectedEntitiesNotifier,
   });
 
   @override
@@ -110,6 +112,27 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
 
   @override
   Widget build(BuildContext context) {
+    // If multi-select notifier is provided, wrap in builder to check selection count
+    if (widget.selectedEntitiesNotifier != null) {
+      return ValueListenableBuilder<Set<Entity>>(
+        valueListenable: widget.selectedEntitiesNotifier!,
+        builder: (context, selectedEntities, _) {
+          if (selectedEntities.length > 1) {
+            return Column(
+              children: [
+                _buildSectionHeader(context),
+                Expanded(child: _buildMultiSelectState(context, selectedEntities.length)),
+              ],
+            );
+          }
+          return _buildMainContent(context);
+        },
+      );
+    }
+    return _buildMainContent(context);
+  }
+
+  Widget _buildMainContent(BuildContext context) {
     return Column(
       children: [
         // Section header
@@ -183,6 +206,43 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMultiSelectState(BuildContext context, int count) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.select_all,
+              size: 32,
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '$count entities selected',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Select a single entity to edit',
+              style: TextStyle(
+                fontSize: 10,
+                color: colorScheme.onSurface.withValues(alpha: 0.4),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

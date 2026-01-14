@@ -6,7 +6,7 @@ import 'package:rogueverse/ecs/ecs.dart';
 /// A recursive tree node widget for displaying entities in a hierarchy.
 ///
 /// Combines tree structure with selection capabilities:
-/// - Entities under the current [viewedParentId] are selectable (checkbox visible)
+/// - Entities under the current [viewedParentId] are selectable
 /// - Other entities are visible but grayed out (double-click to navigate)
 class EntityTreeNode extends StatelessWidget {
   /// The entity this node represents
@@ -30,8 +30,8 @@ class EntityTreeNode extends StatelessWidget {
   /// Callback to toggle node expansion
   final void Function(int entityId) onToggleExpand;
 
-  /// Callback to toggle entity selection
-  final void Function(Entity entity) onToggleSelection;
+  /// Callback to select an entity
+  final void Function(Entity entity) onSelect;
 
   /// Callback for navigation (double-click on parent)
   final void Function(int? parentId) onNavigate;
@@ -45,7 +45,7 @@ class EntityTreeNode extends StatelessWidget {
     required this.expandedNodes,
     required this.depth,
     required this.onToggleExpand,
-    required this.onToggleSelection,
+    required this.onSelect,
     required this.onNavigate,
   });
 
@@ -98,7 +98,7 @@ class EntityTreeNode extends StatelessWidget {
               expandedNodes: expandedNodes,
               depth: depth + 1,
               onToggleExpand: onToggleExpand,
-              onToggleSelection: onToggleSelection,
+              onSelect: onSelect,
               onNavigate: onNavigate,
             );
           }),
@@ -117,7 +117,7 @@ class EntityTreeNode extends StatelessWidget {
     // Use GestureDetector for both tap and double-tap to avoid conflicts
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: _isSelectable ? () => onToggleSelection(entity) : null,
+      onTap: _isSelectable ? () => onSelect(entity) : null,
       onDoubleTap: () => onNavigate(entity.id),
       child: Container(
         color: _isSelected && _isSelectable
@@ -148,19 +148,6 @@ class EntityTreeNode extends StatelessWidget {
                     )
                   : null,
             ),
-            // Checkbox (only for selectable entities)
-            SizedBox(
-              width: 24,
-              height: 24,
-              child: _isSelectable
-                  ? Checkbox(
-                      value: _isSelected,
-                      onChanged: (_) => onToggleSelection(entity),
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: VisualDensity.compact,
-                    )
-                  : null,
-            ),
             const SizedBox(width: 4),
             // Entity icon
             SizedBox(
@@ -169,10 +156,22 @@ class EntityTreeNode extends StatelessWidget {
               child: _buildEntityIcon(context, renderable),
             ),
             const SizedBox(width: 4),
-            // Entity name
+            // Entity name with optional child count
             Expanded(
-              child: Text(
-                name,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: name),
+                    if (_hasChildren)
+                      TextSpan(
+                        text: ' ($childCount)',
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: colorScheme.onSurface.withValues(alpha: 0.4),
+                        ),
+                      ),
+                  ],
+                ),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: _isSelected && _isSelectable
@@ -186,23 +185,6 @@ class EntityTreeNode extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            // Child count badge
-            if (_hasChildren)
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                margin: const EdgeInsets.only(right: 4),
-                decoration: BoxDecoration(
-                  color: colorScheme.secondaryContainer,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  '$childCount',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: colorScheme.onSecondaryContainer,
-                  ),
-                ),
-              ),
             // Entity ID
             Text(
               '#${entity.id}',
