@@ -16,6 +16,7 @@ Creating a new component involves these steps:
 3. Create inspector metadata in `lib/app/widgets/overlays/inspector/sections/`
 4. Register the metadata in `inspector_overlay.dart`
 5. Consider if a new System is needed
+6. Consider if an Interaction Definition is needed (for player-interactable components)
 
 ## Step 1: Component Class Pattern
 
@@ -223,6 +224,53 @@ class MySystem extends System with MySystemMappable {
 }
 ```
 
+## Step 6: Consider Interaction Definition
+
+**ASK THE USER** if this component represents something the player can interact with.
+
+The game uses a context menu system for player interactions (triggered by E key or right-click). If the new component represents an interactable entity, you may need to register an `InteractionDefinition` in the interaction registry.
+
+Interaction definitions are needed when:
+- The component represents something the player can interact with (doors, items, controls, resources)
+- There's already an Intent component for the action (e.g., `OpenIntent`, `PickupIntent`)
+- The player needs to be able to trigger this action via the E key or right-click menu
+
+Interaction definitions are NOT needed for:
+- Components that are purely internal state
+- Actions that happen automatically (e.g., walking into a door auto-opens it)
+- AI-only behaviors
+
+### Adding an Interaction Definition
+
+Add to `lib/game/interaction/interaction_registry.dart`:
+
+```dart
+InteractionDefinition(
+  actionName: 'My Action',      // Display name in menu (e.g., "Open", "Pick up")
+  actionVerb: 'Doing action',   // Present participle for feedback
+  genericLabel: 'Thing',        // Fallback if entity has no Name component
+  range: 1,                     // Manhattan distance: 0=same tile, 1=adjacent
+  isAvailable: (e) => e.has<MyComponent>() && /* any state checks */,
+  createIntent: (e) => MyActionIntent(targetEntityId: e.id),
+),
+```
+
+### Key Fields:
+- **actionName**: What appears in the context menu
+- **genericLabel**: Fallback entity name (e.g., "Door", "Item", "Resource")
+- **range**: How far the player can be to interact
+  - `0` = must be on the same tile (pickup, take control)
+  - `1` = adjacent tiles (open door, mine)
+  - `N` = up to N tiles away (ranged interactions)
+- **isAvailable**: Function that checks if interaction is valid for this entity
+- **createIntent**: Function that creates the Intent component to execute
+
+### Related Files:
+- `lib/game/interaction/interaction_definition.dart` - InteractionDefinition class
+- `lib/game/interaction/interaction_registry.dart` - Register new interactions here
+- `lib/game/interaction/nearby_entity_finder.dart` - Finds interactable entities
+- `lib/app/widgets/overlays/interaction_context_menu.dart` - The UI widget
+
 ## File Locations Summary
 
 | Type | Location |
@@ -233,6 +281,7 @@ class MySystem extends System with MySystemMappable {
 | Sections barrel | `lib/app/widgets/overlays/inspector/sections/sections.dart` |
 | Registry calls | `lib/app/widgets/overlays/inspector/inspector_overlay.dart` |
 | Systems | `lib/ecs/systems.dart` |
+| Interaction registry | `lib/game/interaction/interaction_registry.dart` |
 
 ## Workflow Checklist
 
@@ -247,3 +296,4 @@ When creating a new component:
 - [ ] Export in `sections/sections.dart` if new file created
 - [ ] Register in `inspector_overlay.dart` `_registerAllComponents()`
 - [ ] Ask user if a System is needed for this component
+- [ ] Ask user if an Interaction Definition is needed (for player-interactable components)

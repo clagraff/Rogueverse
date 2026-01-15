@@ -10,11 +10,13 @@ import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/game_area.dart';
 
-/// Handles positional controls (WASD movement, E for interact) for the currently selected entity.
+/// Handles positional controls (WASD movement) for the currently selected entity.
 ///
 /// This component listens to keyboard input and applies movement/combat intents to whichever
 /// entity is currently selected in the game. It only processes controls when the selected
 /// entity has a LocalPosition component.
+///
+/// Note: E key interactions are handled by [InteractionControlHandler] which shows a context menu.
 class PositionalControlHandler extends PositionComponent with KeyboardHandler {
   final ValueNotifier<Entity?> selectedEntityNotifier;
   final World world;
@@ -52,11 +54,8 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
       return false;
     }
 
-    // Check for entity action controls
-    if (_keybindings.matches('entity.interact', keysPressed)) {
-      _handleInteract(entity, game);
-      return false;
-    }
+    // Note: E key interactions are now handled by InteractionControlHandler
+    // which shows a context menu for selecting interactions.
 
     return true;
   }
@@ -188,36 +187,4 @@ class PositionalControlHandler extends PositionComponent with KeyboardHandler {
     }
   }
 
-  /// Handles interact action (e.g., picking up items, taking control).
-  void _handleInteract(Entity entity, GameArea game) {
-    final pos = entity.get<LocalPosition>()!;
-    final entityParentId = entity.get<HasParent>()?.parentEntityId;
-
-    // Priority 1: Check for EnablesControl at same position
-    final controlQuery = Query()
-        .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
-        .require<EnablesControl>();
-    _applyParentFilter(controlQuery, entityParentId);
-    final controlSeat = controlQuery.first(world);
-
-    if (controlSeat != null) {
-      _logger.finer("Found EnablesControl entity at position, adding WantsControlIntent");
-      entity.setIntent(WantsControlIntent(targetEntityId: controlSeat.id));
-      return;
-    }
-
-    // Priority 2: Look for pickupable items at the entity's current position
-    final pickupQuery = Query()
-        .require<LocalPosition>((c) => c.x == pos.x && c.y == pos.y)
-        .require<Pickupable>();
-    _applyParentFilter(pickupQuery, entityParentId);
-    final firstItemAtFeet = pickupQuery.first(world);
-
-    if (firstItemAtFeet != null) {
-      entity.setIntent(PickupIntent(firstItemAtFeet.id));
-      return;
-    }
-
-    _logger.warning("interaction triggered but nothing happened");
-  }
 }

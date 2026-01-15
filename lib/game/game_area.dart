@@ -10,6 +10,7 @@ import 'package:logging/logging.dart' show Logger;
 
 import 'package:rogueverse/app/screens/game_screen.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/game/components/interaction_control_handler.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
 import 'package:rogueverse/game/tick_scheduler.dart';
 
@@ -79,6 +80,10 @@ class GameArea extends FlameGame
 
   /// Manages periodic game ticks (OSRS-style 0.6s intervals).
   late final TickScheduler tickScheduler;
+
+  /// Reference to the interaction control handler for overlay access.
+  /// Set by GameScreen during initialization.
+  InteractionControlHandler? interactionHandler;
 
   /// Temporary world used for editing templates in the inspector.
   World? _templateEditingWorld;

@@ -108,6 +108,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   }
 
   /// Sets up tracking of Renderable changes to swap visuals (e.g., when doors open/close).
+  /// Only updates the visual if the entity is currently visible to the observer.
   void _setupRenderableTracking() {
     _renderableSubscription = world.componentChanges
         .onEntityOnComponent<Renderable>(entity.id)
@@ -119,9 +120,46 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
 
       final newAsset = renderable.asset;
       if (!_assetsEqual(newAsset, _currentAsset)) {
-        _swapVisual(newAsset);
+        // Only update visual if entity is currently visible
+        if (_isCurrentlyVisible()) {
+          _swapVisual(newAsset);
+        }
+        // If not visible, don't update - visual will sync when entity becomes visible
       }
     });
+  }
+
+  /// Returns true if this entity is currently visible to the observer.
+  bool _isCurrentlyVisible() {
+    // In editing mode, all entities are visible
+    final game = parent?.findGame() as GameArea?;
+    if (game != null && game.gameMode.value == GameMode.editing) {
+      return true;
+    }
+
+    // If no observer set, default to visible
+    if (_currentObserverId == null) return true;
+
+    // The observer itself is always visible
+    if (entity.id == _currentObserverId) return true;
+
+    // Check observer's VisibleEntities
+    final observer = world.getEntity(_currentObserverId!);
+    final visibleEntities = observer.get<VisibleEntities>();
+
+    return visibleEntities?.entityIds.contains(entity.id) ?? true;
+  }
+
+  /// Syncs the visual to the current Renderable state.
+  /// Called when entity becomes visible to ensure visual matches current state.
+  void _syncVisualToRenderable() {
+    final renderable = entity.get<Renderable>();
+    if (renderable == null) return;
+
+    final currentAsset = renderable.asset;
+    if (!_assetsEqual(currentAsset, _currentAsset)) {
+      _swapVisual(currentAsset);
+    }
   }
 
   /// Compares two RenderableAssets for equality.
@@ -256,6 +294,8 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       if (localPos != null) {
         _lastSeenPosition = Vector2(localPos.x * 32.0, localPos.y * 32.0);
       }
+      // Sync visual to current renderable state (may have changed while not visible)
+      _syncVisualToRenderable();
     }
     // Check if in vision memory (seen before but not currently visible)
     else if (visionMemory?.hasSeenEntity(entity.id) ?? false) {

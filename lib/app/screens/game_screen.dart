@@ -24,6 +24,8 @@ import 'package:rogueverse/game/components/focus_on_tap_component.dart';
 import 'package:rogueverse/game/components/game_mode_toggle.dart';
 import 'package:rogueverse/game/components/global_control_handler.dart';
 import 'package:rogueverse/game/components/grid_tap.dart';
+import 'package:rogueverse/game/components/interaction_control_handler.dart';
+import 'package:rogueverse/game/components/interaction_highlight.dart';
 import 'package:rogueverse/game/components/inventory_control_handler.dart';
 import 'package:rogueverse/game/components/opponent.dart';
 import 'package:rogueverse/game/components/positional_control_handler.dart';
@@ -47,6 +49,7 @@ class GameScreen extends flame.World with Disposer {
   late PositionalControlHandler _positionalControlHandler;
   late GlobalControlHandler _globalControlHandler;
   late InventoryControlHandler _inventoryControlHandler;
+  late InteractionControlHandler _interactionControlHandler;
   late EditorControlHandler _editorControlHandler;
   late EntityTapComponent _entityTapComponent;
   late DragSelectComponent _dragSelectComponent;
@@ -180,6 +183,19 @@ class GameScreen extends flame.World with Disposer {
     );
     add(_inventoryControlHandler);
 
+    _interactionControlHandler = InteractionControlHandler(
+      selectedEntityNotifier: game.selectedEntity,
+      world: game.currentWorld,
+    );
+    add(_interactionControlHandler);
+    // Store reference in GameArea for overlay access
+    game.interactionHandler = _interactionControlHandler;
+
+    // Add interaction highlight circle (shows target during menu navigation)
+    add(InteractionHighlight(
+      highlightedEntityNotifier: _interactionControlHandler.highlightedEntity,
+    ));
+
     _globalControlHandler = GlobalControlHandler(selectedEntityNotifier: game.selectedEntities);
     add(_globalControlHandler);
 
@@ -200,6 +216,7 @@ class GameScreen extends flame.World with Disposer {
       _positionalControlHandler.isEnabled = isGameplay;
       _globalControlHandler.isEnabled = isGameplay;
       _inventoryControlHandler.isEnabled = isGameplay;
+      _interactionControlHandler.isEnabled = isGameplay;
       // Editing mode handlers
       _entityTapComponent.isEnabled = !isGameplay;
       _dragSelectComponent.isEnabled = !isGameplay;

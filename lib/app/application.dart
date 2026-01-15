@@ -12,6 +12,7 @@ import 'package:rogueverse/app/widgets/panels/entity_list_panel.dart';
 import 'package:rogueverse/app/widgets/panels/templates_panel.dart';
 import 'package:rogueverse/app/widgets/panels/properties_panel.dart';
 import 'package:rogueverse/app/widgets/panels/editor_footer_bar.dart';
+import 'package:rogueverse/app/widgets/overlays/interaction_context_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
 
@@ -190,6 +191,21 @@ class _ApplicationState extends State<Application> {
                               ),
                             ),
                           ),
+                      InteractionContextMenu.overlayName: (context, game) {
+                        final handler = _game.interactionHandler;
+                        final menuState = handler?.menuState.value;
+                        if (handler == null || menuState == null) {
+                          return const SizedBox.shrink();
+                        }
+                        return InteractionContextMenu(
+                          interactables: menuState.interactables,
+                          selfActions: menuState.selfActions,
+                          position: menuState.position,
+                          onSelect: handler.executeInteraction,
+                          onDismiss: handler.dismissMenu,
+                          onHighlightChanged: handler.setHighlightedEntity,
+                        );
+                      },
                     },
                   ),
                 ),
