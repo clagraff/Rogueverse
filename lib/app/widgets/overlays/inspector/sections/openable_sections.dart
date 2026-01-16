@@ -161,6 +161,9 @@ class OpenIntentMetadata extends ComponentMetadata {
   String get componentName => 'OpenIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<OpenIntent>();
 
   @override
@@ -200,6 +203,9 @@ class CloseIntentMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'CloseIntent';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<CloseIntent>();
@@ -243,6 +249,9 @@ class DidOpenMetadata extends ComponentMetadata {
   String get componentName => 'DidOpen';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<DidOpen>();
 
   @override
@@ -282,6 +291,9 @@ class DidCloseMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'DidClose';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<DidClose>();

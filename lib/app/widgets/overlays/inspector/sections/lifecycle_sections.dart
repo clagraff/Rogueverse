@@ -14,6 +14,9 @@ class LifetimeMetadata extends ComponentMetadata {
   String get componentName => 'Lifetime';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<Lifetime>();
 
   @override
@@ -62,6 +65,9 @@ class BeforeTickMetadata extends ComponentMetadata {
   String get componentName => 'BeforeTick';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<BeforeTick>();
 
   @override
@@ -108,6 +114,9 @@ class AfterTickMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'AfterTick';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<AfterTick>();

@@ -12,6 +12,13 @@ abstract class ComponentMetadata {
   /// The display name of the component (e.g., "Name", "LocalPosition").
   String get componentName;
 
+  /// Whether this component is transient (set by ECS systems, not manually).
+  ///
+  /// Transient components include intents, events, and lifecycle markers that
+  /// are typically added/removed by systems during tick processing. These are
+  /// hidden by default in the inspector but can be shown via a toggle.
+  bool get isTransient => false;
+
   /// Checks if the given entity has this component attached.
   bool hasComponent(Entity entity);
 

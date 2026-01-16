@@ -11,6 +11,9 @@ class AttackIntentMetadata extends ComponentMetadata {
   String get componentName => 'AttackIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<AttackIntent>();
 
   @override
@@ -50,6 +53,9 @@ class DidAttackMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'DidAttack';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<DidAttack>();
@@ -99,6 +105,9 @@ class WasAttackedMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'WasAttacked';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<WasAttacked>();

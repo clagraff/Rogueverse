@@ -126,6 +126,9 @@ class WantsControlIntentMetadata extends ComponentMetadata {
   String get componentName => 'WantsControlIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<WantsControlIntent>();
 
   @override
@@ -165,6 +168,9 @@ class ReleasesControlIntentMetadata extends MarkerComponentMetadata {
   String get componentName => 'ReleasesControlIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<ReleasesControlIntent>();
 
   @override
@@ -180,6 +186,9 @@ class DockIntentMetadata extends MarkerComponentMetadata {
   String get componentName => 'DockIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<DockIntent>();
 
   @override
@@ -193,6 +202,9 @@ class DockIntentMetadata extends MarkerComponentMetadata {
 class UndockIntentMetadata extends MarkerComponentMetadata {
   @override
   String get componentName => 'UndockIntent';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<UndockIntent>();

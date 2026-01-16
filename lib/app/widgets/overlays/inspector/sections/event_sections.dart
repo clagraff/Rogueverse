@@ -15,6 +15,9 @@ class MoveByIntentMetadata extends ComponentMetadata {
   String get componentName => 'MoveByIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<MoveByIntent>();
 
   @override
@@ -66,6 +69,9 @@ class DidMoveMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'DidMove';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<DidMove>();
@@ -122,6 +128,9 @@ class BlockedMoveMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'BlockedMove';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<BlockedMove>();

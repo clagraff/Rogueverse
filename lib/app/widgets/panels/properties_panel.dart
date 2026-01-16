@@ -23,10 +23,18 @@ class PropertiesPanel extends StatefulWidget {
 }
 
 class _PropertiesPanelState extends State<PropertiesPanel> {
+  final ValueNotifier<bool> _showTransient = ValueNotifier(false);
+
   @override
   void initState() {
     super.initState();
     _registerAllComponents();
+  }
+
+  @override
+  void dispose() {
+    _showTransient.dispose();
+    super.dispose();
   }
 
   /// Registers all component metadata with the registry.
@@ -120,11 +128,16 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
         valueListenable: widget.selectedEntitiesNotifier!,
         builder: (context, selectedEntities, _) {
           if (selectedEntities.length > 1) {
-            return Column(
-              children: [
-                _buildSectionHeader(context),
-                Expanded(child: _buildMultiSelectState(context, selectedEntities.length)),
-              ],
+            return ValueListenableBuilder<bool>(
+              valueListenable: _showTransient,
+              builder: (context, showTransientValue, _) {
+                return Column(
+                  children: [
+                    _buildSectionHeader(context, showTransientValue),
+                    Expanded(child: _buildMultiSelectState(context, selectedEntities.length)),
+                  ],
+                );
+              },
             );
           }
           return _buildMainContent(context);
@@ -135,47 +148,60 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
   }
 
   Widget _buildMainContent(BuildContext context) {
-    return Column(
-      children: [
-        // Section header
-        _buildSectionHeader(context),
-        // Component list
-        Expanded(
-          child: ValueListenableBuilder<Entity?>(
-            valueListenable: widget.entityNotifier,
-            builder: (context, entity, _) {
-              if (entity == null) {
-                return _buildEmptyState(context);
-              }
+    return ValueListenableBuilder<bool>(
+      valueListenable: _showTransient,
+      builder: (context, showTransientValue, _) {
+        return Column(
+          children: [
+            // Section header
+            _buildSectionHeader(context, showTransientValue),
+            // Component list
+            Expanded(
+              child: ValueListenableBuilder<Entity?>(
+                valueListenable: widget.entityNotifier,
+                builder: (context, entity, _) {
+                  if (entity == null) {
+                    return _buildEmptyState(context);
+                  }
 
-              return StreamBuilder<Change>(
-                stream: entity.parentCell.componentChanges.onEntityChange(entity.id),
-                builder: (context, snapshot) {
-                  final presentComponents = ComponentRegistry.getPresent(entity)
-                    ..sort((a, b) => a.componentName.compareTo(b.componentName));
+                  return StreamBuilder<Change>(
+                    stream: entity.parentCell.componentChanges.onEntityChange(entity.id),
+                    builder: (context, snapshot) {
+                      var presentComponents = ComponentRegistry.getPresent(entity);
+                      if (!showTransientValue) {
+                        presentComponents = presentComponents
+                            .where((m) => !m.isTransient)
+                            .toList();
+                      }
+                      presentComponents.sort((a, b) => a.componentName.compareTo(b.componentName));
 
-                  return ListView(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    children: [
-                      ...presentComponents.map(
-                        (metadata) => ComponentSection(
-                          entity: entity,
-                          metadata: metadata,
-                        ),
-                      ),
-                      _AddComponentButton(entity: entity),
-                    ],
+                      return ListView(
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        children: [
+                          ...presentComponents.map(
+                            (metadata) => ComponentSection(
+                              entity: entity,
+                              metadata: metadata,
+                            ),
+                          ),
+                          _AddComponentButton(
+                            entity: entity,
+                            showTransient: showTransientValue,
+                          ),
+                        ],
+                      );
+                    },
                   );
                 },
-              );
-            },
-          ),
-        ),
-      ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context) {
+  Widget _buildSectionHeader(BuildContext context, bool showTransientValue) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -199,6 +225,25 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
             ),
           ),
           const Spacer(),
+          // Toggle visibility of transient components
+          Tooltip(
+            message: showTransientValue
+                ? 'Hide transient components'
+                : 'Show transient components',
+            child: InkWell(
+              onTap: () => _showTransient.value = !_showTransient.value,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.all(2),
+                child: Icon(
+                  showTransientValue ? Icons.visibility : Icons.visibility_off,
+                  size: 14,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
           // Save as template button (only shown when entity selected)
           ValueListenableBuilder<Entity?>(
             valueListenable: widget.entityNotifier,
@@ -332,7 +377,7 @@ class _SaveAsTemplateButton extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(2),
           child: Icon(
-            Icons.save_outlined,
+            Icons.copy,
             size: 14,
             color: Theme.of(context).colorScheme.primary,
           ),
@@ -403,10 +448,16 @@ class _TemplateNameDialogState extends State<_TemplateNameDialog> {
 }
 
 /// Button that opens a searchable dialog to add new components to the entity.
+///
+/// When [showTransient] is false, transient components are hidden from the dialog.
 class _AddComponentButton extends StatelessWidget {
   final Entity entity;
+  final bool showTransient;
 
-  const _AddComponentButton({required this.entity});
+  const _AddComponentButton({
+    required this.entity,
+    required this.showTransient,
+  });
 
   Future<void> _showAddComponentDialog(BuildContext context) async {
     final available = ComponentRegistry.getAvailable(entity)
@@ -416,7 +467,10 @@ class _AddComponentButton extends StatelessWidget {
 
     final selected = await showDialog<ComponentMetadata>(
       context: context,
-      builder: (context) => _AddComponentDialog(availableComponents: available),
+      builder: (context) => _AddComponentDialog(
+        availableComponents: available,
+        initialShowTransient: showTransient,
+      ),
     );
 
     if (selected != null && context.mounted) {
@@ -434,7 +488,10 @@ class _AddComponentButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final available = ComponentRegistry.getAvailable(entity);
+    var available = ComponentRegistry.getAvailable(entity);
+    if (!showTransient) {
+      available = available.where((m) => !m.isTransient).toList();
+    }
 
     if (available.isEmpty) {
       return const SizedBox.shrink();
@@ -478,8 +535,12 @@ class _AddComponentButton extends StatelessWidget {
 /// Dialog for searching and selecting a component to add.
 class _AddComponentDialog extends StatefulWidget {
   final List<ComponentMetadata> availableComponents;
+  final bool initialShowTransient;
 
-  const _AddComponentDialog({required this.availableComponents});
+  const _AddComponentDialog({
+    required this.availableComponents,
+    required this.initialShowTransient,
+  });
 
   @override
   State<_AddComponentDialog> createState() => _AddComponentDialogState();
@@ -488,10 +549,12 @@ class _AddComponentDialog extends StatefulWidget {
 class _AddComponentDialogState extends State<_AddComponentDialog> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  late bool _showTransient;
 
   @override
   void initState() {
     super.initState();
+    _showTransient = widget.initialShowTransient;
     _searchController.addListener(() {
       setState(() {
         _searchQuery = _searchController.text.toLowerCase();
@@ -506,12 +569,16 @@ class _AddComponentDialogState extends State<_AddComponentDialog> {
   }
 
   List<ComponentMetadata> get _filteredComponents {
-    if (_searchQuery.isEmpty) {
-      return widget.availableComponents;
+    var components = widget.availableComponents;
+    if (!_showTransient) {
+      components = components.where((c) => !c.isTransient).toList();
     }
-    return widget.availableComponents
-        .where((c) => c.componentName.toLowerCase().contains(_searchQuery))
-        .toList();
+    if (_searchQuery.isNotEmpty) {
+      components = components
+          .where((c) => c.componentName.toLowerCase().contains(_searchQuery))
+          .toList();
+    }
+    return components;
   }
 
   @override
@@ -520,7 +587,29 @@ class _AddComponentDialogState extends State<_AddComponentDialog> {
     final filtered = _filteredComponents;
 
     return AlertDialog(
-      title: const Text('Add Component'),
+      title: Row(
+        children: [
+          const Text('Add Component'),
+          const Spacer(),
+          Tooltip(
+            message: _showTransient
+                ? 'Hide transient components'
+                : 'Show transient components',
+            child: InkWell(
+              onTap: () => setState(() => _showTransient = !_showTransient),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.all(4),
+                child: Icon(
+                  _showTransient ? Icons.visibility : Icons.visibility_off,
+                  size: 20,
+                  color: colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
       contentPadding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
       content: SizedBox(
         width: 300,

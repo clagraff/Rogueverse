@@ -14,7 +14,7 @@ Creating a new component involves these steps:
 1. Add the component class to `lib/ecs/components.dart`
 2. Run `build_runner` to generate the mapper
 3. Create inspector metadata in `lib/app/widgets/overlays/inspector/sections/`
-4. Register the metadata in `inspector_overlay.dart`
+4. Register the metadata in `properties_panel.dart`
 5. Consider if a new System is needed
 6. Consider if an Interaction Definition is needed (for player-interactable components)
 
@@ -182,7 +182,7 @@ class MyComponentMetadata extends ComponentMetadata {
 export 'my_new_section.dart';
 ```
 
-2. Register the metadata in `inspector_overlay.dart`'s `_registerAllComponents()`:
+2. Register the metadata in `properties_panel.dart`'s `_registerAllComponents()`:
 ```dart
 // Add under appropriate category comment
 ComponentRegistry.register(MyComponentMetadata());
@@ -279,7 +279,7 @@ InteractionDefinition(
 | Generated mapper | `lib/ecs/components.mapper.dart` (auto-generated) |
 | Inspector metadata | `lib/app/widgets/overlays/inspector/sections/*.dart` |
 | Sections barrel | `lib/app/widgets/overlays/inspector/sections/sections.dart` |
-| Registry calls | `lib/app/widgets/overlays/inspector/inspector_overlay.dart` |
+| Registry calls | `lib/app/widgets/panels/properties_panel.dart` |
 | Systems | `lib/ecs/systems.dart` |
 | Interaction registry | `lib/game/interaction/interaction_registry.dart` |
 
@@ -294,6 +294,6 @@ When creating a new component:
 - [ ] Run `dart run build_runner build --delete-conflicting-outputs`
 - [ ] Create inspector metadata class (marker or data pattern)
 - [ ] Export in `sections/sections.dart` if new file created
-- [ ] Register in `inspector_overlay.dart` `_registerAllComponents()`
+- [ ] Register in `properties_panel.dart` `_registerAllComponents()`
 - [ ] Ask user if a System is needed for this component
 - [ ] Ask user if an Interaction Definition is needed (for player-interactable components)

@@ -109,6 +109,9 @@ class PickupIntentMetadata extends ComponentMetadata {
   String get componentName => 'PickupIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<PickupIntent>();
 
   @override
@@ -150,6 +153,9 @@ class PickedUpMetadata extends ComponentMetadata {
   String get componentName => 'PickedUp';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<PickedUp>();
 
   @override
@@ -189,6 +195,9 @@ class InventoryFullFailureMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'InventoryFullFailure';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<InventoryFullFailure>();

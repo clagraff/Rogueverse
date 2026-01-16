@@ -234,6 +234,9 @@ class UsePortalIntentMetadata extends ComponentMetadata {
   String get componentName => 'UsePortalIntent';
 
   @override
+  bool get isTransient => true;
+
+  @override
   bool hasComponent(Entity entity) => entity.has<UsePortalIntent>();
 
   @override
@@ -282,6 +285,9 @@ class DidPortalMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'DidPortal';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<DidPortal>();
@@ -361,6 +367,9 @@ class FailedToPortalMetadata extends ComponentMetadata {
 
   @override
   String get componentName => 'FailedToPortal';
+
+  @override
+  bool get isTransient => true;
 
   @override
   bool hasComponent(Entity entity) => entity.has<FailedToPortal>();
