@@ -163,6 +163,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
       NameMapper.ensureInitialized();
       LocalPositionMapper.ensureInitialized();
       DidMoveMapper.ensureInitialized();
+      DidChangeDirectionMapper.ensureInitialized();
       BlocksMovementMapper.ensureInitialized();
       BlockedMoveMapper.ensureInitialized();
       AiControlledMapper.ensureInitialized();
@@ -484,6 +485,7 @@ class BeforeTickMapper extends SubClassMapperBase<BeforeTick> {
       MapperContainer.globals.use(_instance = BeforeTickMapper._());
       LifetimeMapper.ensureInitialized().addSubMapper(_instance!);
       DidMoveMapper.ensureInitialized();
+      DidChangeDirectionMapper.ensureInitialized();
       BlockedMoveMapper.ensureInitialized();
       DidAttackMapper.ensureInitialized();
       WasAttackedMapper.ensureInitialized();
@@ -743,6 +745,7 @@ class IntentComponentMapper extends SubClassMapperBase<IntentComponent> {
       AfterTickMapper.ensureInitialized().addSubMapper(_instance!);
       WaitIntentMapper.ensureInitialized();
       MoveByIntentMapper.ensureInitialized();
+      DirectionIntentMapper.ensureInitialized();
       AttackIntentMapper.ensureInitialized();
       PickupIntentMapper.ensureInitialized();
       UsePortalIntentMapper.ensureInitialized();
@@ -1282,6 +1285,13 @@ class MoveByIntentMapper extends SubClassMapperBase<MoveByIntent> {
   static const Field<MoveByIntent, int> _f$dx = Field('dx', _$dx);
   static int _$dy(MoveByIntent v) => v.dy;
   static const Field<MoveByIntent, int> _f$dy = Field('dy', _$dy);
+  static bool _$isStrafe(MoveByIntent v) => v.isStrafe;
+  static const Field<MoveByIntent, bool> _f$isStrafe = Field(
+    'isStrafe',
+    _$isStrafe,
+    opt: true,
+    def: false,
+  );
   static int _$lifetime(MoveByIntent v) => v.lifetime;
   static const Field<MoveByIntent, int> _f$lifetime = Field(
     'lifetime',
@@ -1293,6 +1303,7 @@ class MoveByIntentMapper extends SubClassMapperBase<MoveByIntent> {
   final MappableFields<MoveByIntent> fields = const {
     #dx: _f$dx,
     #dy: _f$dy,
+    #isStrafe: _f$isStrafe,
     #lifetime: _f$lifetime,
   };
 
@@ -1305,7 +1316,11 @@ class MoveByIntentMapper extends SubClassMapperBase<MoveByIntent> {
       IntentComponentMapper.ensureInitialized();
 
   static MoveByIntent _instantiate(DecodingData data) {
-    return MoveByIntent(dx: data.dec(_f$dx), dy: data.dec(_f$dy));
+    return MoveByIntent(
+      dx: data.dec(_f$dx),
+      dy: data.dec(_f$dy),
+      isStrafe: data.dec(_f$isStrafe),
+    );
   }
 
   @override
@@ -1371,7 +1386,7 @@ extension MoveByIntentValueCopy<$R, $Out>
 abstract class MoveByIntentCopyWith<$R, $In extends MoveByIntent, $Out>
     implements IntentComponentCopyWith<$R, $In, $Out> {
   @override
-  $R call({int? dx, int? dy});
+  $R call({int? dx, int? dy, bool? isStrafe});
   MoveByIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -1384,13 +1399,18 @@ class _MoveByIntentCopyWithImpl<$R, $Out>
   late final ClassMapperBase<MoveByIntent> $mapper =
       MoveByIntentMapper.ensureInitialized();
   @override
-  $R call({int? dx, int? dy}) => $apply(
-    FieldCopyWithData({if (dx != null) #dx: dx, if (dy != null) #dy: dy}),
+  $R call({int? dx, int? dy, bool? isStrafe}) => $apply(
+    FieldCopyWithData({
+      if (dx != null) #dx: dx,
+      if (dy != null) #dy: dy,
+      if (isStrafe != null) #isStrafe: isStrafe,
+    }),
   );
   @override
   MoveByIntent $make(CopyWithData data) => MoveByIntent(
     dx: data.get(#dx, or: $value.dx),
     dy: data.get(#dy, or: $value.dy),
+    isStrafe: data.get(#isStrafe, or: $value.isStrafe),
   );
 
   @override
@@ -1537,6 +1557,297 @@ class _DidMoveCopyWithImpl<$R, $Out>
   @override
   DidMoveCopyWith<$R2, DidMove, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
       _DidMoveCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DirectionIntentMapper extends SubClassMapperBase<DirectionIntent> {
+  DirectionIntentMapper._();
+
+  static DirectionIntentMapper? _instance;
+  static DirectionIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DirectionIntentMapper._());
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      CompassDirectionMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DirectionIntent';
+
+  static CompassDirection _$direction(DirectionIntent v) => v.direction;
+  static const Field<DirectionIntent, CompassDirection> _f$direction = Field(
+    'direction',
+    _$direction,
+  );
+  static int _$lifetime(DirectionIntent v) => v.lifetime;
+  static const Field<DirectionIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DirectionIntent> fields = const {
+    #direction: _f$direction,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DirectionIntent';
+  @override
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
+
+  static DirectionIntent _instantiate(DecodingData data) {
+    return DirectionIntent(data.dec(_f$direction));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DirectionIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DirectionIntent>(map);
+  }
+
+  static DirectionIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<DirectionIntent>(json);
+  }
+}
+
+mixin DirectionIntentMappable {
+  String toJson() {
+    return DirectionIntentMapper.ensureInitialized()
+        .encodeJson<DirectionIntent>(this as DirectionIntent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DirectionIntentMapper.ensureInitialized().encodeMap<DirectionIntent>(
+      this as DirectionIntent,
+    );
+  }
+
+  DirectionIntentCopyWith<DirectionIntent, DirectionIntent, DirectionIntent>
+  get copyWith =>
+      _DirectionIntentCopyWithImpl<DirectionIntent, DirectionIntent>(
+        this as DirectionIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DirectionIntentMapper.ensureInitialized().stringifyValue(
+      this as DirectionIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DirectionIntentMapper.ensureInitialized().equalsValue(
+      this as DirectionIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DirectionIntentMapper.ensureInitialized().hashValue(
+      this as DirectionIntent,
+    );
+  }
+}
+
+extension DirectionIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DirectionIntent, $Out> {
+  DirectionIntentCopyWith<$R, DirectionIntent, $Out> get $asDirectionIntent =>
+      $base.as((v, t, t2) => _DirectionIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DirectionIntentCopyWith<$R, $In extends DirectionIntent, $Out>
+    implements IntentComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({CompassDirection? direction});
+  DirectionIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _DirectionIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DirectionIntent, $Out>
+    implements DirectionIntentCopyWith<$R, DirectionIntent, $Out> {
+  _DirectionIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DirectionIntent> $mapper =
+      DirectionIntentMapper.ensureInitialized();
+  @override
+  $R call({CompassDirection? direction}) =>
+      $apply(FieldCopyWithData({if (direction != null) #direction: direction}));
+  @override
+  DirectionIntent $make(CopyWithData data) =>
+      DirectionIntent(data.get(#direction, or: $value.direction));
+
+  @override
+  DirectionIntentCopyWith<$R2, DirectionIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DirectionIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DidChangeDirectionMapper extends SubClassMapperBase<DidChangeDirection> {
+  DidChangeDirectionMapper._();
+
+  static DidChangeDirectionMapper? _instance;
+  static DidChangeDirectionMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DidChangeDirectionMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+      CompassDirectionMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DidChangeDirection';
+
+  static CompassDirection _$from(DidChangeDirection v) => v.from;
+  static const Field<DidChangeDirection, CompassDirection> _f$from = Field(
+    'from',
+    _$from,
+  );
+  static CompassDirection _$to(DidChangeDirection v) => v.to;
+  static const Field<DidChangeDirection, CompassDirection> _f$to = Field(
+    'to',
+    _$to,
+  );
+  static int _$lifetime(DidChangeDirection v) => v.lifetime;
+  static const Field<DidChangeDirection, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DidChangeDirection> fields = const {
+    #from: _f$from,
+    #to: _f$to,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DidChangeDirection';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static DidChangeDirection _instantiate(DecodingData data) {
+    return DidChangeDirection(from: data.dec(_f$from), to: data.dec(_f$to));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DidChangeDirection fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DidChangeDirection>(map);
+  }
+
+  static DidChangeDirection fromJson(String json) {
+    return ensureInitialized().decodeJson<DidChangeDirection>(json);
+  }
+}
+
+mixin DidChangeDirectionMappable {
+  String toJson() {
+    return DidChangeDirectionMapper.ensureInitialized()
+        .encodeJson<DidChangeDirection>(this as DidChangeDirection);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DidChangeDirectionMapper.ensureInitialized()
+        .encodeMap<DidChangeDirection>(this as DidChangeDirection);
+  }
+
+  DidChangeDirectionCopyWith<
+    DidChangeDirection,
+    DidChangeDirection,
+    DidChangeDirection
+  >
+  get copyWith =>
+      _DidChangeDirectionCopyWithImpl<DidChangeDirection, DidChangeDirection>(
+        this as DidChangeDirection,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DidChangeDirectionMapper.ensureInitialized().stringifyValue(
+      this as DidChangeDirection,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DidChangeDirectionMapper.ensureInitialized().equalsValue(
+      this as DidChangeDirection,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DidChangeDirectionMapper.ensureInitialized().hashValue(
+      this as DidChangeDirection,
+    );
+  }
+}
+
+extension DidChangeDirectionValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DidChangeDirection, $Out> {
+  DidChangeDirectionCopyWith<$R, DidChangeDirection, $Out>
+  get $asDidChangeDirection => $base.as(
+    (v, t, t2) => _DidChangeDirectionCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class DidChangeDirectionCopyWith<
+  $R,
+  $In extends DidChangeDirection,
+  $Out
+>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({CompassDirection? from, CompassDirection? to});
+  DidChangeDirectionCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _DidChangeDirectionCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DidChangeDirection, $Out>
+    implements DidChangeDirectionCopyWith<$R, DidChangeDirection, $Out> {
+  _DidChangeDirectionCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DidChangeDirection> $mapper =
+      DidChangeDirectionMapper.ensureInitialized();
+  @override
+  $R call({CompassDirection? from, CompassDirection? to}) => $apply(
+    FieldCopyWithData({if (from != null) #from: from, if (to != null) #to: to}),
+  );
+  @override
+  DidChangeDirection $make(CopyWithData data) => DidChangeDirection(
+    from: data.get(#from, or: $value.from),
+    to: data.get(#to, or: $value.to),
+  );
+
+  @override
+  DidChangeDirectionCopyWith<$R2, DidChangeDirection, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DidChangeDirectionCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class BlocksMovementMapper extends SubClassMapperBase<BlocksMovement> {

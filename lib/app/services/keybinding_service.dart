@@ -360,6 +360,18 @@ class KeyBindingService {
     'movement.left': KeyCombo.fromKeys([LogicalKeyboardKey.keyA]),
     'movement.right': KeyCombo.fromKeys([LogicalKeyboardKey.keyD]),
 
+    // Face direction without moving (Shift + WASD)
+    'direction.up': KeyCombo.fromKeys([LogicalKeyboardKey.shift, LogicalKeyboardKey.keyW]),
+    'direction.down': KeyCombo.fromKeys([LogicalKeyboardKey.shift, LogicalKeyboardKey.keyS]),
+    'direction.left': KeyCombo.fromKeys([LogicalKeyboardKey.shift, LogicalKeyboardKey.keyA]),
+    'direction.right': KeyCombo.fromKeys([LogicalKeyboardKey.shift, LogicalKeyboardKey.keyD]),
+
+    // Strafe - move without changing direction (Ctrl + WASD)
+    'strafe.up': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyW]),
+    'strafe.down': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyS]),
+    'strafe.left': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyA]),
+    'strafe.right': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyD]),
+
     // Entity actions
     'entity.interact': KeyCombo.fromKeys([LogicalKeyboardKey.keyE]),
 

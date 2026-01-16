@@ -45,6 +45,8 @@ void initializeMappers() {
   p6.LocalPositionMapper.ensureInitialized();
   p6.MoveByIntentMapper.ensureInitialized();
   p6.DidMoveMapper.ensureInitialized();
+  p6.DirectionIntentMapper.ensureInitialized();
+  p6.DidChangeDirectionMapper.ensureInitialized();
   p6.BlocksMovementMapper.ensureInitialized();
   p6.BlockedMoveMapper.ensureInitialized();
   p6.AiControlledMapper.ensureInitialized();
@@ -136,6 +138,7 @@ void initializeMappers() {
   p12.HierarchySystemMapper.ensureInitialized();
   p12.CollisionSystemMapper.ensureInitialized();
   p12.MovementSystemMapper.ensureInitialized();
+  p12.DirectionSystemMapper.ensureInitialized();
   p12.InventorySystemMapper.ensureInitialized();
   p12.CombatSystemMapper.ensureInitialized();
   p12.BehaviorSystemMapper.ensureInitialized();

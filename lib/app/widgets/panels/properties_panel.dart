@@ -110,6 +110,8 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
     ComponentRegistry.register(MoveByIntentMetadata());
     ComponentRegistry.register(DidMoveMetadata());
     ComponentRegistry.register(BlockedMoveMetadata());
+    ComponentRegistry.register(DirectionIntentMetadata());
+    ComponentRegistry.register(DidChangeDirectionMetadata());
 
     // Lifecycle components
     ComponentRegistry.register(LifetimeMetadata());

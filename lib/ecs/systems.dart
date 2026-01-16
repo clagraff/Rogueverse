@@ -133,8 +133,11 @@ class CollisionSystem extends System with CollisionSystemMappable {
         }
 
         if (blocked) {
-          // Update direction even when movement is blocked
-          e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
+          // Emit DirectionIntent even when movement is blocked (DirectionSystem will update Direction)
+          // Skip if this is a strafe movement (maintain current direction)
+          if (!intent.isStrafe) {
+            e.upsert(DirectionIntent(Direction.fromOffset(intent.dx, intent.dy)));
+          }
           e.upsert(BlockedMove(dest));
           e.remove<MoveByIntent>();
 
@@ -181,14 +184,50 @@ class MovementSystem extends System with MovementSystemMappable {
         e.upsert<LocalPosition>(
             LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy));
 
-        // Update direction based on movement
-        e.upsert(Direction(Direction.fromOffset(intent.dx, intent.dy)));
+        // Emit DirectionIntent based on movement (DirectionSystem will update Direction)
+        // Skip if this is a strafe movement (maintain current direction)
+        if (!intent.isStrafe) {
+          e.upsert(DirectionIntent(Direction.fromOffset(intent.dx, intent.dy)));
+        }
 
         e.upsert(DidMove(from: from, to: to));
         e.remove<MoveByIntent>();
 
         final direction = e.get<Direction>();
         _logger.finest("moved entity", {"entity": e, "from": from, "to": to, "direction": direction?.facing});
+      }
+    });
+  }
+}
+
+/// Processes DirectionIntent and updates Direction component.
+@MappableClass()
+class DirectionSystem extends System with DirectionSystemMappable {
+  static final _logger = Logger('DirectionSystem');
+
+  @override
+  void update(World world) {
+    Timeline.timeSync("DirectionSystem: update", () {
+      final intents = world.get<DirectionIntent>();
+
+      for (final id in intents.keys.toList()) {
+        final e = world.getEntity(id);
+        final intent = e.get<DirectionIntent>();
+        if (intent == null) continue;
+
+        final current = e.get<Direction>()?.facing ?? CompassDirection.south;
+        final newDir = intent.direction;
+
+        // Only record DidChangeDirection if direction changed AND entity didn't move
+        // (DidMove indicates movement already happened)
+        if (current != newDir && !e.has<DidMove>()) {
+          e.upsert(DidChangeDirection(from: current, to: newDir));
+        }
+
+        e.upsert(Direction(newDir));
+        e.remove<DirectionIntent>();
+
+        _logger.finest("direction set", {"entity": e, "direction": newDir});
       }
     });
   }

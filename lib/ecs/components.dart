@@ -169,7 +169,10 @@ extension LocalPositionExtension on LocalPosition {
 class MoveByIntent extends IntentComponent with MoveByIntentMappable {
   final int dx, dy;
 
-  MoveByIntent({required this.dx, required this.dy});
+  /// If true, this is a strafe movement that should not change facing direction.
+  final bool isStrafe;
+
+  MoveByIntent({required this.dx, required this.dy, this.isStrafe = false});
 
   @override
   String get componentType => "MoveByIntent";
@@ -186,6 +189,31 @@ class DidMove extends BeforeTick with DidMoveMappable implements Component {
 
   @override
   String get componentType => "DidMove";
+}
+
+/// Intent to change facing direction. Processed by DirectionSystem.
+@MappableClass()
+class DirectionIntent extends IntentComponent with DirectionIntentMappable {
+  final CompassDirection direction;
+
+  DirectionIntent(this.direction);
+
+  @override
+  String get componentType => "DirectionIntent";
+}
+
+/// Records a direction change that occurred without movement.
+@MappableClass()
+class DidChangeDirection extends BeforeTick
+    with DidChangeDirectionMappable
+    implements Component {
+  final CompassDirection from;
+  final CompassDirection to;
+
+  DidChangeDirection({required this.from, required this.to}) : super(1);
+
+  @override
+  String get componentType => "DidChangeDirection";
 }
 
 /// Marker component indicating this entity blocks movement.
