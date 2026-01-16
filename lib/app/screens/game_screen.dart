@@ -33,6 +33,9 @@ import 'package:rogueverse/game/components/positional_control_handler.dart';
 import 'package:rogueverse/game/components/template_entity_spawner.dart';
 import 'package:rogueverse/game/components/overlay_toggle.dart';
 import 'package:rogueverse/game/components/vision_cone.dart';
+// DEBUG: Uncomment to enable camera center crosshair
+// import 'package:rogueverse/game/components/camera_center_debug.dart';
+import 'package:rogueverse/game/components/camera_controller.dart';
 import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/game/utils/grid_coordinates.dart';
 import 'package:rogueverse/app/widgets/overlays/unified_editor_panel.dart';
@@ -301,6 +304,12 @@ class GameScreen extends flame.World with Disposer {
       if (playerParent != null) {
         game.viewedParentId.value = playerParent.parentEntityId;
       }
+      // Add camera controller that follows the selected entity (defaults to follow mode)
+      final cameraController = CameraController(
+        followedEntityNotifier: game.selectedEntity,
+      );
+      add(cameraController);
+      game.cameraController = cameraController;
       _logger.info('auto-selected player entity', {'id': playerEntity.id});
     }
 
@@ -347,6 +356,9 @@ class GameScreen extends flame.World with Disposer {
       world: game.currentWorld,
       observerIdNotifier: game.observerEntityId,
     )..priority = -1000);
+
+    // DEBUG: Uncomment to show crosshair where camera thinks the center is
+    // add(CameraCenterDebug()..priority = 1000);
 
     var healthHud = HealthBar();
     // TODO change to component notification.

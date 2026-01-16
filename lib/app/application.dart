@@ -24,6 +24,7 @@ class Application extends StatefulWidget {
 
 class _ApplicationState extends State<Application> {
   late final GameArea _game;
+  final GlobalKey<ScaffoldMessengerState> _scaffoldMessengerKey = GlobalKey();
 
   int? _panPointerId;
 
@@ -31,6 +32,30 @@ class _ApplicationState extends State<Application> {
   void initState() {
     super.initState();
     _game = GameArea(widget.gameAreaFocusNode);
+
+    // Listen for toast messages from the game
+    _game.toastMessage.addListener(_onToastMessage);
+  }
+
+  @override
+  void dispose() {
+    _game.toastMessage.removeListener(_onToastMessage);
+    super.dispose();
+  }
+
+  void _onToastMessage() {
+    final message = _game.toastMessage.value;
+    if (message != null && mounted) {
+      // Use the GlobalKey to access ScaffoldMessenger
+      _scaffoldMessengerKey.currentState?.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+      // Clear the message after showing
+      _game.toastMessage.value = null;
+    }
   }
 
   void _onPointerDown(PointerDownEvent event) {
@@ -48,6 +73,9 @@ class _ApplicationState extends State<Application> {
       _panPointerId = null;
       return;
     }
+
+    // Notify camera controller of manual camera movement
+    _game.cameraController?.onManualCameraMove();
 
     final d = event.delta;
     _game.camera.moveBy(Vector2(-d.dx, -d.dy));
@@ -117,6 +145,7 @@ class _ApplicationState extends State<Application> {
     final darkColorScheme = const ColorScheme.dark();
 
     return MaterialApp(
+      scaffoldMessengerKey: _scaffoldMessengerKey,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: darkColorScheme,

@@ -10,6 +10,7 @@ import 'package:logging/logging.dart' show Logger;
 
 import 'package:rogueverse/app/screens/game_screen.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/game/components/camera_controller.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 import 'package:rogueverse/game/components/interaction_control_handler.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
@@ -89,6 +90,18 @@ class GameArea extends FlameGame
   /// Reference to the dialog control handler for overlay access.
   /// Set by GameScreen during initialization.
   DialogControlHandler? dialogHandler;
+
+  /// Reference to the camera controller for notifying manual camera movements.
+  /// Set by GameScreen during initialization.
+  CameraController? cameraController;
+
+  /// Notifier for toast messages. Application listens to this to show snackbars.
+  final ValueNotifier<String?> toastMessage = ValueNotifier(null);
+
+  /// Shows a toast message by updating the toastMessage notifier.
+  void showToast(String message) {
+    toastMessage.value = message;
+  }
 
   /// Temporary world used for editing templates in the inspector.
   World? _templateEditingWorld;
@@ -388,20 +401,25 @@ class GameArea extends FlameGame
     if (!handled) {
       final camera = this.camera;
       final viewfinder = camera.viewfinder;
+      final isFollowing = cameraController?.mode == CameraMode.follow;
+      final followCenter = cameraController?.getFollowedEntityWorldCenter();
 
-      // Get world position under the cursor BEFORE zoom
-      final worldBefore = camera.globalToLocal(info.eventPosition.global);
-
-      // Zoom in or out
-      final zoomChange = info.scrollDelta.global.y.sign * 0.1 * -1;
-      viewfinder.zoom = (viewfinder.zoom + zoomChange).clamp(0.1, 4.0);
-
-      // Get world position under the cursor AFTER zoom
-      final worldAfter = camera.globalToLocal(info.eventPosition.global);
-
-      // Compute the change and shift the camera to preserve cursor focus
-      final shift = worldBefore - worldAfter;
-      viewfinder.position += shift;
+      if (isFollowing && followCenter != null) {
+        // In follow mode, zoom and keep the followed entity centered
+        final zoomChange = info.scrollDelta.global.y.sign * 0.1 * -1;
+        viewfinder.zoom = (viewfinder.zoom + zoomChange).clamp(0.1, 4.0);
+        // Convert viewport size from screen pixels to world units
+        final viewportWorldSize = camera.viewport.size / viewfinder.zoom;
+        viewfinder.position = followCenter - viewportWorldSize / 2;
+      } else {
+        // In free mode, zoom centered on cursor position
+        final worldBefore = camera.globalToLocal(info.eventPosition.global);
+        final zoomChange = info.scrollDelta.global.y.sign * 0.1 * -1;
+        viewfinder.zoom = (viewfinder.zoom + zoomChange).clamp(0.1, 4.0);
+        final worldAfter = camera.globalToLocal(info.eventPosition.global);
+        final shift = worldBefore - worldAfter;
+        viewfinder.position += shift;
+      }
     }
   }
 

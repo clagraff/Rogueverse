@@ -371,6 +371,9 @@ class KeyBindingService {
     'game.deselect': KeyCombo.fromKeys([LogicalKeyboardKey.escape]),
     'game.toggleMode': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.backquote]),
 
+    // Camera controls
+    'camera.toggleFollow': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyF]),
+
     // Overlay toggles
     'overlay.editor': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyE]),
     'overlay.templates': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyT]),
