@@ -220,6 +220,17 @@ class InteractionControlHandler extends PositionComponent
       'target': target?.id,
     });
 
+    // Special handling for Talk interaction - open dialog directly without setting intent
+    // This prevents a game tick from occurring when starting dialog
+    if (interaction.actionName == 'Talk' && target != null) {
+      dismissMenu();
+      final game = findGame() as GameArea?;
+      if (game?.dialogHandler != null) {
+        game!.dialogHandler!.startDialog(target);
+      }
+      return;
+    }
+
     // Create and set the intent
     // For self-actions, pass the player entity as the target
     final intent = interaction.createIntent(target ?? entity);

@@ -44,83 +44,84 @@ class _InspectorPanelState extends State<InspectorPanel> {
   /// This should be called once during initialization to ensure all component
   /// types are available in the inspector. New components should be registered here.
   void _registerAllComponents() {
-    // Only register if not already registered (prevents double registration)
-    if (ComponentRegistry.getAll().isEmpty) {
-      // Core gameplay components
-      ComponentRegistry.register(NameMetadata());
-      ComponentRegistry.register(LocalPositionMetadata());
-      ComponentRegistry.register(DirectionMetadata());
-      ComponentRegistry.register(HealthMetadata());
-      ComponentRegistry.register(RenderableMetadata());
+    // Register all components (registry handles duplicates via map overwrite)
+    // Core gameplay components
+    ComponentRegistry.register(NameMetadata());
+    ComponentRegistry.register(LocalPositionMetadata());
+    ComponentRegistry.register(DirectionMetadata());
+    ComponentRegistry.register(HealthMetadata());
+    ComponentRegistry.register(RenderableMetadata());
 
-      // Hierarchy components
-      ComponentRegistry.register(HasParentMetadata());
+    // Hierarchy components
+    ComponentRegistry.register(HasParentMetadata());
 
-      // Inventory components
-      ComponentRegistry.register(InventoryMetadata());
-      ComponentRegistry.register(InventoryMaxCountMetadata());
-      ComponentRegistry.register(PickupIntentMetadata());
-      ComponentRegistry.register(PickedUpMetadata());
-      ComponentRegistry.register(InventoryFullFailureMetadata());
+    // Inventory components
+    ComponentRegistry.register(InventoryMetadata());
+    ComponentRegistry.register(InventoryMaxCountMetadata());
+    ComponentRegistry.register(PickupIntentMetadata());
+    ComponentRegistry.register(PickedUpMetadata());
+    ComponentRegistry.register(InventoryFullFailureMetadata());
 
-      // Marker components (tags with no data)
-      ComponentRegistry.register(AiControlledMetadata());
-      ComponentRegistry.register(BlocksMovementMetadata());
-      ComponentRegistry.register(PickupableMetadata());
-      ComponentRegistry.register(DeadMetadata());
+    // Marker components (tags with no data)
+    ComponentRegistry.register(AiControlledMetadata());
+    ComponentRegistry.register(BlocksMovementMetadata());
+    ComponentRegistry.register(PickupableMetadata());
+    ComponentRegistry.register(DeadMetadata());
 
-      // Vision components
-      ComponentRegistry.register(VisionRadiusMetadata());
-      ComponentRegistry.register(VisibleEntitiesMetadata());
-      ComponentRegistry.register(VisionMemoryMetadata());
-      ComponentRegistry.register(BlocksSightMetadata());
+    // Vision components
+    ComponentRegistry.register(VisionRadiusMetadata());
+    ComponentRegistry.register(VisibleEntitiesMetadata());
+    ComponentRegistry.register(VisionMemoryMetadata());
+    ComponentRegistry.register(BlocksSightMetadata());
 
-      // Combat components
-      ComponentRegistry.register(AttackIntentMetadata());
-      ComponentRegistry.register(DidAttackMetadata());
-      ComponentRegistry.register(WasAttackedMetadata());
+    // Combat components
+    ComponentRegistry.register(AttackIntentMetadata());
+    ComponentRegistry.register(DidAttackMetadata());
+    ComponentRegistry.register(WasAttackedMetadata());
 
-      // Portal components
-      ComponentRegistry.register(PortalToPositionMetadata());
-      ComponentRegistry.register(PortalToAnchorMetadata());
-      ComponentRegistry.register(PortalAnchorMetadata());
-      ComponentRegistry.register(UsePortalIntentMetadata());
-      ComponentRegistry.register(DidPortalMetadata());
-      ComponentRegistry.register(FailedToPortalMetadata());
+    // Portal components
+    ComponentRegistry.register(PortalToPositionMetadata());
+    ComponentRegistry.register(PortalToAnchorMetadata());
+    ComponentRegistry.register(PortalAnchorMetadata());
+    ComponentRegistry.register(UsePortalIntentMetadata());
+    ComponentRegistry.register(DidPortalMetadata());
+    ComponentRegistry.register(FailedToPortalMetadata());
 
-      // Control components
-      ComponentRegistry.register(ControllableMetadata());
-      ComponentRegistry.register(ControllingMetadata());
-      ComponentRegistry.register(EnablesControlMetadata());
-      ComponentRegistry.register(DockedMetadata());
-      ComponentRegistry.register(WantsControlIntentMetadata());
-      ComponentRegistry.register(ReleasesControlIntentMetadata());
-      ComponentRegistry.register(DockIntentMetadata());
-      ComponentRegistry.register(UndockIntentMetadata());
+    // Control components
+    ComponentRegistry.register(ControllableMetadata());
+    ComponentRegistry.register(ControllingMetadata());
+    ComponentRegistry.register(EnablesControlMetadata());
+    ComponentRegistry.register(DockedMetadata());
+    ComponentRegistry.register(WantsControlIntentMetadata());
+    ComponentRegistry.register(ReleasesControlIntentMetadata());
+    ComponentRegistry.register(DockIntentMetadata());
+    ComponentRegistry.register(UndockIntentMetadata());
 
-      // Openable components
-      ComponentRegistry.register(OpenableMetadata());
-      ComponentRegistry.register(OpenIntentMetadata());
-      ComponentRegistry.register(CloseIntentMetadata());
-      ComponentRegistry.register(DidOpenMetadata());
-      ComponentRegistry.register(DidCloseMetadata());
+    // Openable components
+    ComponentRegistry.register(OpenableMetadata());
+    ComponentRegistry.register(OpenIntentMetadata());
+    ComponentRegistry.register(CloseIntentMetadata());
+    ComponentRegistry.register(DidOpenMetadata());
+    ComponentRegistry.register(DidCloseMetadata());
 
-      // AI/Behavior components
-      ComponentRegistry.register(BehaviorMetadata());
+    // AI/Behavior components
+    ComponentRegistry.register(BehaviorMetadata());
 
-      // Transient event components (for debugging)
-      ComponentRegistry.register(MoveByIntentMetadata());
-      ComponentRegistry.register(DidMoveMetadata());
-      ComponentRegistry.register(BlockedMoveMetadata());
+    // Dialog components
+    ComponentRegistry.register(DialogMetadata());
 
-      // Lifecycle components
-      ComponentRegistry.register(LifetimeMetadata());
-      ComponentRegistry.register(BeforeTickMetadata());
-      ComponentRegistry.register(AfterTickMetadata());
+    // Transient event components (for debugging)
+    ComponentRegistry.register(MoveByIntentMetadata());
+    ComponentRegistry.register(DidMoveMetadata());
+    ComponentRegistry.register(BlockedMoveMetadata());
 
-      // Grid components
-      ComponentRegistry.register(CellMetadata());
-    }
+    // Lifecycle components
+    ComponentRegistry.register(LifetimeMetadata());
+    ComponentRegistry.register(BeforeTickMetadata());
+    ComponentRegistry.register(AfterTickMetadata());
+
+    // Grid components
+    ComponentRegistry.register(CellMetadata());
   }
 
   /// Requests focus for keyboard handling after the widget is built.

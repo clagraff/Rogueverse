@@ -21,3 +21,4 @@ export 'portal_sections.dart';
 export 'position_section.dart';
 export 'renderable_section.dart';
 export 'vision_sections.dart';
+export 'dialog_section.dart';

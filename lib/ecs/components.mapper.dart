@@ -195,6 +195,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
       OpenableMapper.ensureInitialized();
       DidOpenMapper.ensureInitialized();
       DidCloseMapper.ensureInitialized();
+      DialogMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -751,6 +752,7 @@ class IntentComponentMapper extends SubClassMapperBase<IntentComponent> {
       UndockIntentMapper.ensureInitialized();
       OpenIntentMapper.ensureInitialized();
       CloseIntentMapper.ensureInitialized();
+      TalkIntentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -7440,5 +7442,241 @@ class _DidCloseCopyWithImpl<$R, $Out>
   DidCloseCopyWith<$R2, DidClose, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _DidCloseCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DialogMapper extends SubClassMapperBase<Dialog> {
+  DialogMapper._();
+
+  static DialogMapper? _instance;
+  static DialogMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DialogMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      DialogNodeMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Dialog';
+
+  static DialogNode _$root(Dialog v) => v.root;
+  static const Field<Dialog, DialogNode> _f$root = Field('root', _$root);
+
+  @override
+  final MappableFields<Dialog> fields = const {#root: _f$root};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Dialog';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Dialog _instantiate(DecodingData data) {
+    return Dialog(data.dec(_f$root));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Dialog fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Dialog>(map);
+  }
+
+  static Dialog fromJson(String json) {
+    return ensureInitialized().decodeJson<Dialog>(json);
+  }
+}
+
+mixin DialogMappable {
+  String toJson() {
+    return DialogMapper.ensureInitialized().encodeJson<Dialog>(this as Dialog);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DialogMapper.ensureInitialized().encodeMap<Dialog>(this as Dialog);
+  }
+
+  DialogCopyWith<Dialog, Dialog, Dialog> get copyWith =>
+      _DialogCopyWithImpl<Dialog, Dialog>(this as Dialog, $identity, $identity);
+  @override
+  String toString() {
+    return DialogMapper.ensureInitialized().stringifyValue(this as Dialog);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DialogMapper.ensureInitialized().equalsValue(this as Dialog, other);
+  }
+
+  @override
+  int get hashCode {
+    return DialogMapper.ensureInitialized().hashValue(this as Dialog);
+  }
+}
+
+extension DialogValueCopy<$R, $Out> on ObjectCopyWith<$R, Dialog, $Out> {
+  DialogCopyWith<$R, Dialog, $Out> get $asDialog =>
+      $base.as((v, t, t2) => _DialogCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DialogCopyWith<$R, $In extends Dialog, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({DialogNode? root});
+  DialogCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DialogCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Dialog, $Out>
+    implements DialogCopyWith<$R, Dialog, $Out> {
+  _DialogCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Dialog> $mapper = DialogMapper.ensureInitialized();
+  @override
+  $R call({DialogNode? root}) =>
+      $apply(FieldCopyWithData({if (root != null) #root: root}));
+  @override
+  Dialog $make(CopyWithData data) => Dialog(data.get(#root, or: $value.root));
+
+  @override
+  DialogCopyWith<$R2, Dialog, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _DialogCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class TalkIntentMapper extends SubClassMapperBase<TalkIntent> {
+  TalkIntentMapper._();
+
+  static TalkIntentMapper? _instance;
+  static TalkIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = TalkIntentMapper._());
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'TalkIntent';
+
+  static int _$targetEntityId(TalkIntent v) => v.targetEntityId;
+  static const Field<TalkIntent, int> _f$targetEntityId = Field(
+    'targetEntityId',
+    _$targetEntityId,
+  );
+  static int _$lifetime(TalkIntent v) => v.lifetime;
+  static const Field<TalkIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<TalkIntent> fields = const {
+    #targetEntityId: _f$targetEntityId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'TalkIntent';
+  @override
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
+
+  static TalkIntent _instantiate(DecodingData data) {
+    return TalkIntent(targetEntityId: data.dec(_f$targetEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static TalkIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<TalkIntent>(map);
+  }
+
+  static TalkIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<TalkIntent>(json);
+  }
+}
+
+mixin TalkIntentMappable {
+  String toJson() {
+    return TalkIntentMapper.ensureInitialized().encodeJson<TalkIntent>(
+      this as TalkIntent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return TalkIntentMapper.ensureInitialized().encodeMap<TalkIntent>(
+      this as TalkIntent,
+    );
+  }
+
+  TalkIntentCopyWith<TalkIntent, TalkIntent, TalkIntent> get copyWith =>
+      _TalkIntentCopyWithImpl<TalkIntent, TalkIntent>(
+        this as TalkIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return TalkIntentMapper.ensureInitialized().stringifyValue(
+      this as TalkIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return TalkIntentMapper.ensureInitialized().equalsValue(
+      this as TalkIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return TalkIntentMapper.ensureInitialized().hashValue(this as TalkIntent);
+  }
+}
+
+extension TalkIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, TalkIntent, $Out> {
+  TalkIntentCopyWith<$R, TalkIntent, $Out> get $asTalkIntent =>
+      $base.as((v, t, t2) => _TalkIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class TalkIntentCopyWith<$R, $In extends TalkIntent, $Out>
+    implements IntentComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? targetEntityId});
+  TalkIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _TalkIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, TalkIntent, $Out>
+    implements TalkIntentCopyWith<$R, TalkIntent, $Out> {
+  _TalkIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<TalkIntent> $mapper =
+      TalkIntentMapper.ensureInitialized();
+  @override
+  $R call({int? targetEntityId}) => $apply(
+    FieldCopyWithData({
+      if (targetEntityId != null) #targetEntityId: targetEntityId,
+    }),
+  );
+  @override
+  TalkIntent $make(CopyWithData data) => TalkIntent(
+    targetEntityId: data.get(#targetEntityId, or: $value.targetEntityId),
+  );
+
+  @override
+  TalkIntentCopyWith<$R2, TalkIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _TalkIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

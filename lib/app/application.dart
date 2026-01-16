@@ -12,6 +12,7 @@ import 'package:rogueverse/app/widgets/panels/entity_list_panel.dart';
 import 'package:rogueverse/app/widgets/panels/templates_panel.dart';
 import 'package:rogueverse/app/widgets/panels/properties_panel.dart';
 import 'package:rogueverse/app/widgets/panels/editor_footer_bar.dart';
+import 'package:rogueverse/app/widgets/overlays/dialog_overlay.dart';
 import 'package:rogueverse/app/widgets/overlays/interaction_context_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
@@ -205,6 +206,13 @@ class _ApplicationState extends State<Application> {
                           onDismiss: handler.dismissMenu,
                           onHighlightChanged: handler.setHighlightedEntity,
                         );
+                      },
+                      DialogOverlay.overlayName: (context, game) {
+                        final handler = _game.dialogHandler;
+                        if (handler == null) {
+                          return const SizedBox.shrink();
+                        }
+                        return DialogOverlay(handler: handler);
                       },
                     },
                   ),

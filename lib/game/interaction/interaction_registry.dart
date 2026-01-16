@@ -26,6 +26,16 @@ class InteractionRegistry {
       createIntent: (e) => CloseIntent(targetEntityId: e.id),
     ),
 
+    // Dialog interaction
+    InteractionDefinition(
+      actionName: 'Talk',
+      actionVerb: 'Talking',
+      genericLabel: 'NPC',
+      range: 1, // Adjacent only
+      isAvailable: (e) => e.has<Dialog>(),
+      createIntent: (e) => TalkIntent(targetEntityId: e.id),
+    ),
+
     // Future interactions (commented out for initial implementation):
     // InteractionDefinition(
     //   actionName: 'Pick up',

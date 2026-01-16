@@ -1,5 +1,6 @@
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:rogueverse/ecs/ai/nodes.dart';
+import 'package:rogueverse/ecs/dialog/dialog_nodes.dart';
 
 part 'components.mapper.dart';
 
@@ -806,4 +807,35 @@ class DidClose extends BeforeTick with DidCloseMappable implements Component {
 
   @override
   String get componentType => "DidClose";
+}
+
+// ============================================================================
+// Dialog System Components
+// ============================================================================
+
+/// Component that stores a dialog tree for an NPC.
+///
+/// Entities with this component can be talked to by the player.
+/// The dialog tree defines the conversation flow, including branching
+/// choices, conditions, and effects.
+@MappableClass()
+class Dialog with DialogMappable implements Component {
+  /// The root node of the dialog tree.
+  final DialogNode root;
+
+  Dialog(this.root);
+
+  @override
+  String get componentType => "Dialog";
+}
+
+/// Intent to start a dialog with an NPC.
+@MappableClass()
+class TalkIntent extends IntentComponent with TalkIntentMappable {
+  final int targetEntityId;
+
+  TalkIntent({required this.targetEntityId});
+
+  @override
+  String get componentType => "TalkIntent";
 }

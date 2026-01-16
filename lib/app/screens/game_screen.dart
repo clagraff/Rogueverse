@@ -15,6 +15,7 @@ import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/systems.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent.dart';
+import 'package:rogueverse/game/components/dialog_control_handler.dart';
 import 'package:rogueverse/game/components/drag_select_component.dart';
 import 'package:rogueverse/game/components/editor_control_handler.dart';
 import 'package:rogueverse/game/components/entity_drag_mover.dart';
@@ -50,6 +51,7 @@ class GameScreen extends flame.World with Disposer {
   late GlobalControlHandler _globalControlHandler;
   late InventoryControlHandler _inventoryControlHandler;
   late InteractionControlHandler _interactionControlHandler;
+  late DialogControlHandler _dialogControlHandler;
   late EditorControlHandler _editorControlHandler;
   late EntityTapComponent _entityTapComponent;
   late DragSelectComponent _dragSelectComponent;
@@ -196,6 +198,15 @@ class GameScreen extends flame.World with Disposer {
       highlightedEntityNotifier: _interactionControlHandler.highlightedEntity,
     ));
 
+    // Add dialog control handler
+    _dialogControlHandler = DialogControlHandler(
+      selectedEntityNotifier: game.selectedEntity,
+      world: game.currentWorld,
+    );
+    add(_dialogControlHandler);
+    // Store reference in GameArea for overlay access
+    game.dialogHandler = _dialogControlHandler;
+
     _globalControlHandler = GlobalControlHandler(selectedEntityNotifier: game.selectedEntities);
     add(_globalControlHandler);
 
@@ -217,6 +228,7 @@ class GameScreen extends flame.World with Disposer {
       _globalControlHandler.isEnabled = isGameplay;
       _inventoryControlHandler.isEnabled = isGameplay;
       _interactionControlHandler.isEnabled = isGameplay;
+      _dialogControlHandler.isEnabled = isGameplay;
       // Editing mode handlers
       _entityTapComponent.isEnabled = !isGameplay;
       _dragSelectComponent.isEnabled = !isGameplay;
