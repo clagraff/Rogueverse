@@ -6,12 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/components.dart' show Name, HasParent;
 import 'package:rogueverse/game/game_area.dart';
-import 'package:rogueverse/app/widgets/panels/dock_panel.dart';
-import 'package:rogueverse/app/widgets/panels/panel_section.dart';
-import 'package:rogueverse/app/widgets/panels/entity_list_panel.dart';
-import 'package:rogueverse/app/widgets/panels/templates_panel.dart';
-import 'package:rogueverse/app/widgets/panels/properties_panel.dart';
-import 'package:rogueverse/app/widgets/panels/editor_footer_bar.dart';
+import 'package:rogueverse/app/widgets/layout/panel_layout.dart';
+import 'package:rogueverse/app/widgets/panels/editor_panels.dart';
 import 'package:rogueverse/app/widgets/overlays/dialog_overlay.dart';
 import 'package:rogueverse/app/widgets/overlays/interaction_context_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
@@ -164,139 +160,80 @@ class _ApplicationState extends State<Application> {
         body: ValueListenableBuilder<GameMode>(
           valueListenable: _game.gameMode,
           builder: (context, gameMode, _) {
-            final isEditingMode = gameMode == GameMode.editing;
-
-            return Stack(
-              children: [
-                // Game area (center)
-                Listener(
-                  behavior: HitTestBehavior.opaque,
-                  onPointerDown: _onPointerDown,
-                  onPointerMove: _onPointerMove,
-                  onPointerUp: _onPointerUp,
-                  child: GameWidget(
-                    focusNode: widget.gameAreaFocusNode,
-                    game: _game,
-                    overlayBuilderMap: {
-                      VisionObserverPanel.overlayName: (context, game) => Align(
-                            alignment: Alignment.centerLeft,
-                            child: SizedBox(
-                              width: 280,
-                              child: VisionObserverPanel(
-                                world: _game.currentWorld,
-                                observerEntityIdNotifier: _game.observerEntityId,
-                                viewedParentIdNotifier: _game.viewedParentId,
-                                onClose: () {
-                                  _game.overlays.remove(VisionObserverPanel.overlayName);
-                                },
-                              ),
-                            ),
+            final gameWidget = Listener(
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: _onPointerDown,
+              onPointerMove: _onPointerMove,
+              onPointerUp: _onPointerUp,
+              child: GameWidget(
+                focusNode: widget.gameAreaFocusNode,
+                game: _game,
+                overlayBuilderMap: {
+                  VisionObserverPanel.overlayName: (context, game) => Align(
+                        alignment: Alignment.centerLeft,
+                        child: SizedBox(
+                          width: 280,
+                          child: VisionObserverPanel(
+                            world: _game.currentWorld,
+                            observerEntityIdNotifier: _game.observerEntityId,
+                            viewedParentIdNotifier: _game.viewedParentId,
+                            onClose: () {
+                              _game.overlays.remove(VisionObserverPanel.overlayName);
+                            },
                           ),
-                      InteractionContextMenu.overlayName: (context, game) {
-                        final handler = _game.interactionHandler;
-                        final menuState = handler?.menuState.value;
-                        if (handler == null || menuState == null) {
-                          return const SizedBox.shrink();
-                        }
-                        return InteractionContextMenu(
-                          interactables: menuState.interactables,
-                          selfActions: menuState.selfActions,
-                          position: menuState.position,
-                          onSelect: handler.executeInteraction,
-                          onDismiss: handler.dismissMenu,
-                          onHighlightChanged: handler.setHighlightedEntity,
-                        );
-                      },
-                      DialogOverlay.overlayName: (context, game) {
-                        final handler = _game.dialogHandler;
-                        if (handler == null) {
-                          return const SizedBox.shrink();
-                        }
-                        return DialogOverlay(handler: handler);
-                      },
-                    },
-                  ),
-                ),
-
-                // Left dock (editing mode only)
-                if (isEditingMode)
-                  DockPanel(
-                    side: DockSide.left,
-                    width: 280,
-                    children: [
-                      PanelSection(
-                        title: 'Entities',
-                        child: EntityListPanel(
-                          world: _game.currentWorld,
-                          viewedParentIdNotifier: _game.viewedParentId,
-                          selectedEntitiesNotifier: _game.selectedEntities,
                         ),
                       ),
-                      PanelSection(
-                        title: 'Templates',
-                        child: TemplatesPanel(
-                          selectedTemplateNotifier: _game.selectedTemplate,
-                          onCreateTemplate: () async {
-                            await _game.startTemplateCreation(context);
-                          },
-                          onEditTemplate: (template) async {
-                            await _game.startTemplateEditing(context, template);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-
-                // Right dock (editing mode only)
-                if (isEditingMode)
-                  DockPanel(
-                    side: DockSide.right,
-                    width: 280,
-                    children: [
-                      PanelSection(
-                        title: 'Properties',
-                        child: PropertiesPanel(
-                          entityNotifier: _game.selectedEntity,
-                          selectedEntitiesNotifier: _game.selectedEntities,
-                        ),
-                      ),
-                    ],
-                  ),
-
-                // Footer bar (editing mode only)
-                if (isEditingMode)
-                  Positioned(
-                    left: 280, // After left dock
-                    right: 280, // Before right dock
-                    bottom: 0,
-                    child: EditorFooterBar(
-                      editTargetNotifier: _game.editTarget,
-                    ),
-                  ),
-
-                // Blank entity placement FAB (editing mode only)
-                if (isEditingMode)
-                  Positioned(
-                    left: 280 + 16, // After left dock with margin
-                    bottom: 48, // Above footer bar
-                    child: ValueListenableBuilder<bool>(
-                      valueListenable: _game.blankEntityMode,
-                      builder: (context, isActive, _) {
-                        final colorScheme = Theme.of(context).colorScheme;
-                        return FloatingActionButton.small(
-                          onPressed: () {
-                            _game.blankEntityMode.value = !isActive;
-                          },
-                          tooltip: 'Place blank entity',
-                          backgroundColor: isActive ? colorScheme.primaryContainer : null,
-                          foregroundColor: isActive ? colorScheme.onPrimaryContainer : null,
-                          child: const Icon(Icons.add_box_outlined),
-                        );
-                      },
-                    ),
-                  ),
-              ],
+                  InteractionContextMenu.overlayName: (context, game) {
+                    final handler = _game.interactionHandler;
+                    final menuState = handler?.menuState.value;
+                    if (handler == null || menuState == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return InteractionContextMenu(
+                      interactables: menuState.interactables,
+                      selfActions: menuState.selfActions,
+                      position: menuState.position,
+                      onSelect: handler.executeInteraction,
+                      onDismiss: handler.dismissMenu,
+                      onHighlightChanged: handler.setHighlightedEntity,
+                    );
+                  },
+                  DialogOverlay.overlayName: (context, game) {
+                    final handler = _game.dialogHandler;
+                    if (handler == null) {
+                      return const SizedBox.shrink();
+                    }
+                    return DialogOverlay(handler: handler);
+                  },
+                },
+              ),
             );
+
+            if (gameMode == GameMode.editing) {
+              return PanelLayout(
+                leftPanel: EditorPanels.buildLeftPanel(
+                  world: _game.currentWorld,
+                  viewedParentIdNotifier: _game.viewedParentId,
+                  selectedEntitiesNotifier: _game.selectedEntities,
+                  selectedTemplateNotifier: _game.selectedTemplate,
+                  onCreateTemplate: () => _game.startTemplateCreation(context),
+                  onEditTemplate: (template) =>
+                      _game.startTemplateEditing(context, template),
+                ),
+                rightPanel: EditorPanels.buildRightPanel(
+                  entityNotifier: _game.selectedEntity,
+                  selectedEntitiesNotifier: _game.selectedEntities,
+                ),
+                bottomBar: EditorPanels.buildBottomBar(
+                  editTargetNotifier: _game.editTarget,
+                  blankEntityModeNotifier: _game.blankEntityMode,
+                ),
+                child: gameWidget,
+              );
+            }
+
+            // Gameplay mode - just the game widget
+            return gameWidget;
           },
         ),
         ),
