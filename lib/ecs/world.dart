@@ -395,6 +395,20 @@ class WorldSaves {
   /// Simple lock to prevent concurrent write operations.
   static bool _writeLock = false;
 
+  /// The path to the current save patch file for this game session.
+  /// Set by loadSaveWithPatch() or setCurrentSavePath().
+  /// Used by SaveSystem for periodic saves.
+  static String? _currentSavePatchPath;
+
+  /// Gets the current save patch path. Returns null if no save is loaded.
+  static String? get currentSavePatchPath => _currentSavePatchPath;
+
+  /// Sets the current save patch path for this game session.
+  static void setCurrentSavePath(String? path) {
+    _currentSavePatchPath = path;
+    _logger.info("set current save path", {"path": path});
+  }
+
   /// Returns a read-only reference to the cached initial state.
   /// Throws if no initial state is loaded.
   static Map<String, dynamic> get initialState {
@@ -405,17 +419,27 @@ class WorldSaves {
     return _cachedInitialState!;
   }
 
-  /// Migrates existing save.json to initial.json if needed.
+  /// Migrates existing save files to new structure if needed.
   /// Call this once during app startup before loading.
   static Future<void> migrateIfNeeded() async {
     var supportDir = await getApplicationSupportDirectory();
+
+    // Migration 1: save.json -> initial.json
     var oldSaveFile = File("${supportDir.path}/save.json");
     var newInitialFile = File("${supportDir.path}/initial.json");
 
-    // Only migrate if old file exists and new file doesn't
     if (oldSaveFile.existsSync() && !newInitialFile.existsSync()) {
       _logger.info("migrating save.json to initial.json");
       await oldSaveFile.rename(newInitialFile.path);
+    }
+
+    // Migration 2: save.patch.json -> saves/default.patch.json
+    var oldPatchFile = File("${supportDir.path}/save.patch.json");
+    if (await oldPatchFile.exists()) {
+      var savesDir = await getSavesDirectory();
+      var newPatchFile = File("${savesDir.path}/default.patch.json");
+      _logger.info("migrating save.patch.json to saves/default.patch.json");
+      await oldPatchFile.rename(newPatchFile.path);
     }
   }
 
@@ -448,22 +472,24 @@ class WorldSaves {
     }
   }
 
-  /// Loads the game by reading initial.json and applying save.patch.json.
+  /// Loads the game by reading initial.json and applying a save patch.
+  ///
+  /// [savePatchPath] - Optional path to the save patch file. If null, loads
+  /// initial state only (no patch applied).
   ///
   /// Flow:
   /// 1. Load initial.json (caches in memory)
-  /// 2. If save.patch.json exists, apply it to get current state
+  /// 2. If savePatchPath provided and exists, apply it to get current state
   /// 3. Return the resulting World
   ///
   /// Throws if patch application fails.
-  static Future<World?> loadSaveWithPatch() async {
+  static Future<World?> loadSaveWithPatch([String? savePatchPath]) async {
     var task = TimelineTask(filterKey: "fileio");
     task.start("save: load with patch");
 
     try {
       var supportDir = await getApplicationSupportDirectory();
       var initialFile = File("${supportDir.path}/initial.json");
-      var patchFile = File("${supportDir.path}/save.patch.json");
 
       // Step 1: Load initial state
       if (!initialFile.existsSync()) {
@@ -479,18 +505,29 @@ class WorldSaves {
       _cachedInitialState =
           jsonDecode(jsonEncode(initialJson)) as Map<String, dynamic>;
 
+      // Store the current save path for this session
+      _currentSavePatchPath = savePatchPath;
+
       // Step 2: Apply patch if exists
       Map<String, dynamic> finalState;
-      if (patchFile.existsSync()) {
-        _logger.info("applying save patch", {"path": patchFile.path});
-        var patchJson = jsonDecode(patchFile.readAsStringSync()) as List<dynamic>;
-        var patchOps = patchJson.cast<Map<String, dynamic>>();
+      if (savePatchPath != null) {
+        var patchFile = File(savePatchPath);
+        if (patchFile.existsSync()) {
+          _logger.info("applying save patch", {"path": patchFile.path});
+          var patchJson =
+              jsonDecode(patchFile.readAsStringSync()) as List<dynamic>;
+          var patchOps = patchJson.cast<Map<String, dynamic>>();
 
-        // Apply RFC 6902 patch
-        finalState = JsonPatch.apply(initialJson, patchOps, strict: false)
-            as Map<String, dynamic>;
+          // Apply RFC 6902 patch
+          finalState = JsonPatch.apply(initialJson, patchOps, strict: false)
+              as Map<String, dynamic>;
+        } else {
+          _logger.info("save patch file not found, using initial state",
+              {"path": savePatchPath});
+          finalState = initialJson;
+        }
       } else {
-        _logger.info("no save patch found, using initial state");
+        _logger.info("no save patch path provided, using initial state");
         finalState = initialJson;
       }
 
@@ -502,11 +539,20 @@ class WorldSaves {
   }
 
   /// Computes the diff between initial state and current world,
-  /// then writes the patch to save.patch.json.
+  /// then writes the patch to the specified save file.
+  ///
+  /// [savePatchPath] - Optional path to write the save patch. If null, uses
+  /// the current save path set by loadSaveWithPatch() or setCurrentSavePath().
   ///
   /// Uses the cached initial state from loadInitialState/loadSaveWithPatch.
-  /// Throws StateError if no initial state is cached.
-  static Future<void> writeSavePatch(World world) async {
+  /// Throws StateError if no initial state is cached or no save path is set.
+  static Future<void> writeSavePatch(World world, [String? savePatchPath]) async {
+    var effectivePath = savePatchPath ?? _currentSavePatchPath;
+    if (effectivePath == null) {
+      _logger.warning("no save path specified and no current save path set, skipping");
+      return;
+    }
+
     if (_writeLock) {
       _logger.warning("write operation already in progress, skipping");
       return;
@@ -521,8 +567,7 @@ class WorldSaves {
         throw StateError('Cannot write save patch: no initial state loaded.');
       }
 
-      var supportDir = await getApplicationSupportDirectory();
-      var patchFile = File("${supportDir.path}/save.patch.json");
+      var patchFile = File(effectivePath);
 
       // Get current state as Map
       var currentState = world.toMap();
@@ -599,4 +644,78 @@ class WorldSaves {
   static Future<void> writeSave(World world, [bool indent = true]) async {
     await writeInitialState(world, indent);
   }
+
+  /// Gets (and creates if needed) the saves directory.
+  static Future<Directory> getSavesDirectory() async {
+    var supportDir = await getApplicationSupportDirectory();
+    var savesDir = Directory("${supportDir.path}/saves");
+    if (!await savesDir.exists()) {
+      await savesDir.create(recursive: true);
+    }
+    return savesDir;
+  }
+
+  /// Lists all save files in the saves directory.
+  /// Returns saves sorted by last modified date (newest first).
+  static Future<List<SaveFileInfo>> listSaves() async {
+    var savesDir = await getSavesDirectory();
+    var saves = <SaveFileInfo>[];
+
+    await for (var entity in savesDir.list()) {
+      if (entity is File && entity.path.endsWith('.patch.json')) {
+        var stat = await entity.stat();
+        var fileName = entity.uri.pathSegments.last;
+        var name = fileName.replaceAll('.patch.json', '');
+        saves.add(SaveFileInfo(
+          name: name,
+          path: entity.path,
+          lastModified: stat.modified,
+        ));
+      }
+    }
+
+    // Sort by last modified, newest first
+    saves.sort((a, b) => b.lastModified.compareTo(a.lastModified));
+    return saves;
+  }
+
+  /// Creates a new save file with the given name.
+  /// Returns the path to the new save file.
+  /// Throws if a save with this name already exists.
+  static Future<String> createNewSave(String name) async {
+    var savesDir = await getSavesDirectory();
+    var savePath = "${savesDir.path}/$name.patch.json";
+    var saveFile = File(savePath);
+
+    if (await saveFile.exists()) {
+      throw StateError('Save file "$name" already exists.');
+    }
+
+    // Write empty patch array
+    await saveFile.writeAsString('[]');
+    _logger.info("created new save", {"path": savePath});
+    return savePath;
+  }
+
+  /// Deletes a save file.
+  static Future<void> deleteSave(String savePath) async {
+    var file = File(savePath);
+    if (await file.exists()) {
+      await file.delete();
+      _logger.info("deleted save", {"path": savePath});
+    }
+  }
+}
+
+/// Information about a save file.
+class SaveFileInfo {
+  final String name;
+  final String path;
+  final DateTime lastModified;
+
+  SaveFileInfo({
+    required this.name,
+    required this.path,
+    required this.lastModified,
+  });
 }

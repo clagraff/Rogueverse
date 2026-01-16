@@ -46,6 +46,10 @@ class GameScreen extends flame.World with Disposer {
   final Set<int> _renderedEntities = {};
   static final _logger = Logger('GameScreen');
 
+  /// The path to the save patch file for this game session.
+  /// Used for loading game progress on startup.
+  final String? savePatchPath;
+
   StreamSubscription<Change>? _spawnListener;
   StreamSubscription<int?>? _viewedParentListener;
 
@@ -59,7 +63,7 @@ class GameScreen extends flame.World with Disposer {
   late EntityTapComponent _entityTapComponent;
   late DragSelectComponent _dragSelectComponent;
 
-  GameScreen(FocusNode focusNode) {
+  GameScreen(FocusNode focusNode, {this.savePatchPath}) {
     gameFocusNode = focusNode;
   }
 
@@ -70,9 +74,9 @@ class GameScreen extends flame.World with Disposer {
   Future<void> onLoad() async {
     final game = parent!.findGame() as GameArea;
 
-    // Attempt to load world-state from local save file (initial + patch).
+    // Attempt to load world-state from local save file (initial + optional patch).
     // TODO this can only work when running on Desktop, not web!
-    var save = await WorldSaves.loadSaveWithPatch();
+    var save = await WorldSaves.loadSaveWithPatch(savePatchPath);
     if (save != null) {
       game.currentWorld = save;
       // Update tick scheduler to use the loaded world

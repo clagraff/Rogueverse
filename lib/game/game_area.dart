@@ -103,6 +103,15 @@ class GameArea extends FlameGame
     toastMessage.value = message;
   }
 
+  /// Notifier that signals when the menu should be opened (e.g., Escape pressed).
+  /// GameScreenWrapper listens to this to open the navigation drawer.
+  final ValueNotifier<bool> menuRequested = ValueNotifier(false);
+
+  /// Requests the menu to be opened.
+  void requestMenu() {
+    menuRequested.value = true;
+  }
+
   /// Temporary world used for editing templates in the inspector.
   World? _templateEditingWorld;
 
@@ -121,12 +130,17 @@ class GameArea extends FlameGame
   /// Used for dispatching scroll-related events, before otherwise controlling the camera.
   late final ScrollDispatcher scrollDispatcher;
 
+  /// The path to the save patch file for this game session.
+  /// Used for loading and saving game progress.
+  final String? savePatchPath;
+
   /// Creates a new game area with the specified focus node for keyboard input.
   ///
   /// Initializes the game world, ECS systems, and sets up the core game state.
   ///
   /// [gameFocusNode] - The focus node used to capture keyboard input for the game.
-  GameArea(FocusNode gameFocusNode) {
+  /// [savePatchPath] - Optional path to the save patch file. If null, a new game is started.
+  GameArea(FocusNode gameFocusNode, {this.savePatchPath}) {
     // Sync selectedEntities → selectedEntity for backwards compatibility
     selectedEntities.addListener(() {
       selectedEntity.value = selectedEntities.value.firstOrNull;
@@ -140,7 +154,7 @@ class GameArea extends FlameGame
       observerEntityId.value = firstSelected?.id;
     });
 
-    world = GameScreen(gameFocusNode);
+    world = GameScreen(gameFocusNode, savePatchPath: savePatchPath);
     var systems = [
       HierarchySystem(), // Rebuild hierarchy cache FIRST (other systems may use it)
       BehaviorSystem(), // AI decides what to do
@@ -267,7 +281,7 @@ class GameArea extends FlameGame
 
       // Reload initial state + apply save patch to restore player progress
       try {
-        var worldWithPatch = await WorldSaves.loadSaveWithPatch();
+        var worldWithPatch = await WorldSaves.loadSaveWithPatch(savePatchPath);
         if (worldWithPatch != null) {
           currentWorld.loadFrom(worldWithPatch.toMap());
         }
@@ -301,7 +315,7 @@ class GameArea extends FlameGame
       // Save current state as initial (we were editing the initial state)
       await WorldSaves.writeInitialState(currentWorld);
       // Load initial + patch for editing (creates empty patch if none exists)
-      var worldWithPatch = await WorldSaves.loadSaveWithPatch();
+      var worldWithPatch = await WorldSaves.loadSaveWithPatch(savePatchPath);
       if (worldWithPatch != null) {
         currentWorld.loadFrom(worldWithPatch.toMap());
       }

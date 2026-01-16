@@ -28,9 +28,7 @@ void main() async {
     await setupWindow();
   }
 
-  runApp(
-    Application(gameAreaFocusNode: FocusNode(debugLabel: 'game')),
-  );
+  runApp(const Application());
 }
 
 /// Hardcode log level, setup log sinking.

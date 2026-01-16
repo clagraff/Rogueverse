@@ -42,17 +42,16 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
       return false;
     }
 
-    // Deselect/release control action
-    // TODO: Reconsider Esc behavior - should probably open a pause/menu overlay
-    // (save game, exit, settings, etc.) rather than releasing control. The current
-    // "release control" behavior may not be intuitive. For now, Esc does nothing
-    // in gameplay mode unless actively controlling another entity.
+    // Escape key behavior depends on context:
+    // - If controlling another entity: release control
+    // - In gameplay mode with no overlays: open menu
+    // - In editing mode: deselect entities
     if (_keybindings.matches('game.deselect', keysPressed)) {
-      _logger.info("deselect pressed");
+      _logger.info("deselect/menu pressed");
       final selected = selectedEntityNotifier.value;
 
+      // Check if any selected entity is being controlled by someone
       if (selected.isNotEmpty) {
-        // Check if any selected entity is being controlled by someone
         final world = game.currentWorld;
         final controllingMap = world.get<Controlling>();
         final firstSelected = selected.first;
@@ -65,21 +64,25 @@ class GlobalControlHandler extends PositionComponent with KeyboardHandler {
             return false;
           }
         }
+      }
 
-        // In gameplay mode, don't deselect the player - Esc only releases control
-        // Deselection only makes sense in editing mode for stopping entity inspection
-        if (game.gameMode.value == GameMode.gameplay) {
-          _logger.info("in gameplay mode, not deselecting");
-          return false;
+      // In gameplay mode with no overlays, open the menu
+      if (game.gameMode.value == GameMode.gameplay) {
+        if (game.overlays.activeOverlays.isEmpty) {
+          _logger.info("requesting menu");
+          game.requestMenu();
         }
+        return false;
+      }
 
-        // Not being controlled and in editing mode - deselect entities
+      // In editing mode - deselect entities
+      if (selected.isNotEmpty) {
         _logger.info("deselecting entities");
         selectedEntityNotifier.value = {};
         game.observerEntityId.value = null;
         game.overlays.remove(UnifiedEditorPanel.overlayName);
-        return false;
       }
+      return false;
     }
 
     _logger.info("not handling event");
