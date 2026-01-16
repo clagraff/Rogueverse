@@ -236,7 +236,6 @@ class _ApplicationState extends State<Application> {
                         title: 'Templates',
                         child: TemplatesPanel(
                           selectedTemplateNotifier: _game.selectedTemplate,
-                          blankEntityModeNotifier: _game.blankEntityMode,
                           onCreateTemplate: () async {
                             await _game.startTemplateCreation(context);
                           },
@@ -272,6 +271,28 @@ class _ApplicationState extends State<Application> {
                     bottom: 0,
                     child: EditorFooterBar(
                       editTargetNotifier: _game.editTarget,
+                    ),
+                  ),
+
+                // Blank entity placement FAB (editing mode only)
+                if (isEditingMode)
+                  Positioned(
+                    left: 280 + 16, // After left dock with margin
+                    bottom: 48, // Above footer bar
+                    child: ValueListenableBuilder<bool>(
+                      valueListenable: _game.blankEntityMode,
+                      builder: (context, isActive, _) {
+                        final colorScheme = Theme.of(context).colorScheme;
+                        return FloatingActionButton.small(
+                          onPressed: () {
+                            _game.blankEntityMode.value = !isActive;
+                          },
+                          tooltip: 'Place blank entity',
+                          backgroundColor: isActive ? colorScheme.primaryContainer : null,
+                          foregroundColor: isActive ? colorScheme.onPrimaryContainer : null,
+                          child: const Icon(Icons.add_box_outlined),
+                        );
+                      },
                     ),
                   ),
               ],
