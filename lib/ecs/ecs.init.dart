@@ -93,6 +93,9 @@ void initializeMappers() {
   p6.DidCloseMapper.ensureInitialized();
   p6.DialogMapper.ensureInitialized();
   p6.TalkIntentMapper.ensureInitialized();
+  p6.IsTemplateMapper.ensureInitialized();
+  p6.FromTemplateMapper.ensureInitialized();
+  p6.ExcludesComponentMapper.ensureInitialized();
   p6.CompassDirectionMapper.ensureInitialized();
   p6.PortalFailureReasonMapper.ensureInitialized();
   p7.DialogConditionMapper.ensureInitialized();

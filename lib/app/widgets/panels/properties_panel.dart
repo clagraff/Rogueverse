@@ -120,6 +120,11 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
 
     // Grid components
     ComponentRegistry.register(CellMetadata());
+
+    // Template components
+    ComponentRegistry.register(IsTemplateMetadata());
+    ComponentRegistry.register(FromTemplateMetadata());
+    ComponentRegistry.register(ExcludesComponentMetadata());
   }
 
   @override

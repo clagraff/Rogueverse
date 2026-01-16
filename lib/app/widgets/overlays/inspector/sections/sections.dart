@@ -21,5 +21,6 @@ export 'openable_sections.dart';
 export 'portal_sections.dart';
 export 'position_section.dart';
 export 'renderable_section.dart';
+export 'template_sections.dart';
 export 'vision_sections.dart';
 export 'dialog_section.dart';

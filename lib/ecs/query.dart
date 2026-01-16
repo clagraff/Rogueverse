@@ -40,21 +40,26 @@ class Query {
     return this;
   }
 
-  /// Returns all matching entities in the [chunk].
-  /// 
-  /// Optimized to iterate over the smallest component set to minimize checks.
+  /// Returns all matching entities in the world.
+  ///
+  /// Uses a two-pass approach:
+  /// 1. First pass: entities with required components directly
+  /// 2. Second pass: entities with FromTemplate that might inherit required components
+  ///
+  /// This ensures entities using template inheritance are properly discovered.
   Iterable<Entity> find(World world) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
+    // Track yielded entity IDs to avoid duplicates
+    final yielded = <int>{};
+
+    // First pass: entities with the component directly
     // Find the smallest component set to iterate over for better performance.
-    // Eg if we needed entities with `[Health, VisionRadius]` and we had 1,000
-    // entities with health but only 50 with vision, iterating through 50 would be
-    // a lot faster for the same end-result.
     Type? smallestType;
     int smallestCount = double.maxFinite.toInt();
-    
+
     for (final type in _required.keys) {
       final store = world.components[type.toString()] ?? {};
       final count = store.length;
@@ -68,42 +73,32 @@ class Query {
 
     for (final id in store.keys) {
       if (isMatching(world, id)) {
+        yielded.add(id);
+        yield world.getEntity(id);
+      }
+    }
+
+    // Second pass: entities with FromTemplate that might inherit required components
+    final fromTemplateMap = world.components['FromTemplate'] ?? {};
+    for (final id in fromTemplateMap.keys) {
+      if (yielded.contains(id)) continue; // Already checked
+      if (isMatching(world, id)) {
+        yielded.add(id);
         yield world.getEntity(id);
       }
     }
   }
 
-  /// Returns matching entities in the [chunk] from the provided list of allowed entity IDs.
-  /// 
-  /// Optimized to iterate over the smallest component set to minimize checks.
+  /// Returns matching entities from the provided list of allowed entity IDs.
+  ///
+  /// Since we're filtering by a known set of IDs, we simply iterate through
+  /// them and check if they match (isMatching handles template resolution).
   Iterable<Entity> findFromIds(World world, List<int> possibleIds) sync* {
     if (_required.isEmpty) {
       throw StateError('Query must have at least one required component.');
     }
 
-    // Find the smallest component set to iterate over for better performance
-    // Eg if we needed entities with `[Health, VisionRadius]` and we had 1,000
-    // entities with health but only 50 with vision, iterating through 50 would be
-    // a lot faster for the same end-result.
-    Type? smallestType;
-    int smallestCount = double.maxFinite.toInt();
-    
-    for (final type in _required.keys) {
-      final store = world.components[type.toString()] ?? {};
-      final count = store.length;
-      if (count < smallestCount) {
-        smallestType = type;
-        smallestCount = count;
-      }
-    }
-
-    final store = world.components[smallestType.toString()] ?? {};
-
-    for (final id in store.keys) {
-      if (!possibleIds.contains(id)) {
-        continue;
-      }
-
+    for (final id in possibleIds) {
       if (isMatching(world, id)) {
         yield world.getEntity(id);
       }
@@ -116,26 +111,43 @@ class Query {
   bool any(World world) => find(world).firstOrNull != null;
 
 
+  /// Checks if an entity matches this query, considering template inheritance.
+  ///
+  /// Uses Entity.hasType() and Entity.getByName() which resolve through
+  /// templates via FromTemplate component.
   bool isMatching(World world, int entityId) {
+    final entity = world.getEntity(entityId);
+
     for (final entry in _required.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = world.components[type.toString()] ?? {};
-      if (!store.containsKey(entityId)) return false;
+      final typeName = type.toString();
 
-      if (predicate != null && !predicate(store[entityId]!)) { // TODO should we handle store[entityId]! better?
-        return false;
+      // Use entity.hasType which resolves through templates
+      if (!entity.hasType(typeName)) return false;
+
+      if (predicate != null) {
+        // Use entity.getByName which resolves through templates
+        final component = entity.getByName(typeName);
+        if (component == null || !predicate(component)) {
+          return false;
+        }
       }
     }
 
     for (final entry in _excluded.entries) {
       final type = entry.key;
       final predicate = entry.value;
-      final store = world.components[type.toString()] ?? {};
-      if (!store.containsKey(entityId)) continue;
+      final typeName = type.toString();
 
-      if (predicate == null || predicate(store[entityId]!)) {  // TODO should we handle store[entityId]! better?
-        return false;
+      // Use entity.hasType which resolves through templates
+      if (!entity.hasType(typeName)) continue;
+
+      final component = entity.getByName(typeName);
+      if (component != null) {
+        if (predicate == null || predicate(component)) {
+          return false;
+        }
       }
     }
 

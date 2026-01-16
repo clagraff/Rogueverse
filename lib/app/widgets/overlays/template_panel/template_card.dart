@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:rogueverse/ecs/components.dart' show ImageAsset;
-import 'package:rogueverse/ecs/entity_template.dart';
+import 'package:rogueverse/ecs/ecs.dart';
 
 /// A card displaying a single entity template in the grid.
 ///
 /// Shows the template's Renderable asset as an icon and its display name below.
-/// Highlights when selected and provides a delete button on hover.
+/// Highlights when selected and provides action buttons on hover.
 class TemplateCard extends StatefulWidget {
-  /// The template to display.
-  final EntityTemplate template;
+  /// The template entity to display (must have IsTemplate component).
+  final Entity templateEntity;
 
   /// Whether this template is currently selected for placement.
   final bool isSelected;
@@ -28,7 +27,7 @@ class TemplateCard extends StatefulWidget {
 
   const TemplateCard({
     super.key,
-    required this.template,
+    required this.templateEntity,
     required this.isSelected,
     required this.onTap,
     required this.onDelete,
@@ -47,6 +46,8 @@ class _TemplateCardState extends State<TemplateCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isTemplate = widget.templateEntity.get<IsTemplate>();
+    final displayName = isTemplate?.displayName ?? 'Unknown';
 
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovering = true),
@@ -96,7 +97,7 @@ class _TemplateCardState extends State<TemplateCard> {
                       ),
                     ),
                     child: Text(
-                      widget.template.displayName,
+                      displayName,
                       style: const TextStyle(
                         fontSize: 10,
                       ).copyWith(
@@ -158,7 +159,7 @@ class _TemplateCardState extends State<TemplateCard> {
   /// Otherwise, shows a fallback icon. If the asset fails to load, falls back
   /// to a default asset or placeholder icon.
   Widget _buildIcon(BuildContext context) {
-    final renderable = widget.template.renderable;
+    final renderable = widget.templateEntity.get<Renderable>();
 
     if (renderable == null) {
       return Icon(

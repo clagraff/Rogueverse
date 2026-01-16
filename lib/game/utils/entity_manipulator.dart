@@ -1,6 +1,5 @@
-import 'package:rogueverse/ecs/components.dart' show LocalPosition, BlocksMovement, HasParent;
+import 'package:rogueverse/ecs/components.dart' show LocalPosition, BlocksMovement, HasParent, FromTemplate, Component;
 import 'package:rogueverse/ecs/entity.dart' show Entity;
-import 'package:rogueverse/ecs/entity_template.dart' show EntityTemplate;
 import 'package:rogueverse/ecs/query.dart' show Query;
 import 'package:rogueverse/ecs/world.dart' show World;
 
@@ -12,21 +11,29 @@ class EntityManipulator {
   /// Places an entity at the specified position, replacing any existing entity.
   ///
   /// If there's already an entity with [BlocksMovement] at [pos], it will be destroyed
-  /// and replaced with the new entity from [template].
+  /// and replaced with a new entity linked to [templateEntityId] via FromTemplate.
   ///
   /// Parameters:
   /// - [world]: The ECS world to manipulate
-  /// - [template]: The entity template to instantiate
+  /// - [templateEntityId]: The ID of the template entity to link to
   /// - [pos]: The grid position to place the entity
-  static void placeEntity(World world, EntityTemplate template, LocalPosition pos, int? parentId) {
+  /// - [parentId]: The parent entity ID (for room containment)
+  static void placeEntity(World world, int templateEntityId, LocalPosition pos, int? parentId) {
     // Remove existing BlocksMovement entities
     final existing = queryBlockingAt(world, pos, parentId);
     for (var entity in existing) {
       entity.destroy();
     }
 
-    // Always place new entity from template
-    template.build(world, baseComponents: [pos], parentId: parentId);
+    // Create new entity with FromTemplate reference
+    final components = <Component>[
+      FromTemplate(templateEntityId),
+      pos,
+    ];
+    if (parentId != null) {
+      components.add(HasParent(parentId));
+    }
+    world.add(components);
   }
 
   /// Removes all entities with [BlocksMovement] at the specified position.

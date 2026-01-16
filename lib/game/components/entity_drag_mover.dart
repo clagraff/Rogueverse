@@ -5,7 +5,6 @@ import 'package:flutter/material.dart' show Colors, ValueNotifier;
 import 'package:logging/logging.dart' show Logger;
 import 'package:rogueverse/ecs/components.dart' show LocalPosition, Renderable, HasParent, ImageAsset;
 import 'package:rogueverse/ecs/entity.dart' show Entity;
-import 'package:rogueverse/ecs/entity_template.dart' show EntityTemplate;
 import 'package:rogueverse/ecs/query.dart' show Query;
 import 'package:rogueverse/ecs/world.dart' show World;
 import 'package:rogueverse/game/components/svg_visual_component.dart' show SvgVisualComponent;
@@ -27,7 +26,7 @@ import 'package:rogueverse/game/utils/grid_coordinates.dart' show GridCoordinate
 /// Could temporarily hide the original entity's Agent component during drag for cleaner visuals
 class EntityDragMover extends PositionComponent with DragCallbacks {
   final World world;
-  final ValueNotifier<EntityTemplate?> templateNotifier;
+  final ValueNotifier<int?> templateIdNotifier;
   final ValueNotifier<int?> viewedParentNotifier;
   final FlameGame game;
 
@@ -40,7 +39,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
 
   EntityDragMover({
     required this.world,
-    required this.templateNotifier,
+    required this.templateIdNotifier,
     required this.game,
     required this.viewedParentNotifier,
   }) {
@@ -53,8 +52,8 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
     // Check if template panel overlay is active
     final isPanelOpen = game.overlays.isActive('templatePanel');
     // Check if no template is selected
-    final noTemplateSelected = templateNotifier.value == null;
-    
+    final noTemplateSelected = templateIdNotifier.value == null;
+
     return isPanelOpen && noTemplateSelected;
   }
 

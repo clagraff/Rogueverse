@@ -145,8 +145,11 @@ class _EntityListPanelState extends State<EntityListPanel> {
     // Get the HasParent component map directly from the world
     final hasParentMap = widget.world.get<HasParent>();
 
-    // Get all entities under the viewed parent
+    // Get all entities under the viewed parent (excluding templates)
     var entities = widget.world.entities().where((e) {
+      // Exclude template entities - they're shown in the Templates panel
+      if (e.has<IsTemplate>()) return false;
+
       final hasParent = hasParentMap[e.id];
       if (viewedParentId == null) {
         // Show entities without a parent
@@ -170,14 +173,17 @@ class _EntityListPanelState extends State<EntityListPanel> {
     return entities;
   }
 
-  /// Get all root entities (no parent)
+  /// Get all root entities (no parent, excluding templates)
   List<Entity> _getRootEntities() {
     // Get all entity IDs that have a HasParent component
     final hasParentMap = widget.world.get<HasParent>();
     final entitiesWithParent = hasParentMap.keys.toSet();
 
-    // Root entities are those NOT in the hasParent map
-    var entities = widget.world.entities().where((e) => !entitiesWithParent.contains(e.id)).toList();
+    // Root entities are those NOT in the hasParent map and NOT templates
+    var entities = widget.world.entities().where((e) {
+      if (e.has<IsTemplate>()) return false;
+      return !entitiesWithParent.contains(e.id);
+    }).toList();
 
     _sortEntities(entities);
     return entities;

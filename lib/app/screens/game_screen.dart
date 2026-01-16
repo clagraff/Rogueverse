@@ -90,7 +90,7 @@ class GameScreen extends flame.World with Disposer {
     // Create template entity spawner (listens to template selection and blank entity mode)
     add(TemplateEntitySpawner(
       world: game.currentWorld,
-      templateNotifier: game.selectedTemplate,
+      templateIdNotifier: game.selectedTemplateId,
       blankEntityModeNotifier: game.blankEntityMode,
       viewedParentNotifier: game.viewedParentId,
     ));
@@ -98,7 +98,7 @@ class GameScreen extends flame.World with Disposer {
     // Create entity drag mover (allows dragging entities when no template selected)
     add(EntityDragMover(
       world: game.currentWorld,
-      templateNotifier: game.selectedTemplate,
+      templateIdNotifier: game.selectedTemplateId,
       game: game,
       viewedParentNotifier: game.viewedParentId,
     ));

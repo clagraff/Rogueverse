@@ -262,10 +262,9 @@ class _GameScreenWrapperState extends State<GameScreenWrapper> {
                     world: _game.currentWorld,
                     viewedParentIdNotifier: _game.viewedParentId,
                     selectedEntitiesNotifier: _game.selectedEntities,
-                    selectedTemplateNotifier: _game.selectedTemplate,
+                    selectedTemplateIdNotifier: _game.selectedTemplateId,
                     onCreateTemplate: () => _game.startTemplateCreation(context),
-                    onEditTemplate: (template) =>
-                        _game.startTemplateEditing(context, template),
+                    onEditTemplate: (entity) => _game.startTemplateEditing(entity),
                   ),
                   rightPanel: EditorPanels.buildRightPanel(
                     entityNotifier: _game.selectedEntity,

@@ -20,9 +20,9 @@ class EditorPanels {
     required World world,
     required ValueNotifier<int?> viewedParentIdNotifier,
     required ValueNotifier<Set<Entity>> selectedEntitiesNotifier,
-    required ValueNotifier<EntityTemplate?> selectedTemplateNotifier,
+    required ValueNotifier<int?> selectedTemplateIdNotifier,
     required VoidCallback onCreateTemplate,
-    required void Function(EntityTemplate) onEditTemplate,
+    required void Function(Entity) onEditTemplate,
   }) {
     return Column(
       children: [
@@ -40,7 +40,8 @@ class EditorPanels {
           child: PanelSection(
             title: 'Templates',
             child: TemplatesPanel(
-              selectedTemplateNotifier: selectedTemplateNotifier,
+              world: world,
+              selectedTemplateIdNotifier: selectedTemplateIdNotifier,
               onCreateTemplate: onCreateTemplate,
               onEditTemplate: onEditTemplate,
             ),
@@ -72,44 +73,58 @@ class EditorPanels {
 
   /// Builds the bottom bar containing the edit target selector and FAB.
   ///
-  /// The FAB is positioned in a Stack overlay above the footer bar.
+  /// Uses a SizedBox to give the Stack enough height to include the FAB
+  /// in its hit test area (the FAB floats above the footer bar).
   static Widget buildBottomBar({
     required ValueNotifier<EditTarget> editTargetNotifier,
     required ValueNotifier<bool> blankEntityModeNotifier,
   }) {
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // Footer bar
-        EditorFooterBar(editTargetNotifier: editTargetNotifier),
+    const fabSize = 40.0; // FloatingActionButton.small size
+    const fabSpacing = 8.0;
+    const footerHeight = 48.0; // Approximate footer bar height
+    const totalHeight = fabSize + fabSpacing + footerHeight;
 
-        // FAB positioned above the footer bar
-        Positioned(
-          left: 16,
-          top: -48, // Position above the footer bar
-          child: Builder(
-            builder: (context) {
-              return ValueListenableBuilder<bool>(
-                valueListenable: blankEntityModeNotifier,
-                builder: (context, isActive, _) {
-                  final colorScheme = Theme.of(context).colorScheme;
-                  return FloatingActionButton.small(
-                    onPressed: () {
-                      blankEntityModeNotifier.value = !isActive;
-                    },
-                    tooltip: 'Place blank entity',
-                    backgroundColor:
-                        isActive ? colorScheme.primaryContainer : null,
-                    foregroundColor:
-                        isActive ? colorScheme.onPrimaryContainer : null,
-                    child: const Icon(Icons.add_box_outlined),
-                  );
-                },
-              );
-            },
+    return SizedBox(
+      height: totalHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Footer bar at the bottom
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: EditorFooterBar(editTargetNotifier: editTargetNotifier),
           ),
-        ),
-      ],
+
+          // FAB positioned above the footer bar
+          Positioned(
+            left: 16,
+            top: 0,
+            child: Builder(
+              builder: (context) {
+                return ValueListenableBuilder<bool>(
+                  valueListenable: blankEntityModeNotifier,
+                  builder: (context, isActive, _) {
+                    final colorScheme = Theme.of(context).colorScheme;
+                    return FloatingActionButton.small(
+                      onPressed: () {
+                        blankEntityModeNotifier.value = !isActive;
+                      },
+                      tooltip: 'Place blank entity',
+                      backgroundColor:
+                          isActive ? colorScheme.primaryContainer : null,
+                      foregroundColor:
+                          isActive ? colorScheme.onPrimaryContainer : null,
+                      child: const Icon(Icons.add_box_outlined),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

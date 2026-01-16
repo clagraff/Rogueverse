@@ -197,6 +197,9 @@ class ComponentMapper extends ClassMapperBase<Component> {
       DidOpenMapper.ensureInitialized();
       DidCloseMapper.ensureInitialized();
       DialogMapper.ensureInitialized();
+      IsTemplateMapper.ensureInitialized();
+      FromTemplateMapper.ensureInitialized();
+      ExcludesComponentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -7989,5 +7992,396 @@ class _TalkIntentCopyWithImpl<$R, $Out>
   TalkIntentCopyWith<$R2, TalkIntent, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _TalkIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class IsTemplateMapper extends SubClassMapperBase<IsTemplate> {
+  IsTemplateMapper._();
+
+  static IsTemplateMapper? _instance;
+  static IsTemplateMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = IsTemplateMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'IsTemplate';
+
+  static String _$displayName(IsTemplate v) => v.displayName;
+  static const Field<IsTemplate, String> _f$displayName = Field(
+    'displayName',
+    _$displayName,
+  );
+
+  @override
+  final MappableFields<IsTemplate> fields = const {
+    #displayName: _f$displayName,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'IsTemplate';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static IsTemplate _instantiate(DecodingData data) {
+    return IsTemplate(displayName: data.dec(_f$displayName));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static IsTemplate fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<IsTemplate>(map);
+  }
+
+  static IsTemplate fromJson(String json) {
+    return ensureInitialized().decodeJson<IsTemplate>(json);
+  }
+}
+
+mixin IsTemplateMappable {
+  String toJson() {
+    return IsTemplateMapper.ensureInitialized().encodeJson<IsTemplate>(
+      this as IsTemplate,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return IsTemplateMapper.ensureInitialized().encodeMap<IsTemplate>(
+      this as IsTemplate,
+    );
+  }
+
+  IsTemplateCopyWith<IsTemplate, IsTemplate, IsTemplate> get copyWith =>
+      _IsTemplateCopyWithImpl<IsTemplate, IsTemplate>(
+        this as IsTemplate,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return IsTemplateMapper.ensureInitialized().stringifyValue(
+      this as IsTemplate,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return IsTemplateMapper.ensureInitialized().equalsValue(
+      this as IsTemplate,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return IsTemplateMapper.ensureInitialized().hashValue(this as IsTemplate);
+  }
+}
+
+extension IsTemplateValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, IsTemplate, $Out> {
+  IsTemplateCopyWith<$R, IsTemplate, $Out> get $asIsTemplate =>
+      $base.as((v, t, t2) => _IsTemplateCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class IsTemplateCopyWith<$R, $In extends IsTemplate, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({String? displayName});
+  IsTemplateCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _IsTemplateCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, IsTemplate, $Out>
+    implements IsTemplateCopyWith<$R, IsTemplate, $Out> {
+  _IsTemplateCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<IsTemplate> $mapper =
+      IsTemplateMapper.ensureInitialized();
+  @override
+  $R call({String? displayName}) => $apply(
+    FieldCopyWithData({if (displayName != null) #displayName: displayName}),
+  );
+  @override
+  IsTemplate $make(CopyWithData data) =>
+      IsTemplate(displayName: data.get(#displayName, or: $value.displayName));
+
+  @override
+  IsTemplateCopyWith<$R2, IsTemplate, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _IsTemplateCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class FromTemplateMapper extends SubClassMapperBase<FromTemplate> {
+  FromTemplateMapper._();
+
+  static FromTemplateMapper? _instance;
+  static FromTemplateMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = FromTemplateMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'FromTemplate';
+
+  static int _$templateEntityId(FromTemplate v) => v.templateEntityId;
+  static const Field<FromTemplate, int> _f$templateEntityId = Field(
+    'templateEntityId',
+    _$templateEntityId,
+  );
+
+  @override
+  final MappableFields<FromTemplate> fields = const {
+    #templateEntityId: _f$templateEntityId,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'FromTemplate';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static FromTemplate _instantiate(DecodingData data) {
+    return FromTemplate(data.dec(_f$templateEntityId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static FromTemplate fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<FromTemplate>(map);
+  }
+
+  static FromTemplate fromJson(String json) {
+    return ensureInitialized().decodeJson<FromTemplate>(json);
+  }
+}
+
+mixin FromTemplateMappable {
+  String toJson() {
+    return FromTemplateMapper.ensureInitialized().encodeJson<FromTemplate>(
+      this as FromTemplate,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return FromTemplateMapper.ensureInitialized().encodeMap<FromTemplate>(
+      this as FromTemplate,
+    );
+  }
+
+  FromTemplateCopyWith<FromTemplate, FromTemplate, FromTemplate> get copyWith =>
+      _FromTemplateCopyWithImpl<FromTemplate, FromTemplate>(
+        this as FromTemplate,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return FromTemplateMapper.ensureInitialized().stringifyValue(
+      this as FromTemplate,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return FromTemplateMapper.ensureInitialized().equalsValue(
+      this as FromTemplate,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return FromTemplateMapper.ensureInitialized().hashValue(
+      this as FromTemplate,
+    );
+  }
+}
+
+extension FromTemplateValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, FromTemplate, $Out> {
+  FromTemplateCopyWith<$R, FromTemplate, $Out> get $asFromTemplate =>
+      $base.as((v, t, t2) => _FromTemplateCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class FromTemplateCopyWith<$R, $In extends FromTemplate, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? templateEntityId});
+  FromTemplateCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _FromTemplateCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, FromTemplate, $Out>
+    implements FromTemplateCopyWith<$R, FromTemplate, $Out> {
+  _FromTemplateCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<FromTemplate> $mapper =
+      FromTemplateMapper.ensureInitialized();
+  @override
+  $R call({int? templateEntityId}) => $apply(
+    FieldCopyWithData({
+      if (templateEntityId != null) #templateEntityId: templateEntityId,
+    }),
+  );
+  @override
+  FromTemplate $make(CopyWithData data) =>
+      FromTemplate(data.get(#templateEntityId, or: $value.templateEntityId));
+
+  @override
+  FromTemplateCopyWith<$R2, FromTemplate, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _FromTemplateCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class ExcludesComponentMapper extends SubClassMapperBase<ExcludesComponent> {
+  ExcludesComponentMapper._();
+
+  static ExcludesComponentMapper? _instance;
+  static ExcludesComponentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ExcludesComponentMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'ExcludesComponent';
+
+  static Set<String> _$excludedTypes(ExcludesComponent v) => v.excludedTypes;
+  static const Field<ExcludesComponent, Set<String>> _f$excludedTypes = Field(
+    'excludedTypes',
+    _$excludedTypes,
+  );
+
+  @override
+  final MappableFields<ExcludesComponent> fields = const {
+    #excludedTypes: _f$excludedTypes,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'ExcludesComponent';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static ExcludesComponent _instantiate(DecodingData data) {
+    return ExcludesComponent(data.dec(_f$excludedTypes));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static ExcludesComponent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<ExcludesComponent>(map);
+  }
+
+  static ExcludesComponent fromJson(String json) {
+    return ensureInitialized().decodeJson<ExcludesComponent>(json);
+  }
+}
+
+mixin ExcludesComponentMappable {
+  String toJson() {
+    return ExcludesComponentMapper.ensureInitialized()
+        .encodeJson<ExcludesComponent>(this as ExcludesComponent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return ExcludesComponentMapper.ensureInitialized()
+        .encodeMap<ExcludesComponent>(this as ExcludesComponent);
+  }
+
+  ExcludesComponentCopyWith<
+    ExcludesComponent,
+    ExcludesComponent,
+    ExcludesComponent
+  >
+  get copyWith =>
+      _ExcludesComponentCopyWithImpl<ExcludesComponent, ExcludesComponent>(
+        this as ExcludesComponent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return ExcludesComponentMapper.ensureInitialized().stringifyValue(
+      this as ExcludesComponent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ExcludesComponentMapper.ensureInitialized().equalsValue(
+      this as ExcludesComponent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return ExcludesComponentMapper.ensureInitialized().hashValue(
+      this as ExcludesComponent,
+    );
+  }
+}
+
+extension ExcludesComponentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, ExcludesComponent, $Out> {
+  ExcludesComponentCopyWith<$R, ExcludesComponent, $Out>
+  get $asExcludesComponent => $base.as(
+    (v, t, t2) => _ExcludesComponentCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class ExcludesComponentCopyWith<
+  $R,
+  $In extends ExcludesComponent,
+  $Out
+>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({Set<String>? excludedTypes});
+  ExcludesComponentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _ExcludesComponentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, ExcludesComponent, $Out>
+    implements ExcludesComponentCopyWith<$R, ExcludesComponent, $Out> {
+  _ExcludesComponentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<ExcludesComponent> $mapper =
+      ExcludesComponentMapper.ensureInitialized();
+  @override
+  $R call({Set<String>? excludedTypes}) => $apply(
+    FieldCopyWithData({
+      if (excludedTypes != null) #excludedTypes: excludedTypes,
+    }),
+  );
+  @override
+  ExcludesComponent $make(CopyWithData data) =>
+      ExcludesComponent(data.get(#excludedTypes, or: $value.excludedTypes));
+
+  @override
+  ExcludesComponentCopyWith<$R2, ExcludesComponent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _ExcludesComponentCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

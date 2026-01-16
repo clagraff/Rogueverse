@@ -867,3 +867,67 @@ class TalkIntent extends IntentComponent with TalkIntentMappable {
   @override
   String get componentType => "TalkIntent";
 }
+
+// ============================================================================
+// Template System Components
+// ============================================================================
+
+/// Marker component identifying an entity as a template.
+///
+/// Template entities:
+/// - Are not rendered in the game world (no position in normal gameplay)
+/// - Appear in the template panel UI instead of the entity list
+/// - Can be used by other entities via [FromTemplate] for component inheritance
+/// - Can themselves have [FromTemplate] for template inheritance chains
+@MappableClass()
+class IsTemplate with IsTemplateMappable implements Component {
+  /// User-friendly display name shown in the template panel.
+  /// Distinct from the [Name] component which is used for in-game display.
+  final String displayName;
+
+  IsTemplate({required this.displayName});
+
+  @override
+  String get componentType => "IsTemplate";
+}
+
+/// Component that links an entity to a template for component inheritance.
+///
+/// When an entity has this component, calls to `has<C>()` and `get<C>()`
+/// will check the template entity if the component is not found locally,
+/// unless the entity has an [ExcludesComponent] for that type.
+///
+/// Templates can themselves have [FromTemplate] (up to 3 levels deep).
+@MappableClass()
+class FromTemplate with FromTemplateMappable implements Component {
+  /// The entity ID of the template this entity inherits from.
+  final int templateEntityId;
+
+  FromTemplate(this.templateEntityId);
+
+  @override
+  String get componentType => "FromTemplate";
+}
+
+/// Explicitly blocks inheritance of specific component types from templates.
+///
+/// When an entity has this component with a type T in [excludedTypes]:
+/// - `has<T>()` returns false
+/// - `get<T>()` returns null
+/// - The template's component of type T is not inherited
+///
+/// This component is automatically added when `remove<C>()` is called on a
+/// component the entity doesn't have directly but would inherit from its template.
+@MappableClass()
+class ExcludesComponent with ExcludesComponentMappable implements Component {
+  /// Set of component type names that are excluded from template inheritance.
+  final Set<String> excludedTypes;
+
+  ExcludesComponent(this.excludedTypes);
+
+  /// Convenience constructor for excluding a single type.
+  ExcludesComponent.single(String typeName) : excludedTypes = {typeName};
+
+  @override
+  String get componentType => "ExcludesComponent";
+}

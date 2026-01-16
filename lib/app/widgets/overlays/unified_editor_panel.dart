@@ -19,11 +19,15 @@ import 'package:rogueverse/app/widgets/overlays/template_panel/template_card.dar
 class UnifiedEditorPanel extends StatefulWidget {
   /// The overlay name used to register and toggle this panel.
   static const String overlayName = 'editorPanel';
+
+  /// The ECS world for querying template entities.
+  final World world;
+
   /// Notifier that tracks which entity (if any) is currently selected for editing.
   final ValueNotifier<Entity?> entityNotifier;
 
-  /// Notifier that tracks which template (if any) is currently selected for placement.
-  final ValueNotifier<EntityTemplate?> selectedTemplateNotifier;
+  /// Notifier that tracks which template entity ID (if any) is currently selected for placement.
+  final ValueNotifier<int?> selectedTemplateIdNotifier;
 
   /// Notifier for the current game mode (gameplay vs editing).
   final ValueNotifier<GameMode> gameModeNotifier;
@@ -31,16 +35,17 @@ class UnifiedEditorPanel extends StatefulWidget {
   /// Callback to create a new template.
   final VoidCallback onCreateTemplate;
 
-  /// Callback to edit an existing template.
-  final void Function(EntityTemplate) onEditTemplate;
+  /// Callback to edit an existing template entity.
+  final void Function(Entity) onEditTemplate;
 
   /// Callback to close the panel.
   final VoidCallback onClose;
 
   const UnifiedEditorPanel({
     super.key,
+    required this.world,
     required this.entityNotifier,
-    required this.selectedTemplateNotifier,
+    required this.selectedTemplateIdNotifier,
     required this.gameModeNotifier,
     required this.onCreateTemplate,
     required this.onEditTemplate,
@@ -152,6 +157,11 @@ class _UnifiedEditorPanelState extends State<UnifiedEditorPanel> {
 
       // Grid components
       ComponentRegistry.register(CellMetadata());
+
+      // Template components
+      ComponentRegistry.register(IsTemplateMetadata());
+      ComponentRegistry.register(FromTemplateMetadata());
+      ComponentRegistry.register(ExcludesComponentMetadata());
     }
   }
 
@@ -210,6 +220,7 @@ class _UnifiedEditorPanelState extends State<UnifiedEditorPanel> {
               Expanded(
                 flex: 3,
                 child: _PropertiesSection(
+                  world: widget.world,
                   entityNotifier: widget.entityNotifier,
                 ),
               ),
@@ -223,7 +234,8 @@ class _UnifiedEditorPanelState extends State<UnifiedEditorPanel> {
               Expanded(
                 flex: 2,
                 child: _TemplatesSection(
-                  selectedTemplateNotifier: widget.selectedTemplateNotifier,
+                  world: widget.world,
+                  selectedTemplateIdNotifier: widget.selectedTemplateIdNotifier,
                   searchController: _searchController,
                   searchQuery: _searchQuery,
                   onEditTemplate: widget.onEditTemplate,
@@ -316,9 +328,13 @@ class _UnifiedEditorPanelState extends State<UnifiedEditorPanel> {
 
 /// Properties section showing the currently selected entity's components.
 class _PropertiesSection extends StatelessWidget {
+  final World world;
   final ValueNotifier<Entity?> entityNotifier;
 
-  const _PropertiesSection({required this.entityNotifier});
+  const _PropertiesSection({
+    required this.world,
+    required this.entityNotifier,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -390,7 +406,7 @@ class _PropertiesSection extends StatelessWidget {
             valueListenable: entityNotifier,
             builder: (context, entity, _) {
               if (entity == null) return const SizedBox.shrink();
-              return _SaveAsTemplateButton(entity: entity);
+              return _SaveAsTemplateButton(world: world, entity: entity);
             },
           ),
         ],
@@ -438,19 +454,45 @@ class _PropertiesSection extends StatelessWidget {
 
 /// Templates section showing the template grid and search.
 class _TemplatesSection extends StatelessWidget {
-  final ValueNotifier<EntityTemplate?> selectedTemplateNotifier;
+  final World world;
+  final ValueNotifier<int?> selectedTemplateIdNotifier;
   final TextEditingController searchController;
   final String searchQuery;
-  final void Function(EntityTemplate) onEditTemplate;
+  final void Function(Entity) onEditTemplate;
   final VoidCallback onCreateTemplate;
 
   const _TemplatesSection({
-    required this.selectedTemplateNotifier,
+    required this.world,
+    required this.selectedTemplateIdNotifier,
     required this.searchController,
     required this.searchQuery,
     required this.onEditTemplate,
     required this.onCreateTemplate,
   });
+
+  /// Gets all template entities (entities with IsTemplate component).
+  List<Entity> _getTemplateEntities() {
+    final query = Query().require<IsTemplate>();
+    var templates = query.find(world).toList();
+
+    // Filter by search query
+    if (searchQuery.isNotEmpty) {
+      final lowerQuery = searchQuery.toLowerCase();
+      templates = templates.where((entity) {
+        final isTemplate = entity.get<IsTemplate>();
+        return isTemplate?.displayName.toLowerCase().contains(lowerQuery) ?? false;
+      }).toList();
+    }
+
+    // Sort by display name
+    templates.sort((a, b) {
+      final nameA = a.get<IsTemplate>()?.displayName ?? '';
+      final nameB = b.get<IsTemplate>()?.displayName ?? '';
+      return nameA.compareTo(nameB);
+    });
+
+    return templates;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -462,10 +504,9 @@ class _TemplatesSection extends StatelessWidget {
         _buildSearchBar(context),
         // Template grid
         Expanded(
-          child: ValueListenableBuilder<int>(
-            valueListenable: TemplateRegistry.instance.changeNotifier,
-            builder: (context, _, __) {
-              final templates = TemplateRegistry.instance.search(searchQuery);
+          child: Builder(
+            builder: (context) {
+              final templates = _getTemplateEntities();
               return _buildTemplateGrid(context, templates);
             },
           ),
@@ -533,14 +574,14 @@ class _TemplatesSection extends StatelessWidget {
     );
   }
 
-  Widget _buildTemplateGrid(BuildContext context, List<EntityTemplate> templates) {
+  Widget _buildTemplateGrid(BuildContext context, List<Entity> templates) {
     if (templates.isEmpty) {
       return _buildEmptyState(context);
     }
 
-    return ValueListenableBuilder<EntityTemplate?>(
-      valueListenable: selectedTemplateNotifier,
-      builder: (context, selectedTemplate, child) {
+    return ValueListenableBuilder<int?>(
+      valueListenable: selectedTemplateIdNotifier,
+      builder: (context, selectedTemplateId, child) {
         return GridView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 6),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -551,22 +592,22 @@ class _TemplatesSection extends StatelessWidget {
           ),
           itemCount: templates.length,
           itemBuilder: (context, index) {
-            final template = templates[index];
-            final isSelected = selectedTemplate?.id == template.id;
+            final templateEntity = templates[index];
+            final isSelected = selectedTemplateId == templateEntity.id;
 
             return TemplateCard(
-              template: template,
+              templateEntity: templateEntity,
               isSelected: isSelected,
               onTap: () {
                 if (isSelected) {
-                  selectedTemplateNotifier.value = null;
+                  selectedTemplateIdNotifier.value = null;
                 } else {
-                  selectedTemplateNotifier.value = template;
+                  selectedTemplateIdNotifier.value = templateEntity.id;
                 }
               },
-              onEdit: () => onEditTemplate(template),
-              onDuplicate: () => _duplicateTemplate(context, template),
-              onDelete: () => _deleteTemplate(context, template),
+              onEdit: () => onEditTemplate(templateEntity),
+              onDuplicate: () => _duplicateTemplate(context, templateEntity),
+              onDelete: () => _deleteTemplate(context, templateEntity),
             );
           },
         );
@@ -631,23 +672,32 @@ class _TemplatesSection extends StatelessWidget {
     );
   }
 
-  Future<void> _duplicateTemplate(BuildContext context, EntityTemplate template) async {
+  Future<void> _duplicateTemplate(BuildContext context, Entity templateEntity) async {
+    final isTemplate = templateEntity.get<IsTemplate>();
+    if (isTemplate == null) return;
+
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => _DuplicateTemplateDialog(
-        originalName: template.displayName,
+        originalName: isTemplate.displayName,
       ),
     );
 
     if (newName == null || newName.isEmpty) return;
 
-    final duplicate = EntityTemplate(
-      id: TemplateRegistry.instance.generateId(),
-      displayName: newName,
-      components: List.from(template.components),
-    );
+    // Create a new template entity with copied components
+    final components = templateEntity.getAll()
+        .where((c) => c is! LocalPosition && c is! HasParent && c is! FromTemplate)
+        .toList();
 
-    await TemplateRegistry.instance.save(duplicate);
+    // Replace the IsTemplate component with new display name
+    final newComponents = components.where((c) => c is! IsTemplate).toList();
+    newComponents.add(IsTemplate(displayName: newName));
+
+    world.add(newComponents);
+
+    // Save the world state
+    await WorldSaves.writeInitialState(world);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -659,12 +709,15 @@ class _TemplatesSection extends StatelessWidget {
     }
   }
 
-  Future<void> _deleteTemplate(BuildContext context, EntityTemplate template) async {
+  Future<void> _deleteTemplate(BuildContext context, Entity templateEntity) async {
+    final isTemplate = templateEntity.get<IsTemplate>();
+    if (isTemplate == null) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Template'),
-        content: Text('Are you sure you want to delete "${template.displayName}"?'),
+        content: Text('Are you sure you want to delete "${isTemplate.displayName}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -682,9 +735,13 @@ class _TemplatesSection extends StatelessWidget {
     );
 
     if (confirmed == true) {
-      await TemplateRegistry.instance.delete(template.id);
-      if (selectedTemplateNotifier.value?.id == template.id) {
-        selectedTemplateNotifier.value = null;
+      templateEntity.destroy();
+
+      // Save the world state
+      await WorldSaves.writeInitialState(world);
+
+      if (selectedTemplateIdNotifier.value == templateEntity.id) {
+        selectedTemplateIdNotifier.value = null;
       }
     }
   }
@@ -692,9 +749,13 @@ class _TemplatesSection extends StatelessWidget {
 
 /// Button that saves the current entity as a new template.
 class _SaveAsTemplateButton extends StatelessWidget {
+  final World world;
   final Entity entity;
 
-  const _SaveAsTemplateButton({required this.entity});
+  const _SaveAsTemplateButton({
+    required this.world,
+    required this.entity,
+  });
 
   Future<void> _saveAsTemplate(BuildContext context) async {
     final nameComponent = entity.get<Name>();
@@ -707,13 +768,18 @@ class _SaveAsTemplateButton extends StatelessWidget {
 
     if (templateName == null || templateName.isEmpty) return;
 
-    final template = EntityTemplate.fromEntity(
-      id: TemplateRegistry.instance.generateId(),
-      displayName: templateName,
-      entity: entity,
-    );
+    // Copy components from entity, excluding position-related ones
+    final components = entity.getAll()
+        .where((c) => c is! LocalPosition && c is! HasParent && c is! FromTemplate && c is! IsTemplate)
+        .toList();
 
-    await TemplateRegistry.instance.save(template);
+    // Add IsTemplate marker component
+    components.add(IsTemplate(displayName: templateName));
+
+    world.add(components);
+
+    // Save the world state
+    await WorldSaves.writeInitialState(world);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

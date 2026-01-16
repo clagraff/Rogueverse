@@ -50,12 +50,13 @@ class GameArea extends FlameGame
   /// Returns the first selected entity, or null if none selected.
   final ValueNotifier<Entity?> selectedEntity = ValueNotifier(null);
 
-  /// The currently selected entity template in the template panel.
-  final ValueNotifier<EntityTemplate?> selectedTemplate = ValueNotifier(null);
+  /// The currently selected template entity ID in the template panel.
+  /// When set, clicking places entities with FromTemplate pointing to this template.
+  final ValueNotifier<int?> selectedTemplateId = ValueNotifier(null);
 
   /// Whether blank entity placement mode is active.
   /// When true, clicking in the game area places a default entity without a template.
-  /// Mutually exclusive with selectedTemplate.
+  /// Mutually exclusive with selectedTemplateId.
   final ValueNotifier<bool> blankEntityMode = ValueNotifier(false);
 
   /// The current title displayed in the app bar.
@@ -111,15 +112,6 @@ class GameArea extends FlameGame
   void requestMenu() {
     menuRequested.value = true;
   }
-
-  /// Temporary world used for editing templates in the inspector.
-  World? _templateEditingWorld;
-
-  /// Temporary entity being edited for template creation/editing.
-  Entity? _templateEditingEntity;
-
-  /// ID of the template currently being edited.
-  int? _editingTemplateId;
 
   @override
   get debugMode => false;
@@ -234,8 +226,8 @@ class GameArea extends FlameGame
     });
 
     // Clear selected entity and observer when entering template placement mode
-    selectedTemplate.addListener(() {
-      if (selectedTemplate.value != null) {
+    selectedTemplateId.addListener(() {
+      if (selectedTemplateId.value != null) {
         selectedEntities.value = {};
         observerEntityId.value = null;
         // Mutually exclusive with blank entity mode
@@ -249,7 +241,7 @@ class GameArea extends FlameGame
         selectedEntities.value = {};
         observerEntityId.value = null;
         // Mutually exclusive with template selection
-        selectedTemplate.value = null;
+        selectedTemplateId.value = null;
       }
     });
   }
@@ -446,78 +438,34 @@ class GameArea extends FlameGame
     currentWorld.tick();
   }
 
-  /// Starts creating a new template by showing a name dialog and setting up temp world.
+  /// Starts creating a new template by showing a name dialog and creating a template entity.
+  ///
+  /// Templates are now first-class entities with an [IsTemplate] marker component.
+  /// The new template entity is created in the main world and selected for editing.
   Future<void> startTemplateCreation(BuildContext context) async {
     // Show dialog to get template name
     final name = await _showTemplateNameDialog(context);
     if (name == null || name.trim().isEmpty) return;
 
-    // Generate new ID
-    final id = TemplateRegistry.instance.generateId();
+    // Create template entity in the main world
+    final templateEntity = currentWorld.add([
+      IsTemplate(displayName: name.trim()),
+    ]);
 
-    // Create temporary world and entity for editing
-    _templateEditingWorld = World([], {});
-    _templateEditingEntity = _templateEditingWorld!.add([]);
-    _editingTemplateId = id;
+    // Save the world state
+    await WorldSaves.writeInitialState(currentWorld);
 
-    // Create empty template
-    final template = EntityTemplate(
-      id: id,
-      displayName: name.trim(),
-      components: [],
-    );
-    await TemplateRegistry.instance.save(template);
-
-    // Set up auto-save listener
-    _setupTemplateAutoSave();
-
-    // Select entity for editing (Properties panel is already visible in editing mode)
-    selectedEntities.value = {_templateEditingEntity!};
+    // Select template entity for editing
+    selectedEntities.value = {templateEntity};
   }
 
-  /// Sets up a listener to auto-save template changes.
-  void _setupTemplateAutoSave() {
-    if (_templateEditingWorld == null ||
-        _templateEditingEntity == null ||
-        _editingTemplateId == null) {
-      return;
-    }
-
-    // Listen to all component changes on the temp entity
-    _templateEditingWorld!
-        .componentChanges
-        .onEntityChange(_templateEditingEntity!.id)
-        .listen((change) async {
-      // Extract current components and save to template
-      final template = EntityTemplate.fromEntity(
-        id: _editingTemplateId!,
-        displayName:
-            TemplateRegistry.instance.getById(_editingTemplateId!)!.displayName,
-        entity: _templateEditingEntity!,
-      );
-
-      await TemplateRegistry.instance.save(template);
-    });
-  }
-
-  /// Starts editing an existing template by loading it into a temp world and opening the inspector.
-  Future<void> startTemplateEditing(
-      BuildContext context, EntityTemplate template) async {
-    // Create temporary world and entity for editing
-    _templateEditingWorld = World([], {});
-    _templateEditingEntity = _templateEditingWorld!.add([]);
-    _editingTemplateId = template.id;
-
-    // Load template components into the temporary entity
-    for (final component in template.components) {
-      _templateEditingEntity!.upsertByName(component);
-    }
-
-    // Set up auto-save listener (reuse existing method)
-    _setupTemplateAutoSave();
-
-    // Select entity for editing (Properties panel is already visible in editing mode)
-    selectedEntities.value = {_templateEditingEntity!};
+  /// Starts editing an existing template entity.
+  ///
+  /// Since templates are now entities in the main world, we simply select
+  /// the template entity for editing in the inspector.
+  void startTemplateEditing(Entity templateEntity) {
+    // Just select the template entity for editing
+    selectedEntities.value = {templateEntity};
   }
 
   /// Shows a dialog to input a template name.

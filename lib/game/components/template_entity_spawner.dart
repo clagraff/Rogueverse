@@ -4,7 +4,6 @@ import 'package:flutter/services.dart' show HardwareKeyboard, KeyEvent, LogicalK
 import 'package:flutter/widgets.dart' show ValueNotifier;
 import 'package:logging/logging.dart' show Logger;
 import 'package:rogueverse/ecs/components.dart' show LocalPosition, Renderable, ImageAsset, Name, HasParent;
-import 'package:rogueverse/ecs/entity_template.dart' show EntityTemplate;
 import 'package:rogueverse/ecs/world.dart' show World;
 import 'package:rogueverse/game/components/placement_preview.dart' show PlacementPreview;
 import 'package:rogueverse/game/utils/grid_coordinates.dart' show GridCoordinates;
@@ -33,7 +32,7 @@ class TemplateEntitySpawner extends PositionComponent
     with TapCallbacks, DragCallbacks, SecondaryTapCallbacks, KeyboardHandler, HoverCallbacks {
 
   final World world;
-  final ValueNotifier<EntityTemplate?> templateNotifier;
+  final ValueNotifier<int?> templateIdNotifier;
   final ValueNotifier<bool> blankEntityModeNotifier;
   final ValueNotifier<int?> viewedParentNotifier;
 
@@ -47,40 +46,42 @@ class TemplateEntitySpawner extends PositionComponent
 
   TemplateEntitySpawner({
     required this.world,
-    required this.templateNotifier,
+    required this.templateIdNotifier,
     required this.blankEntityModeNotifier,
     required this.viewedParentNotifier,
   }) {
     priority = 100; // Before camera controls!
   }
 
-  EntityTemplate? get _template => templateNotifier.value;
+  int? get _templateId => templateIdNotifier.value;
   bool get _blankEntityMode => blankEntityModeNotifier.value;
   // Active when a template is selected or blank entity mode is active
-  bool get _isActive => _template != null || _blankEntityMode;
+  bool get _isActive => _templateId != null || _blankEntityMode;
 
   @override
   Future<void> onLoad() async {
     await super.onLoad();
 
     // Listen to template changes to update preview
-    templateNotifier.addListener(_onTemplateChanged);
+    templateIdNotifier.addListener(_onTemplateChanged);
     blankEntityModeNotifier.addListener(_onBlankEntityModeChanged);
     _onTemplateChanged(); // Initial setup
   }
 
   /// Updates preview component when template changes
   void _onTemplateChanged() {
-    final template = _template;
+    final templateId = _templateId;
 
-    if (template != null) {
+    if (templateId != null) {
       // Template selected - create preview with entity's SVG
       if (_preview != null) {
         _preview!.removeFromParent();
         _preview = null;
       }
 
-      final renderable = template.components.whereType<Renderable>().firstOrNull;
+      // Get the template entity and its Renderable component
+      final templateEntity = world.getEntity(templateId);
+      final renderable = templateEntity.get<Renderable>();
       if (renderable != null) {
         _preview = PlacementPreview(asset: renderable.asset);
         add(_preview!);
@@ -102,7 +103,7 @@ class TemplateEntitySpawner extends PositionComponent
 
       _preview = PlacementPreview.fromPath('images/default.svg');
       add(_preview!);
-    } else if (_template == null) {
+    } else if (_templateId == null) {
       // Blank entity mode deactivated and no template - exit placement mode
       exitPlacementMode();
     }
@@ -197,7 +198,7 @@ class TemplateEntitySpawner extends PositionComponent
 
     // Right-click exits placement mode
     exitPlacementMode();
-    templateNotifier.value = null;
+    templateIdNotifier.value = null;
     blankEntityModeNotifier.value = false;
 
     event.handled = true;
@@ -257,14 +258,14 @@ class TemplateEntitySpawner extends PositionComponent
     _logger.info('onKeyEvent triggered: event_type=${event.runtimeType} key=${event.logicalKey} _isActive=$_isActive');
 
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
-      _logger.info('esc key detected: _isActive=$_isActive _preview=${_preview != null} _template=${_template != null}');
+      _logger.info('esc key detected: _isActive=$_isActive _preview=${_preview != null} _templateId=${_templateId != null}');
 
       if (_isActive) {
         _logger.info('exiting editor');
 
         // Exit placement mode and clear template/blank mode
         exitPlacementMode();
-        templateNotifier.value = null;
+        templateIdNotifier.value = null;
         blankEntityModeNotifier.value = false;
 
         _logger.info('exited editor successfully');
@@ -292,7 +293,7 @@ class TemplateEntitySpawner extends PositionComponent
 
   /// Executes entity placement at calculated positions
   void _execute(LocalPosition start, LocalPosition end, {required bool isPlacement}) {
-    final template = _template;
+    final templateId = _templateId;
     final mode = _getPlacementMode();
     final positions = PlacementStrategy.calculate(
       start: start,
@@ -301,9 +302,9 @@ class TemplateEntitySpawner extends PositionComponent
     );
 
     for (final pos in positions) {
-      if (template != null) {
-        // Template placement mode - place/replace entities from template
-        EntityManipulator.placeEntity(world, template, pos, viewedParentNotifier.value);
+      if (templateId != null) {
+        // Template placement mode - place entity with FromTemplate reference
+        EntityManipulator.placeEntity(world, templateId, pos, viewedParentNotifier.value);
       } else if (_blankEntityMode) {
         // Blank entity mode - place a default entity
         _placeBlankEntity(pos);
@@ -357,7 +358,7 @@ class TemplateEntitySpawner extends PositionComponent
 
   @override
   void onRemove() {
-    templateNotifier.removeListener(_onTemplateChanged);
+    templateIdNotifier.removeListener(_onTemplateChanged);
     blankEntityModeNotifier.removeListener(_onBlankEntityModeChanged);
     super.onRemove();
   }

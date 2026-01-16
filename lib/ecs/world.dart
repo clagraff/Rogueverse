@@ -1,4 +1,4 @@
-import 'dart:async' show StreamController;
+import 'dart:async' show StreamController, scheduleMicrotask;
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
@@ -134,7 +134,105 @@ class World with WorldMappable implements IWorldView {
   /// Not serialized - Entity objects are lightweight wrappers around data
   final Map<int, Entity> _entityCache = {};
 
-  World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]);
+  /// Reverse index: template entity ID -> set of entities with FromTemplate pointing to it.
+  /// Used for efficient event propagation when templates change.
+  /// Not serialized - rebuilt from FromTemplate components on world load.
+  final Map<int, Set<int>> _templateDependents = {};
+
+  World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]) {
+    _setupTemplateDependencyTracking();
+    _setupTemplateChangeForwarding();
+    _initializeTemplateDependencyIndex();
+  }
+
+  /// Sets up reactive tracking of FromTemplate component changes.
+  /// Updates _templateDependents index when FromTemplate is added/removed/changed.
+  void _setupTemplateDependencyTracking() {
+    componentChanges.listen((change) {
+      if (change.componentType != 'FromTemplate') return;
+
+      // Handle FromTemplate removal or change (remove old mapping)
+      if (change.oldValue != null) {
+        final old = change.oldValue as FromTemplate;
+        _templateDependents[old.templateEntityId]?.remove(change.entityId);
+      }
+
+      // Handle FromTemplate addition or change (add new mapping)
+      if (change.newValue != null) {
+        final newFt = change.newValue as FromTemplate;
+        _templateDependents
+            .putIfAbsent(newFt.templateEntityId, () => {})
+            .add(change.entityId);
+      }
+    });
+  }
+
+  /// Sets up event propagation when template components change.
+  /// When a template's component changes, emits synthetic Change events
+  /// for all dependent entities so their listeners can update.
+  void _setupTemplateChangeForwarding() {
+    componentChanges.listen((change) {
+      final entity = getEntity(change.entityId);
+      // Only propagate from template entities
+      if (!entity.has<IsTemplate>()) return;
+      // Don't propagate FromTemplate changes themselves
+      if (change.componentType == 'FromTemplate') return;
+      // Don't propagate IsTemplate changes
+      if (change.componentType == 'IsTemplate') return;
+      // Don't propagate ExcludesComponent changes
+      if (change.componentType == 'ExcludesComponent') return;
+
+      // Defer propagation to avoid re-entrancy (can't fire events while firing)
+      scheduleMicrotask(() {
+        _propagateToAllDependents(change.entityId, change);
+      });
+    });
+  }
+
+  /// Propagates a component change from a template to all dependent entities.
+  void _propagateToAllDependents(int templateId, Change originalChange) {
+    final directDependents = _templateDependents[templateId] ?? {};
+    for (final dependentId in directDependents) {
+      final dependent = getEntity(dependentId);
+
+      // Skip if dependent excludes this component
+      final excludes = dependent.get<ExcludesComponent>();
+      if (excludes?.excludedTypes.contains(originalChange.componentType) == true) {
+        continue;
+      }
+
+      // Skip if dependent has its own override of this component
+      final hasDirectComponent =
+          components[originalChange.componentType]?.containsKey(dependentId) ?? false;
+      if (hasDirectComponent) continue;
+
+      // Emit synthetic change for this dependent
+      notifyChange(Change(
+        entityId: dependentId,
+        componentType: originalChange.componentType,
+        oldValue: originalChange.oldValue,
+        newValue: originalChange.newValue,
+      ));
+
+      // Recursively propagate if this dependent is also a template
+      if (dependent.has<IsTemplate>()) {
+        _propagateToAllDependents(dependentId, originalChange);
+      }
+    }
+  }
+
+  /// Initializes the template dependency index from existing FromTemplate components.
+  /// Called on world creation and after loadFrom().
+  void _initializeTemplateDependencyIndex() {
+    _templateDependents.clear();
+    final fromTemplateMap = components['FromTemplate'] ?? {};
+    for (final entry in fromTemplateMap.entries) {
+      final ft = entry.value as FromTemplate;
+      _templateDependents
+          .putIfAbsent(ft.templateEntityId, () => {})
+          .add(entry.key);
+    }
+  }
 
   @override
   Entity getEntity(int entityId) {
@@ -237,6 +335,9 @@ class World with WorldMappable implements IWorldView {
 
     // Rebuild hierarchy cache (also clears it internally)
     hierarchyCache.rebuild(this);
+
+    // Rebuild template dependency index
+    _initializeTemplateDependencyIndex();
 
     // Reset and rebuild systems that maintain state (e.g., spatial indexes)
     // Must happen before emitting changes so subscribers see fresh data
@@ -519,8 +620,17 @@ class WorldSaves {
           var patchOps = patchJson.cast<Map<String, dynamic>>();
 
           // Apply RFC 6902 patch
-          finalState = JsonPatch.apply(initialJson, patchOps, strict: false)
-              as Map<String, dynamic>;
+          try {
+            finalState = JsonPatch.apply(initialJson, patchOps, strict: false)
+                as Map<String, dynamic>;
+          } catch (e) {
+            _logger.warning(
+                "Failed to apply save patch - initial state may have changed. "
+                "Discarding patch and using initial state only.",
+                {"error": e.toString(), "patchPath": patchFile.path});
+            // Fall back to initial state without patch
+            finalState = initialJson;
+          }
         } else {
           _logger.info("save patch file not found, using initial state",
               {"path": savePatchPath});

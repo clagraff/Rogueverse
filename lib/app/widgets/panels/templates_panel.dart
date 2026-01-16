@@ -4,16 +4,18 @@ import 'package:rogueverse/app/widgets/overlays/template_panel/template_card.dar
 
 /// Panel for browsing, searching, and selecting entity templates.
 ///
-/// Displays a searchable grid of templates that can be selected for placement
-/// in the game world.
+/// Displays a searchable grid of template entities (entities with IsTemplate)
+/// that can be selected for placement in the game world.
 class TemplatesPanel extends StatefulWidget {
-  final ValueNotifier<EntityTemplate?> selectedTemplateNotifier;
-  final void Function(EntityTemplate)? onEditTemplate;
+  final World world;
+  final ValueNotifier<int?> selectedTemplateIdNotifier;
+  final void Function(Entity)? onEditTemplate;
   final VoidCallback? onCreateTemplate;
 
   const TemplatesPanel({
     super.key,
-    required this.selectedTemplateNotifier,
+    required this.world,
+    required this.selectedTemplateIdNotifier,
     this.onEditTemplate,
     this.onCreateTemplate,
   });
@@ -34,12 +36,42 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
         _searchQuery = _searchController.text;
       });
     });
+    // Listen to component changes to rebuild when templates are added/removed/modified
+    widget.world.componentChanges.listen((change) {
+      if (change.componentType == 'IsTemplate') {
+        if (mounted) setState(() {});
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// Gets all template entities (entities with IsTemplate component).
+  List<Entity> _getTemplateEntities() {
+    final query = Query().require<IsTemplate>();
+    var templates = query.find(widget.world).toList();
+
+    // Filter by search query
+    if (_searchQuery.isNotEmpty) {
+      final lowerQuery = _searchQuery.toLowerCase();
+      templates = templates.where((entity) {
+        final isTemplate = entity.get<IsTemplate>();
+        return isTemplate?.displayName.toLowerCase().contains(lowerQuery) ?? false;
+      }).toList();
+    }
+
+    // Sort by display name
+    templates.sort((a, b) {
+      final nameA = a.get<IsTemplate>()?.displayName ?? '';
+      final nameB = b.get<IsTemplate>()?.displayName ?? '';
+      return nameA.compareTo(nameB);
+    });
+
+    return templates;
   }
 
   @override
@@ -52,10 +84,9 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
         _buildSearchBar(context),
         // Template grid
         Expanded(
-          child: ValueListenableBuilder<int>(
-            valueListenable: TemplateRegistry.instance.changeNotifier,
-            builder: (context, _, __) {
-              final templates = TemplateRegistry.instance.search(_searchQuery);
+          child: Builder(
+            builder: (context) {
+              final templates = _getTemplateEntities();
               return _buildTemplateGrid(context, templates);
             },
           ),
@@ -93,14 +124,14 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     );
   }
 
-  Widget _buildTemplateGrid(BuildContext context, List<EntityTemplate> templates) {
+  Widget _buildTemplateGrid(BuildContext context, List<Entity> templates) {
     if (templates.isEmpty) {
       return _buildEmptyState(context);
     }
 
-    return ValueListenableBuilder<EntityTemplate?>(
-      valueListenable: widget.selectedTemplateNotifier,
-      builder: (context, selectedTemplate, child) {
+    return ValueListenableBuilder<int?>(
+      valueListenable: widget.selectedTemplateIdNotifier,
+      builder: (context, selectedTemplateId, child) {
         return GridView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 6),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -111,24 +142,24 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
           ),
           itemCount: templates.length,
           itemBuilder: (context, index) {
-            final template = templates[index];
-            final isSelected = selectedTemplate?.id == template.id;
+            final templateEntity = templates[index];
+            final isSelected = selectedTemplateId == templateEntity.id;
 
             return TemplateCard(
-              template: template,
+              templateEntity: templateEntity,
               isSelected: isSelected,
               onTap: () {
                 if (isSelected) {
-                  widget.selectedTemplateNotifier.value = null;
+                  widget.selectedTemplateIdNotifier.value = null;
                 } else {
-                  widget.selectedTemplateNotifier.value = template;
+                  widget.selectedTemplateIdNotifier.value = templateEntity.id;
                 }
               },
               onEdit: () {
-                widget.onEditTemplate?.call(template);
+                widget.onEditTemplate?.call(templateEntity);
               },
-              onDuplicate: () => _duplicateTemplate(context, template),
-              onDelete: () => _deleteTemplate(context, template),
+              onDuplicate: () => _duplicateTemplate(context, templateEntity),
+              onDelete: () => _deleteTemplate(context, templateEntity),
             );
           },
         );
@@ -192,23 +223,34 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     );
   }
 
-  Future<void> _duplicateTemplate(BuildContext context, EntityTemplate template) async {
+  Future<void> _duplicateTemplate(BuildContext context, Entity templateEntity) async {
+    final isTemplate = templateEntity.get<IsTemplate>();
+    if (isTemplate == null) return;
+
     final newName = await showDialog<String>(
       context: context,
       builder: (context) => _DuplicateTemplateDialog(
-        originalName: template.displayName,
+        originalName: isTemplate.displayName,
       ),
     );
 
     if (newName == null || newName.isEmpty) return;
 
-    final duplicate = EntityTemplate(
-      id: TemplateRegistry.instance.generateId(),
-      displayName: newName,
-      components: List.from(template.components),
-    );
+    // Create a new template entity with copied components
+    final components = templateEntity.getAll()
+        .where((c) => c is! LocalPosition && c is! HasParent && c is! FromTemplate)
+        .toList();
 
-    await TemplateRegistry.instance.save(duplicate);
+    // Replace the IsTemplate component with new display name
+    final newComponents = components
+        .where((c) => c is! IsTemplate)
+        .toList();
+    newComponents.add(IsTemplate(displayName: newName));
+
+    widget.world.add(newComponents);
+
+    // Save the world state
+    await WorldSaves.writeInitialState(widget.world);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,12 +262,15 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     }
   }
 
-  Future<void> _deleteTemplate(BuildContext context, EntityTemplate template) async {
+  Future<void> _deleteTemplate(BuildContext context, Entity templateEntity) async {
+    final isTemplate = templateEntity.get<IsTemplate>();
+    if (isTemplate == null) return;
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Template'),
-        content: Text('Are you sure you want to delete "${template.displayName}"?'),
+        content: Text('Are you sure you want to delete "${isTemplate.displayName}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
@@ -243,9 +288,13 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     );
 
     if (confirmed == true) {
-      await TemplateRegistry.instance.delete(template.id);
-      if (widget.selectedTemplateNotifier.value?.id == template.id) {
-        widget.selectedTemplateNotifier.value = null;
+      templateEntity.destroy();
+
+      // Save the world state
+      await WorldSaves.writeInitialState(widget.world);
+
+      if (widget.selectedTemplateIdNotifier.value == templateEntity.id) {
+        widget.selectedTemplateIdNotifier.value = null;
       }
     }
   }
