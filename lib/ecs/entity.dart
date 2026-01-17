@@ -15,8 +15,7 @@ class Entity {
   /// These are marker/identity components that only apply to the specific entity.
   static const Set<String> _nonInheritableTypes = {
     'IsTemplate',      // Template marker - only the template itself IS a template
-    'FromTemplate',    // Template reference - each entity has its own
-    'ExcludesComponent', // Exclusions are per-entity
+    'FromTemplate',    // Template reference - each entity has its own (includes exclusions)
   };
 
   final World parentCell;
@@ -42,8 +41,8 @@ class Entity {
   /// Checks if this entity has component C, considering template inheritance.
   ///
   /// Resolution order:
-  /// 1. Check if entity has [ExcludesComponent] blocking type C → false
-  /// 2. Check if entity has component C directly → true
+  /// 1. Check if entity has component C directly → true (direct always wins)
+  /// 2. Check if [FromTemplate.excludedTypes] blocks type C → false
   /// 3. If entity has [FromTemplate], recursively check template (up to 3 levels)
   bool has<C extends Component>() {
     return _hasWithDepth(C.toString(), 0);
@@ -55,21 +54,20 @@ class Entity {
   }
 
   bool _hasWithDepth(String typeName, int depth) {
-    // 1. Check exclusions
-    final excludes = _getDirectComponent<ExcludesComponent>('ExcludesComponent');
-    if (excludes != null && excludes.excludedTypes.contains(typeName)) {
-      return false;
-    }
-
-    // 2. Check direct component
+    // 1. Check direct component FIRST - direct always wins
     var entitiesWithComponent = parentCell.components[typeName] ?? {};
     if (entitiesWithComponent.containsKey(id)) {
       return true;
     }
 
+    // 2. Check exclusions (only blocks template inheritance)
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate != null && fromTemplate.excludedTypes.contains(typeName)) {
+      return false;
+    }
+
     // 3. Check template (with depth limit) - but not for non-inheritable types
     if (depth < _maxTemplateDepth && !_nonInheritableTypes.contains(typeName)) {
-      final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
       if (fromTemplate != null) {
         final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
         return templateEntity._hasWithDepth(typeName, depth + 1);
@@ -92,8 +90,8 @@ class Entity {
   /// stored on this entity and returned.
   ///
   /// Resolution order:
-  /// 1. Check if entity has [ExcludesComponent] blocking type C → null (or apply default)
-  /// 2. Check if entity has component C directly → return it
+  /// 1. Check if entity has component C directly → return it (direct always wins)
+  /// 2. Check if [FromTemplate.excludedTypes] blocks type C → null (or apply default)
   /// 3. If entity has [FromTemplate], recursively check template (up to 3 levels)
   /// 4. Apply orDefault if provided (stores on entity, not template)
   C? get<C extends Component>([C? orDefault]) {
@@ -101,9 +99,15 @@ class Entity {
   }
 
   C? _getWithDepth<C extends Component>(String typeName, C? orDefault, int depth) {
-    // 1. Check exclusions
-    final excludes = _getDirectComponent<ExcludesComponent>('ExcludesComponent');
-    if (excludes != null && excludes.excludedTypes.contains(typeName)) {
+    // 1. Check direct component FIRST - direct always wins
+    var entitiesWithComponent = parentCell.components[typeName] ?? {};
+    if (entitiesWithComponent.containsKey(id)) {
+      return entitiesWithComponent[id] as C;
+    }
+
+    // 2. Check exclusions (only blocks template inheritance)
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate != null && fromTemplate.excludedTypes.contains(typeName)) {
       // If excluded and orDefault provided, add to entity
       if (orDefault != null) {
         _setDirectComponent(typeName, orDefault);
@@ -112,15 +116,8 @@ class Entity {
       return null;
     }
 
-    // 2. Check direct component
-    var entitiesWithComponent = parentCell.components[typeName] ?? {};
-    if (entitiesWithComponent.containsKey(id)) {
-      return entitiesWithComponent[id] as C;
-    }
-
     // 3. Check template (with depth limit) - but not for non-inheritable types
     if (depth < _maxTemplateDepth && !_nonInheritableTypes.contains(typeName)) {
-      final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
       if (fromTemplate != null) {
         final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
         final templateValue = templateEntity._getWithDepth<C>(typeName, null, depth + 1);
@@ -167,9 +164,15 @@ class Entity {
   }
 
   Component? _getByNameWithDepth(String componentType, Component? orDefault, int depth) {
-    // 1. Check exclusions
-    final excludes = _getDirectComponent<ExcludesComponent>('ExcludesComponent');
-    if (excludes != null && excludes.excludedTypes.contains(componentType)) {
+    // 1. Check direct component FIRST - direct always wins
+    var entitiesWithComponent = parentCell.components[componentType] ?? {};
+    if (entitiesWithComponent.containsKey(id)) {
+      return entitiesWithComponent[id] as Component;
+    }
+
+    // 2. Check exclusions (only blocks template inheritance)
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate != null && fromTemplate.excludedTypes.contains(componentType)) {
       if (orDefault != null) {
         _setDirectComponent(componentType, orDefault);
         return orDefault;
@@ -177,15 +180,8 @@ class Entity {
       return null;
     }
 
-    // 2. Check direct component
-    var entitiesWithComponent = parentCell.components[componentType] ?? {};
-    if (entitiesWithComponent.containsKey(id)) {
-      return entitiesWithComponent[id] as Component;
-    }
-
     // 3. Check template (with depth limit) - but not for non-inheritable types
     if (depth < _maxTemplateDepth && !_nonInheritableTypes.contains(componentType)) {
-      final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
       if (fromTemplate != null) {
         final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
         final templateValue = templateEntity._getByNameWithDepth(componentType, null, depth + 1);
@@ -208,7 +204,7 @@ class Entity {
   ///
   /// Template components are included unless:
   /// - The entity has its own version (override)
-  /// - The entity has [ExcludesComponent] blocking that type
+  /// - The type is in [FromTemplate.excludedTypes]
   List<Component> getAll() {
     return _getAllWithDepth(0);
   }
@@ -216,14 +212,13 @@ class Entity {
   List<Component> _getAllWithDepth(int depth) {
     final comps = <String, Component>{};
 
-    // Get exclusions first
-    final excludes = _getDirectComponent<ExcludesComponent>('ExcludesComponent');
-    final excludedTypes = excludes?.excludedTypes ?? {};
+    // Get FromTemplate and its exclusions
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    final excludedTypes = fromTemplate?.excludedTypes ?? {};
 
     // Get template components first (lower priority - will be overridden)
-    // But never inherit non-inheritable types
+    // But never inherit non-inheritable types or excluded types
     if (depth < _maxTemplateDepth) {
-      final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
       if (fromTemplate != null) {
         final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
         for (final c in templateEntity._getAllWithDepth(depth + 1)) {
@@ -235,9 +230,9 @@ class Entity {
       }
     }
 
-    // Get direct components (override template values)
+    // Get direct components (override template values) - direct always wins, ignore exclusions
     parentCell.components.forEach((k, v) {
-      if (v.containsKey(id) && !excludedTypes.contains(k)) {
+      if (v.containsKey(id)) {
         comps[k] = v[id]!;
       }
     });
@@ -246,6 +241,9 @@ class Entity {
   }
 
   void upsert<C extends Component>(C c) {
+    // Clear exclusion if this type was excluded (so direct component is visible)
+    _clearExclusionIfNeeded(c.componentType);
+
     var entitiesWithComponent =
         parentCell.components.putIfAbsent(c.componentType, () => {});
     var existing =
@@ -268,12 +266,35 @@ class Entity {
   }
 
   void upsertByName(Component c) {
+    // Clear exclusion if this type was excluded (so direct component is visible)
+    _clearExclusionIfNeeded(c.componentType);
+
     var entitiesWithComponent = parentCell.components.putIfAbsent(c.componentType, () => {});
     var existing = entitiesWithComponent.entries.firstWhereOrNull((e) => e.key == id);
 
     entitiesWithComponent[id] = c;
 
     parentCell.notifyChange(Change(entityId: id, componentType: c.componentType, oldValue: existing?.value, newValue: c));
+  }
+
+  /// Clears an exclusion for the given type if it exists in FromTemplate.excludedTypes.
+  ///
+  /// Called when upserting a component directly, so the direct component will be
+  /// visible and the exclusion state stays clean.
+  void _clearExclusionIfNeeded(String typeName) {
+    // Don't try to clear exclusions when upserting FromTemplate itself (avoids recursion)
+    if (typeName == 'FromTemplate') return;
+
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate != null && fromTemplate.excludedTypes.contains(typeName)) {
+      final newExclusions = Set<String>.from(fromTemplate.excludedTypes)..remove(typeName);
+      final newFromTemplate = FromTemplate(
+        fromTemplate.templateEntityId,
+        excludedTypes: newExclusions,
+      );
+      // Use _setDirectComponent to avoid recursion (don't call upsertByName)
+      _setDirectComponent('FromTemplate', newFromTemplate);
+    }
   }
 
   /// Sets an intent on this entity, clearing any existing intents first.
@@ -307,8 +328,8 @@ class Entity {
   /// Removes component C from this entity.
   ///
   /// If the entity has the component directly, it is removed.
-  /// If the component comes from a template (via [FromTemplate]), an
-  /// [ExcludesComponent] is added to block inheritance of that type.
+  /// If the component comes from a template (via [FromTemplate]), the type
+  /// is added to [FromTemplate.excludedTypes] to block inheritance.
   void remove<C>() {
     _removeByTypeName(C.toString());
   }
@@ -316,8 +337,8 @@ class Entity {
   /// Removes component by type name.
   ///
   /// If the entity has the component directly, it is removed.
-  /// If the component comes from a template (via [FromTemplate]), an
-  /// [ExcludesComponent] is added to block inheritance of that type.
+  /// If the component comes from a template (via [FromTemplate]), the type
+  /// is added to [FromTemplate.excludedTypes] to block inheritance.
   void removeByName(String componentType) {
     _removeByTypeName(componentType);
   }
@@ -335,26 +356,37 @@ class Entity {
         oldValue: existing.value,
         newValue: null,
       ));
-    } else {
-      // Check if it comes from a template
-      final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
-      if (fromTemplate != null) {
-        final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
-        if (templateEntity._hasWithDepth(typeName, 0)) {
-          // Component comes from template - add exclusion
-          _addExclusion(typeName);
-        }
+    }
+
+    // Always check if template also has this component and add exclusion if needed
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate != null) {
+      final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
+      if (templateEntity._hasWithDepth(typeName, 0)) {
+        _addExclusion(typeName, fromTemplate);
       }
     }
   }
 
-  /// Add a component type to [ExcludesComponent] (internal helper).
-  void _addExclusion(String typeName) {
-    final existing = _getDirectComponent<ExcludesComponent>('ExcludesComponent');
-    final newExcludes = existing != null
-        ? ExcludesComponent({...existing.excludedTypes, typeName})
-        : ExcludesComponent.single(typeName);
-    upsertByName(newExcludes);
+  /// Add a component type to [FromTemplate.excludedTypes] (internal helper).
+  ///
+  /// Also emits a synthetic change notification for the excluded component type
+  /// so that systems (like VisionSystem) can respond to the effective removal.
+  void _addExclusion(String typeName, FromTemplate fromTemplate) {
+    final newFromTemplate = FromTemplate(
+      fromTemplate.templateEntityId,
+      excludedTypes: {...fromTemplate.excludedTypes, typeName},
+    );
+    upsertByName(newFromTemplate);
+
+    // Emit synthetic change notification for the excluded component
+    // so systems like VisionSystem know to update
+    parentCell.notifyChange(Change(
+      entityId: id,
+      componentType: typeName,
+      oldValue: null, // We don't have the actual old value (it was on template)
+      newValue: null, // Component is now effectively "removed" (excluded)
+    ));
   }
 
   void destroy() {

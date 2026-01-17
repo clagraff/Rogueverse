@@ -118,6 +118,8 @@ class _FromTemplateEditor extends StatelessWidget {
         ? fromTemplate.templateEntityId
         : null;
 
+    final excludedList = fromTemplate.excludedTypes.toList()..sort();
+
     return Column(
       children: [
         // Template dropdown
@@ -168,7 +170,8 @@ class _FromTemplateEditor extends StatelessWidget {
             },
             onChanged: (int? newId) {
               if (newId != null) {
-                entity.upsert<FromTemplate>(FromTemplate(newId));
+                // Preserve excludedTypes when changing template
+                entity.upsert<FromTemplate>(FromTemplate(newId, excludedTypes: fromTemplate.excludedTypes));
               }
             },
           ),
@@ -191,6 +194,53 @@ class _FromTemplateEditor extends StatelessWidget {
               ],
             ),
           ),
+        // Excluded types section
+        if (excludedList.isNotEmpty) ...[
+          PropertyRow(
+            key: ValueKey('excludedTypes_${excludedList.join(",")}'),
+            item: StringPropertyItem(
+              id: "excludedTypes",
+              label: "Excluded Types",
+              value: excludedList.join(', '),
+              hintText: 'Comma-separated list',
+              onChanged: (String s) {
+                final types = s.split(',')
+                    .map((t) => t.trim())
+                    .where((t) => t.isNotEmpty)
+                    .toSet();
+                entity.upsert<FromTemplate>(FromTemplate(
+                  fromTemplate.templateEntityId,
+                  excludedTypes: types,
+                ));
+              },
+            ),
+            theme: theme,
+          ),
+          // Show individual excluded types as chips
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: excludedList.map((type) {
+                return Chip(
+                  label: Text(type, style: const TextStyle(fontSize: 10)),
+                  deleteIcon: const Icon(Icons.close, size: 14),
+                  onDeleted: () {
+                    final newTypes = Set<String>.from(fromTemplate.excludedTypes)..remove(type);
+                    entity.upsert<FromTemplate>(FromTemplate(
+                      fromTemplate.templateEntityId,
+                      excludedTypes: newTypes,
+                    ));
+                  },
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+                );
+              }).toList(),
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -249,82 +299,4 @@ class _NavigateToTemplateButton extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Metadata for the ExcludesComponent component, which blocks inherited components.
-class ExcludesComponentMetadata extends ComponentMetadata {
-  static const _theme = PropertyPanelThemeData(labelColumnWidth: 140);
-
-  @override
-  String get componentName => 'ExcludesComponent';
-
-  @override
-  bool hasComponent(Entity entity) => entity.has<ExcludesComponent>();
-
-  @override
-  Widget buildContent(Entity entity) {
-    return StreamBuilder<Change>(
-      stream: entity.parentCell.componentChanges.onEntityOnComponent<ExcludesComponent>(entity.id),
-      builder: (context, snapshot) {
-        final excludes = entity.get<ExcludesComponent>();
-        if (excludes == null) return const SizedBox.shrink();
-
-        final excludedList = excludes.excludedTypes.toList()..sort();
-
-        return Column(
-          children: [
-            PropertyRow(
-              key: ValueKey('excludes_${excludedList.join(",")}'),
-              item: StringPropertyItem(
-                id: "excludedTypes",
-                label: "Excluded Types",
-                value: excludedList.join(', '),
-                hintText: 'Comma-separated list',
-                onChanged: (String s) {
-                  final types = s.split(',')
-                      .map((t) => t.trim())
-                      .where((t) => t.isNotEmpty)
-                      .toSet();
-                  entity.upsert<ExcludesComponent>(ExcludesComponent(types));
-                },
-              ),
-              theme: _theme,
-            ),
-            // Show individual excluded types as chips
-            if (excludedList.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: excludedList.map((type) {
-                    return Chip(
-                      label: Text(type, style: const TextStyle(fontSize: 10)),
-                      deleteIcon: const Icon(Icons.close, size: 14),
-                      onDeleted: () {
-                        final newTypes = Set<String>.from(excludes.excludedTypes)..remove(type);
-                        if (newTypes.isEmpty) {
-                          entity.remove<ExcludesComponent>();
-                        } else {
-                          entity.upsert<ExcludesComponent>(ExcludesComponent(newTypes));
-                        }
-                      },
-                      visualDensity: VisualDensity.compact,
-                      padding: EdgeInsets.zero,
-                      labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-                    );
-                  }).toList(),
-                ),
-              ),
-          ],
-        );
-      },
-    );
-  }
-
-  @override
-  Component createDefault() => ExcludesComponent({});
-
-  @override
-  void removeComponent(Entity entity) => entity.remove<ExcludesComponent>();
 }

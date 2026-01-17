@@ -124,7 +124,6 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
     // Template components
     ComponentRegistry.register(IsTemplateMetadata());
     ComponentRegistry.register(FromTemplateMetadata());
-    ComponentRegistry.register(ExcludesComponentMetadata());
   }
 
   @override

@@ -179,8 +179,6 @@ class World with WorldMappable implements IWorldView {
       if (change.componentType == 'FromTemplate') return;
       // Don't propagate IsTemplate changes
       if (change.componentType == 'IsTemplate') return;
-      // Don't propagate ExcludesComponent changes
-      if (change.componentType == 'ExcludesComponent') return;
 
       // Defer propagation to avoid re-entrancy (can't fire events while firing)
       scheduleMicrotask(() {
@@ -195,9 +193,9 @@ class World with WorldMappable implements IWorldView {
     for (final dependentId in directDependents) {
       final dependent = getEntity(dependentId);
 
-      // Skip if dependent excludes this component
-      final excludes = dependent.get<ExcludesComponent>();
-      if (excludes?.excludedTypes.contains(originalChange.componentType) == true) {
+      // Skip if dependent excludes this component (via FromTemplate.excludedTypes)
+      final fromTemplate = dependent.get<FromTemplate>();
+      if (fromTemplate?.excludedTypes.contains(originalChange.componentType) == true) {
         continue;
       }
 

@@ -241,11 +241,12 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
         .where((c) => c is! LocalPosition && c is! HasParent && c is! FromTemplate)
         .toList();
 
-    // Replace the IsTemplate component with new display name
+    // Replace the IsTemplate and Name components with new display name
     final newComponents = components
-        .where((c) => c is! IsTemplate)
+        .where((c) => c is! IsTemplate && c is! Name)
         .toList();
     newComponents.add(IsTemplate(displayName: newName));
+    newComponents.add(Name(name: newName));
 
     widget.world.add(newComponents);
 

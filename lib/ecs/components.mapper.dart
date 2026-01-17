@@ -199,7 +199,6 @@ class ComponentMapper extends ClassMapperBase<Component> {
       DialogMapper.ensureInitialized();
       IsTemplateMapper.ensureInitialized();
       FromTemplateMapper.ensureInitialized();
-      ExcludesComponentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -8138,10 +8137,18 @@ class FromTemplateMapper extends SubClassMapperBase<FromTemplate> {
     'templateEntityId',
     _$templateEntityId,
   );
+  static Set<String> _$excludedTypes(FromTemplate v) => v.excludedTypes;
+  static const Field<FromTemplate, Set<String>> _f$excludedTypes = Field(
+    'excludedTypes',
+    _$excludedTypes,
+    opt: true,
+    def: const {},
+  );
 
   @override
   final MappableFields<FromTemplate> fields = const {
     #templateEntityId: _f$templateEntityId,
+    #excludedTypes: _f$excludedTypes,
   };
 
   @override
@@ -8152,7 +8159,10 @@ class FromTemplateMapper extends SubClassMapperBase<FromTemplate> {
   late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
 
   static FromTemplate _instantiate(DecodingData data) {
-    return FromTemplate(data.dec(_f$templateEntityId));
+    return FromTemplate(
+      data.dec(_f$templateEntityId),
+      excludedTypes: data.dec(_f$excludedTypes),
+    );
   }
 
   @override
@@ -8218,7 +8228,7 @@ extension FromTemplateValueCopy<$R, $Out>
 abstract class FromTemplateCopyWith<$R, $In extends FromTemplate, $Out>
     implements ComponentCopyWith<$R, $In, $Out> {
   @override
-  $R call({int? templateEntityId});
+  $R call({int? templateEntityId, Set<String>? excludedTypes});
   FromTemplateCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -8231,157 +8241,21 @@ class _FromTemplateCopyWithImpl<$R, $Out>
   late final ClassMapperBase<FromTemplate> $mapper =
       FromTemplateMapper.ensureInitialized();
   @override
-  $R call({int? templateEntityId}) => $apply(
+  $R call({int? templateEntityId, Set<String>? excludedTypes}) => $apply(
     FieldCopyWithData({
       if (templateEntityId != null) #templateEntityId: templateEntityId,
+      if (excludedTypes != null) #excludedTypes: excludedTypes,
     }),
   );
   @override
-  FromTemplate $make(CopyWithData data) =>
-      FromTemplate(data.get(#templateEntityId, or: $value.templateEntityId));
+  FromTemplate $make(CopyWithData data) => FromTemplate(
+    data.get(#templateEntityId, or: $value.templateEntityId),
+    excludedTypes: data.get(#excludedTypes, or: $value.excludedTypes),
+  );
 
   @override
   FromTemplateCopyWith<$R2, FromTemplate, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _FromTemplateCopyWithImpl<$R2, $Out2>($value, $cast, t);
-}
-
-class ExcludesComponentMapper extends SubClassMapperBase<ExcludesComponent> {
-  ExcludesComponentMapper._();
-
-  static ExcludesComponentMapper? _instance;
-  static ExcludesComponentMapper ensureInitialized() {
-    if (_instance == null) {
-      MapperContainer.globals.use(_instance = ExcludesComponentMapper._());
-      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
-    }
-    return _instance!;
-  }
-
-  @override
-  final String id = 'ExcludesComponent';
-
-  static Set<String> _$excludedTypes(ExcludesComponent v) => v.excludedTypes;
-  static const Field<ExcludesComponent, Set<String>> _f$excludedTypes = Field(
-    'excludedTypes',
-    _$excludedTypes,
-  );
-
-  @override
-  final MappableFields<ExcludesComponent> fields = const {
-    #excludedTypes: _f$excludedTypes,
-  };
-
-  @override
-  final String discriminatorKey = '__type';
-  @override
-  final dynamic discriminatorValue = 'ExcludesComponent';
-  @override
-  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
-
-  static ExcludesComponent _instantiate(DecodingData data) {
-    return ExcludesComponent(data.dec(_f$excludedTypes));
-  }
-
-  @override
-  final Function instantiate = _instantiate;
-
-  static ExcludesComponent fromMap(Map<String, dynamic> map) {
-    return ensureInitialized().decodeMap<ExcludesComponent>(map);
-  }
-
-  static ExcludesComponent fromJson(String json) {
-    return ensureInitialized().decodeJson<ExcludesComponent>(json);
-  }
-}
-
-mixin ExcludesComponentMappable {
-  String toJson() {
-    return ExcludesComponentMapper.ensureInitialized()
-        .encodeJson<ExcludesComponent>(this as ExcludesComponent);
-  }
-
-  Map<String, dynamic> toMap() {
-    return ExcludesComponentMapper.ensureInitialized()
-        .encodeMap<ExcludesComponent>(this as ExcludesComponent);
-  }
-
-  ExcludesComponentCopyWith<
-    ExcludesComponent,
-    ExcludesComponent,
-    ExcludesComponent
-  >
-  get copyWith =>
-      _ExcludesComponentCopyWithImpl<ExcludesComponent, ExcludesComponent>(
-        this as ExcludesComponent,
-        $identity,
-        $identity,
-      );
-  @override
-  String toString() {
-    return ExcludesComponentMapper.ensureInitialized().stringifyValue(
-      this as ExcludesComponent,
-    );
-  }
-
-  @override
-  bool operator ==(Object other) {
-    return ExcludesComponentMapper.ensureInitialized().equalsValue(
-      this as ExcludesComponent,
-      other,
-    );
-  }
-
-  @override
-  int get hashCode {
-    return ExcludesComponentMapper.ensureInitialized().hashValue(
-      this as ExcludesComponent,
-    );
-  }
-}
-
-extension ExcludesComponentValueCopy<$R, $Out>
-    on ObjectCopyWith<$R, ExcludesComponent, $Out> {
-  ExcludesComponentCopyWith<$R, ExcludesComponent, $Out>
-  get $asExcludesComponent => $base.as(
-    (v, t, t2) => _ExcludesComponentCopyWithImpl<$R, $Out>(v, t, t2),
-  );
-}
-
-abstract class ExcludesComponentCopyWith<
-  $R,
-  $In extends ExcludesComponent,
-  $Out
->
-    implements ComponentCopyWith<$R, $In, $Out> {
-  @override
-  $R call({Set<String>? excludedTypes});
-  ExcludesComponentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
-    Then<$Out2, $R2> t,
-  );
-}
-
-class _ExcludesComponentCopyWithImpl<$R, $Out>
-    extends ClassCopyWithBase<$R, ExcludesComponent, $Out>
-    implements ExcludesComponentCopyWith<$R, ExcludesComponent, $Out> {
-  _ExcludesComponentCopyWithImpl(super.value, super.then, super.then2);
-
-  @override
-  late final ClassMapperBase<ExcludesComponent> $mapper =
-      ExcludesComponentMapper.ensureInitialized();
-  @override
-  $R call({Set<String>? excludedTypes}) => $apply(
-    FieldCopyWithData({
-      if (excludedTypes != null) #excludedTypes: excludedTypes,
-    }),
-  );
-  @override
-  ExcludesComponent $make(CopyWithData data) =>
-      ExcludesComponent(data.get(#excludedTypes, or: $value.excludedTypes));
-
-  @override
-  ExcludesComponentCopyWith<$R2, ExcludesComponent, $Out2> $chain<$R2, $Out2>(
-    Then<$Out2, $R2> t,
-  ) => _ExcludesComponentCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

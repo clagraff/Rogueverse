@@ -78,9 +78,11 @@ class GameScreen extends flame.World with Disposer {
     // TODO this can only work when running on Desktop, not web!
     var save = await WorldSaves.loadSaveWithPatch(savePatchPath);
     if (save != null) {
-      game.currentWorld = save;
+      // Use loadFrom() to properly initialize systems (especially VisionSystem's spatial index)
+      // Direct assignment would bypass system initialization, breaking vision/control on load
+      game.currentWorld.loadFrom(save.toMap());
       // Update tick scheduler to use the loaded world
-      game.tickScheduler.updateWorld(save);
+      game.tickScheduler.updateWorld(game.currentWorld);
     } else {
       // No initial.json exists - write the current (empty) world as initial state.
       // This ensures _cachedInitialState is set for the editor to function.
@@ -291,23 +293,25 @@ class GameScreen extends flame.World with Disposer {
     // Rebuild hierarchy cache after loading entities (HierarchySystem normally does this during tick)
     game.currentWorld.hierarchyCache.rebuild(game.currentWorld);
 
-    // Find an entity named "Player" to set default selection and view.
+    // Find the player entity by checking for the Player component.
     // TODO: In the future, consider checking if the player has a Controlling component
     // and select the controlled entity instead (e.g., when piloting a ship). Could also
     // persist the "currently controlled entity ID" in the save file.
     final playerEntity = game.currentWorld.entities().firstWhereOrNull(
-          (e) => e.get<Name>()?.name == "Player",
+          (e) => e.has<Player>(),
         );
     if (playerEntity != null) {
-      // Set the player as the selected/controlled entity
-      game.selectedEntities.value = {playerEntity};
-      // Set the player as the vision observer
-      game.observerEntityId.value = playerEntity.id;
-      // Set the view to the player's parent (room/location)
+      // Set the view to the player's parent FIRST (room/location)
+      // This must be done before setting selectedEntities/observerEntityId because
+      // the viewedParentId listener clears those values when the view changes
       final playerParent = playerEntity.get<HasParent>();
       if (playerParent != null) {
         game.viewedParentId.value = playerParent.parentEntityId;
       }
+      // Now set the player as the selected/controlled entity
+      game.selectedEntities.value = {playerEntity};
+      // Set the player as the vision observer
+      game.observerEntityId.value = playerEntity.id;
       // Add camera controller that follows the selected entity (defaults to follow mode)
       final cameraController = CameraController(
         followedEntityNotifier: game.selectedEntity,
@@ -378,6 +382,14 @@ class GameScreen extends flame.World with Disposer {
         .forEach((entity) {
       _spawnRenderableEntity(game, game.currentWorld.getEntity(entity.id));
     });
+
+    // Trigger final vision update now that all components (including Agents) are spawned.
+    // This ensures VisibleEntities is populated and Agent opacity is correct on initial load.
+    // Without this, the earlier vision update (line 330) happens before Agents exist.
+    if (game.observerEntityId.value != null) {
+      final visionSystem = game.currentWorld.systems.whereType<VisionSystem>().firstOrNull;
+      visionSystem?.updateVisionForObserver(game.currentWorld, game.observerEntityId.value!);
+    }
   }
 
   @override

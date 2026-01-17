@@ -161,7 +161,6 @@ class _UnifiedEditorPanelState extends State<UnifiedEditorPanel> {
       // Template components
       ComponentRegistry.register(IsTemplateMetadata());
       ComponentRegistry.register(FromTemplateMetadata());
-      ComponentRegistry.register(ExcludesComponentMetadata());
     }
   }
 
@@ -690,9 +689,10 @@ class _TemplatesSection extends StatelessWidget {
         .where((c) => c is! LocalPosition && c is! HasParent && c is! FromTemplate)
         .toList();
 
-    // Replace the IsTemplate component with new display name
-    final newComponents = components.where((c) => c is! IsTemplate).toList();
+    // Replace the IsTemplate and Name components with new display name
+    final newComponents = components.where((c) => c is! IsTemplate && c is! Name).toList();
     newComponents.add(IsTemplate(displayName: newName));
+    newComponents.add(Name(name: newName));
 
     world.add(newComponents);
 
@@ -768,13 +768,14 @@ class _SaveAsTemplateButton extends StatelessWidget {
 
     if (templateName == null || templateName.isEmpty) return;
 
-    // Copy components from entity, excluding position-related ones
+    // Copy components from entity, excluding position-related ones and Name (will use template name)
     final components = entity.getAll()
-        .where((c) => c is! LocalPosition && c is! HasParent && c is! FromTemplate && c is! IsTemplate)
+        .where((c) => c is! LocalPosition && c is! HasParent && c is! FromTemplate && c is! IsTemplate && c is! Name)
         .toList();
 
-    // Add IsTemplate marker component
+    // Add IsTemplate marker and Name components
     components.add(IsTemplate(displayName: templateName));
+    components.add(Name(name: templateName));
 
     world.add(components);
 

@@ -775,7 +775,7 @@ class UndockIntent extends IntentComponent with UndockIntentMappable {
 /// BlocksMovement, and BlocksSight components based on the current state.
 @MappableClass()
 class Openable with OpenableMappable implements Component {
-  bool isOpen;
+  final bool isOpen;
   final String openRenderablePath;
   final String closedRenderablePath;
   final bool blocksMovementWhenClosed;
@@ -895,7 +895,7 @@ class IsTemplate with IsTemplateMappable implements Component {
 ///
 /// When an entity has this component, calls to `has<C>()` and `get<C>()`
 /// will check the template entity if the component is not found locally,
-/// unless the entity has an [ExcludesComponent] for that type.
+/// unless the component type is in [excludedTypes].
 ///
 /// Templates can themselves have [FromTemplate] (up to 3 levels deep).
 @MappableClass()
@@ -903,31 +903,15 @@ class FromTemplate with FromTemplateMappable implements Component {
   /// The entity ID of the template this entity inherits from.
   final int templateEntityId;
 
-  FromTemplate(this.templateEntityId);
+  /// Set of component type names excluded from template inheritance.
+  /// When a type is in this set:
+  /// - `has<T>()` returns false (for that type)
+  /// - `get<T>()` returns null (for that type)
+  /// - The template's component of that type is not inherited
+  final Set<String> excludedTypes;
+
+  FromTemplate(this.templateEntityId, {this.excludedTypes = const {}});
 
   @override
   String get componentType => "FromTemplate";
-}
-
-/// Explicitly blocks inheritance of specific component types from templates.
-///
-/// When an entity has this component with a type T in [excludedTypes]:
-/// - `has<T>()` returns false
-/// - `get<T>()` returns null
-/// - The template's component of type T is not inherited
-///
-/// This component is automatically added when `remove<C>()` is called on a
-/// component the entity doesn't have directly but would inherit from its template.
-@MappableClass()
-class ExcludesComponent with ExcludesComponentMappable implements Component {
-  /// Set of component type names that are excluded from template inheritance.
-  final Set<String> excludedTypes;
-
-  ExcludesComponent(this.excludedTypes);
-
-  /// Convenience constructor for excluding a single type.
-  ExcludesComponent.single(String typeName) : excludedTypes = {typeName};
-
-  @override
-  String get componentType => "ExcludesComponent";
 }

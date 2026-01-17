@@ -737,6 +737,11 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
 
     final observerDirection = observer.get<Direction>();
 
+    // Warn if entity has limited FOV but no Direction component
+    if (visionRadius.fieldOfViewDegrees < 360 && observerDirection == null) {
+      _logger.warning('limited FOV but no Direction', {'entityId': observerId});
+    }
+
     // Calculate visible tiles using Bresenham raycasting
     final visibleTiles = _calculateVisibleTiles(
       world,
@@ -1034,8 +1039,14 @@ class OpenableSystem extends System with OpenableSystemMappable {
           continue;
         }
 
-        // Open the entity
-        openable.isOpen = true;
+        // Open the entity - create new Openable with updated state (don't mutate template)
+        target.upsert(Openable(
+          isOpen: true,
+          openRenderablePath: openable.openRenderablePath,
+          closedRenderablePath: openable.closedRenderablePath,
+          blocksMovementWhenClosed: openable.blocksMovementWhenClosed,
+          blocksVisionWhenClosed: openable.blocksVisionWhenClosed,
+        ));
         target.upsert(Renderable(ImageAsset(openable.openRenderablePath)));
 
         // Remove blocking components
@@ -1074,8 +1085,14 @@ class OpenableSystem extends System with OpenableSystemMappable {
           continue;
         }
 
-        // Close the entity
-        openable.isOpen = false;
+        // Close the entity - create new Openable with updated state (don't mutate template)
+        target.upsert(Openable(
+          isOpen: false,
+          openRenderablePath: openable.openRenderablePath,
+          closedRenderablePath: openable.closedRenderablePath,
+          blocksMovementWhenClosed: openable.blocksMovementWhenClosed,
+          blocksVisionWhenClosed: openable.blocksVisionWhenClosed,
+        ));
         target.upsert(Renderable(ImageAsset(openable.closedRenderablePath)));
 
         // Add blocking components based on configuration

@@ -328,15 +328,17 @@ class GameArea extends FlameGame
         );
 
     if (playerEntity != null) {
-      // Set the player as the selected/controlled entity
-      selectedEntities.value = {playerEntity};
-      // Set the player as the vision observer
-      observerEntityId.value = playerEntity.id;
-      // Set the view to the player's parent (room/location)
+      // Set the view to the player's parent FIRST (room/location)
+      // This must be done before setting selectedEntities/observerEntityId because
+      // the viewedParentId listener clears those values when the view changes
       final playerParent = playerEntity.get<HasParent>();
       if (playerParent != null) {
         viewedParentId.value = playerParent.parentEntityId;
       }
+      // Now set the player as the selected/controlled entity
+      selectedEntities.value = {playerEntity};
+      // Set the player as the vision observer
+      observerEntityId.value = playerEntity.id;
       _logger.info('Restored player control: entity ${playerEntity.id}');
     } else {
       // No player found, just clear selection
@@ -448,8 +450,10 @@ class GameArea extends FlameGame
     if (name == null || name.trim().isEmpty) return;
 
     // Create template entity in the main world
+    final trimmedName = name.trim();
     final templateEntity = currentWorld.add([
-      IsTemplate(displayName: name.trim()),
+      IsTemplate(displayName: trimmedName),
+      Name(name: trimmedName),
     ]);
 
     // Save the world state

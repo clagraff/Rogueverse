@@ -141,14 +141,20 @@ class VisionConeComponent extends PositionComponent {
       return;
     }
 
+    // Check if we have NEW tiles (not just removed tiles)
+    final addedTiles = newTiles.difference(_previousVisibleTiles);
+
     // Do a hard reset if:
     // 1. Position changed at all (handles world reloads with stale tile state)
     // 2. First render after re-attaching (oldPosition is null) - always start fresh
+    // 3. New tiles are being added (e.g., door opened, revealing more area)
+    //    This ensures proper max distance calculation for gradient consistency
     final positionChanged = oldPosition != null &&
         (position.x != oldPosition.x || position.y != oldPosition.y);
     final firstRenderAfterAttach = oldPosition == null;
+    final newTilesAdded = addedTiles.isNotEmpty;
 
-    if (positionChanged || firstRenderAfterAttach) {
+    if (positionChanged || firstRenderAfterAttach || newTilesAdded) {
       _hardResetTiles(newTiles);
       return;
     }
