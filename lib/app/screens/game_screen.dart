@@ -290,8 +290,8 @@ class GameScreen extends flame.World with Disposer {
       // });
     });
 
-    // Rebuild hierarchy cache after loading entities (HierarchySystem normally does this during tick)
-    game.currentWorld.hierarchyCache.rebuild(game.currentWorld);
+    // Force hierarchy service to initialize after loading entities
+    game.currentWorld.hierarchyCache.ensureInitialized();
 
     // Find the player entity by checking for the Player component.
     // TODO: In the future, consider checking if the player has a Controlling component

@@ -3,6 +3,7 @@ import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/query.dart';
+import 'package:rogueverse/ecs/systems/behavior_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
@@ -10,6 +11,8 @@ part 'inventory_system.mapper.dart';
 
 @MappableClass()
 class InventorySystem extends System with InventorySystemMappable {
+  @override
+  Set<Type> get runAfter => {BehaviorSystem};
   static final _logger = Logger('InventorySystem');
 
   final Query canPickup = Query().require<Inventory>().require<LocalPosition>();

@@ -2,15 +2,22 @@ import 'dart:developer';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/systems/collision_system.dart';
+import 'package:rogueverse/ecs/systems/movement_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
 part 'direction_system.mapper.dart';
 
 /// Processes DirectionIntent and updates Direction component.
+///
+/// Must run after CollisionSystem and MovementSystem (both emit DirectionIntent).
 @MappableClass()
 class DirectionSystem extends System with DirectionSystemMappable {
   static final _logger = Logger('DirectionSystem');
+
+  @override
+  Set<Type> get runAfter => {CollisionSystem, MovementSystem};
 
   @override
   void update(World world) {

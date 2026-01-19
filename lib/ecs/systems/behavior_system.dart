@@ -9,9 +9,13 @@ import 'package:rogueverse/ecs/world.dart';
 
 part 'behavior_system.mapper.dart';
 
+/// Executes AI behavior trees to generate intents for entities.
+///
+/// Emits intents (MoveByIntent, AttackIntent, etc.) that other systems process.
 @MappableClass()
 class BehaviorSystem extends BudgetedSystem with BehaviorSystemMappable {
   static final _logger = Logger('BehaviorSystem');
+
   final Queue<(Entity entity, Behavior behavior)> queue = Queue<(Entity entity, Behavior behavior)>();
 
   /// Schedule AI behaviors to be processed during the budget run.

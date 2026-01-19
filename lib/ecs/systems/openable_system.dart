@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/systems/behavior_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
@@ -18,6 +19,9 @@ part 'openable_system.mapper.dart';
 @MappableClass()
 class OpenableSystem extends System with OpenableSystemMappable {
   static final _logger = Logger('OpenableSystem');
+
+  @override
+  Set<Type> get runAfter => {BehaviorSystem};
 
   @override
   void update(World world) {

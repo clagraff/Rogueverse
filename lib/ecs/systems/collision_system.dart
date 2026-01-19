@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/systems/behavior_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
@@ -11,9 +12,14 @@ part 'collision_system.mapper.dart';
 ///
 /// If an entity attempts to move into an occupied tile, its move is cancelled.
 /// Uses hierarchy-scoped queries: only checks collisions with sibling entities (same parent).
+///
+/// Must run after BehaviorSystem (which emits MoveByIntent) and before MovementSystem.
 @MappableClass()
 class CollisionSystem extends System with CollisionSystemMappable {
   static final _logger = Logger('CollisionSystem');
+
+  @override
+  Set<Type> get runAfter => {BehaviorSystem};
 
   @override
   void update(World world) {

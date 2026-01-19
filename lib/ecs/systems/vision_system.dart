@@ -8,6 +8,8 @@ import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/events.dart';
+import 'package:rogueverse/ecs/systems/movement_system.dart';
+import 'package:rogueverse/ecs/systems/portal_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
@@ -15,6 +17,8 @@ part 'vision_system.mapper.dart';
 
 @MappableClass()
 class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
+  @override
+  Set<Type> get runAfter => {MovementSystem, PortalSystem};
   static final _logger = Logger('VisionSystem');
 
   /// Track which observers need vision recalculation this tick

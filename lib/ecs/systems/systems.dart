@@ -1,13 +1,10 @@
 /// Barrel file for all ECS systems
 ///
-/// Systems execute in priority order during World.tick():
-/// - 0-50: Early systems (e.g., cache rebuilding, preprocessing)
-/// - 100: Normal gameplay systems (default)
-/// - 150+: Late systems (e.g., cleanup, post-processing)
+/// Systems are executed in dependency order determined by their `runAfter` declarations.
+/// The World performs a topological sort at startup to determine execution order.
 library;
 
 export 'system.dart';
-export 'hierarchy_system.dart';
 export 'collision_system.dart';
 export 'movement_system.dart';
 export 'direction_system.dart';

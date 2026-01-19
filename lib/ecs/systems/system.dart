@@ -20,16 +20,36 @@ part 'system.mapper.dart';
 //   }
 // }
 
-/// A base class for all systems that operate over a [Chunk] of ECS data.
+/// A base class for all systems that operate over a [World] of ECS data.
 ///
-/// Systems execute in (ascending) priority order during World.tick():
-/// - 0-50: Early systems (e.g., cache rebuilding, preprocessing)
-/// - 100: Normal gameplay systems (default)
-/// - 150+: Late systems (e.g., cleanup, post-processing)
+/// ## System Ordering
+///
+/// Systems declare their dependencies explicitly via [runAfter], which specifies
+/// which other systems must execute before this one. The World uses topological
+/// sorting to determine execution order at startup.
+///
+/// Example:
+/// ```dart
+/// class MovementSystem extends System {
+///   @override
+///   Set<Type> get runAfter => {CollisionSystem};
+///   // MovementSystem will always run after CollisionSystem
+/// }
+/// ```
+///
+/// For systems with no dependencies, execution order relative to other
+/// independent systems is undefined but consistent within a session.
+///
+/// Circular dependencies are detected at startup and will throw an error.
 @MappableClass()
 abstract class System with SystemMappable {
-  /// Execution priority. Lower numbers run first. Default is 100.
-  int get priority => 100;
+  /// Systems that must run before this one.
+  ///
+  /// Override this getter to declare dependencies on other systems.
+  /// The World will ensure all listed systems execute before this one.
+  ///
+  /// Returns an empty set by default (no dependencies).
+  Set<Type> get runAfter => const {};
 
   void update(World world);
 }

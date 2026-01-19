@@ -3,6 +3,7 @@ import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/systems/behavior_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
@@ -15,6 +16,9 @@ part 'portal_system.mapper.dart';
 @MappableClass()
 class PortalSystem extends System with PortalSystemMappable {
   static final _logger = Logger('PortalSystem');
+
+  @override
+  Set<Type> get runAfter => {BehaviorSystem};
 
   @override
   void update(World world) {

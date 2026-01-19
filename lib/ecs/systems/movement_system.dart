@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/systems/collision_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
@@ -10,9 +11,13 @@ part 'movement_system.mapper.dart';
 /// A system that processes unblocked movement requests.
 ///
 /// Updates positions and adds [DidMove] to track movement history.
+/// Must run after CollisionSystem (which removes blocked MoveByIntents).
 @MappableClass()
 class MovementSystem extends System with MovementSystemMappable {
   static final _logger = Logger('MovementSystem');
+
+  @override
+  Set<Type> get runAfter => {CollisionSystem};
 
   @override
   void update(World world) {

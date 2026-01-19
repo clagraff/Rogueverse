@@ -2,6 +2,7 @@ import 'dart:developer';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/systems/behavior_system.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
 import 'package:rogueverse/ecs/world.dart';
 
@@ -9,6 +10,8 @@ part 'combat_system.mapper.dart';
 
 @MappableClass()
 class CombatSystem extends System with CombatSystemMappable {
+  @override
+  Set<Type> get runAfter => {BehaviorSystem};
   static final _logger = Logger('CombatSystem');
 
   @override

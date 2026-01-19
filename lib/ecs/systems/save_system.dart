@@ -1,6 +1,7 @@
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/systems/system.dart';
+import 'package:rogueverse/ecs/systems/vision_system.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/ecs/persistence.dart';
 
@@ -18,8 +19,9 @@ class SaveSystem extends System with SaveSystemMappable {
   /// Number of ticks between saves. With 600ms ticks, 10 = ~6 seconds.
   static const int saveIntervalTicks = 10;
 
+  /// Runs after VisionSystem to ensure all processing is complete before saving.
   @override
-  int get priority => 200; // Run after all other systems
+  Set<Type> get runAfter => {VisionSystem};
 
   @override
   void update(World world) {

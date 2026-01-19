@@ -148,7 +148,6 @@ class GameArea extends FlameGame
 
     world = GameScreen(gameFocusNode, savePatchPath: savePatchPath);
     var systems = [
-      HierarchySystem(), // Rebuild hierarchy cache FIRST (other systems may use it)
       BehaviorSystem(), // AI decides what to do
       ControlSystem(), // Process control intents (before movement/combat)
       CollisionSystem(), // Check for blocked movement
