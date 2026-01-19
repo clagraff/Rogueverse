@@ -51,12 +51,6 @@ class WorldMapper extends ClassMapperBase<World> {
     _$templateResolver,
     mode: FieldMode.member,
   );
-  static HierarchyCache _$hierarchyCache(World v) => v.hierarchyCache;
-  static const Field<World, HierarchyCache> _f$hierarchyCache = Field(
-    'hierarchyCache',
-    _$hierarchyCache,
-    mode: FieldMode.member,
-  );
 
   @override
   final MappableFields<World> fields = const {
@@ -65,7 +59,6 @@ class WorldMapper extends ClassMapperBase<World> {
     #tickId: _f$tickId,
     #lastId: _f$lastId,
     #templateResolver: _f$templateResolver,
-    #hierarchyCache: _f$hierarchyCache,
   };
 
   static World _instantiate(DecodingData data) {

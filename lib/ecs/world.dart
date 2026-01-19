@@ -45,64 +45,6 @@ abstract interface class IWorldView {
   Stream<Change> get componentChanges;
 }
 
-/// Cache for fast parent-child relationship queries in the entity hierarchy.
-///
-/// Maintains bidirectional indices for quick lookups without scanning all entities.
-/// Rebuilt from component data each tick by HierarchySystem.
-class HierarchyCache {
-  /// Maps child entity ID to parent entity ID
-  Map<int, int> childToParent = {};
-
-  /// Maps parent entity ID to set of child entity IDs
-  Map<int, Set<int>> parentToChildren = {};
-
-  /// Flag to indicate cache needs rebuilding
-  bool isDirty = true;
-
-  /// Rebuild cache from world's HasParent components
-  void rebuild(World world) {
-    childToParent.clear();
-    parentToChildren.clear();
-
-    final parents = world.get<HasParent>();
-    for (final entry in parents.entries) {
-      final childId = entry.key;
-      final parentId = entry.value.parentEntityId;
-
-      childToParent[childId] = parentId;
-      parentToChildren.putIfAbsent(parentId, () => {}).add(childId);
-    }
-
-    isDirty = false;
-  }
-
-  /// Get all children of a parent entity
-  Set<int> getChildren(int parentId) {
-    return parentToChildren[parentId] ?? {};
-  }
-
-  /// Get parent of a child entity (null if no parent)
-  int? getParent(int childId) {
-    return childToParent[childId];
-  }
-
-  /// Get all children that have a specific component
-  List<Entity> getChildrenWith<C extends Component>(World world, int parentId) {
-    return getChildren(parentId)
-        .map((id) => world.getEntity(id))
-        .where((e) => e.has<C>())
-        .toList();
-  }
-
-  /// Get all sibling entities (entities with same parent)
-  Set<int> getSiblings(int entityId) {
-    final parentId = getParent(entityId);
-    if (parentId == null) return {};
-
-    return getChildren(parentId).where((id) => id != entityId).toSet();
-  }
-}
-
 @MappableClass()
 class World with WorldMappable implements IWorldView {
   static final _logger = Logger('World');
@@ -133,9 +75,16 @@ class World with WorldMappable implements IWorldView {
   /// Not serialized - recreated on world creation.
   late final TemplateResolver templateResolver;
 
-  /// Cache for fast parent-child hierarchy queries
-  /// Not serialized - rebuilt from HasParent components on world load
-  final HierarchyCache hierarchyCache = HierarchyCache();
+  /// Reactive service for fast parent-child hierarchy queries.
+  /// Not serialized - rebuilt from HasParent components on world load.
+  late final HierarchyService _hierarchyService;
+
+  /// Convenience accessor for hierarchy queries.
+  /// The service is lazily initialized on first access.
+  HierarchyService get hierarchyCache {
+    _hierarchyService.ensureInitialized();
+    return _hierarchyService;
+  }
 
   /// Cache for Entity wrapper objects to avoid creating new instances on every getEntity() call
   /// Not serialized - Entity objects are lightweight wrappers around data
@@ -152,6 +101,10 @@ class World with WorldMappable implements IWorldView {
     return _spatialService.index;
   }
 
+  /// Systems sorted by dependency order.
+  /// Computed once at startup via topological sort.
+  late final List<System> _sortedSystems;
+
   World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]) {
     _storage = ComponentStorage(components, lastId);
     templateResolver = TemplateResolver(
@@ -160,7 +113,88 @@ class World with WorldMappable implements IWorldView {
       notifyChange: notifyChange,
       componentChanges: componentChanges,
     );
+    _hierarchyService = HierarchyService(this);
     _spatialService = SpatialService(this);
+    _sortedSystems = _topologicalSort(systems);
+  }
+
+  /// Topologically sorts systems based on their declared dependencies.
+  ///
+  /// Uses Kahn's algorithm to produce a valid execution order where each
+  /// system runs after all systems listed in its [System.runAfter].
+  ///
+  /// Throws [StateError] if circular dependencies are detected.
+  List<System> _topologicalSort(List<System> systems) {
+    if (systems.isEmpty) return [];
+
+    // Build a map from Type to System instance
+    final typeToSystem = <Type, System>{};
+    for (final system in systems) {
+      typeToSystem[system.runtimeType] = system;
+    }
+
+    // Build adjacency list and in-degree count
+    // If A.runAfter contains B, then B -> A (B must run before A)
+    final inDegree = <Type, int>{};
+    final dependents = <Type, Set<Type>>{}; // B -> {A} means A depends on B
+
+    for (final system in systems) {
+      final type = system.runtimeType;
+      inDegree.putIfAbsent(type, () => 0);
+      dependents.putIfAbsent(type, () => {});
+
+      for (final dependency in system.runAfter) {
+        if (!typeToSystem.containsKey(dependency)) {
+          _logger.warning(
+            'System ${system.runtimeType} declares dependency on $dependency, '
+            'but no such system is registered. Ignoring dependency.',
+          );
+          continue;
+        }
+        dependents.putIfAbsent(dependency, () => {}).add(type);
+        inDegree[type] = (inDegree[type] ?? 0) + 1;
+      }
+    }
+
+    // Kahn's algorithm: start with systems that have no dependencies
+    final queue = <Type>[];
+    for (final entry in inDegree.entries) {
+      if (entry.value == 0) {
+        queue.add(entry.key);
+      }
+    }
+
+    final sorted = <System>[];
+    while (queue.isNotEmpty) {
+      final current = queue.removeAt(0);
+      sorted.add(typeToSystem[current]!);
+
+      for (final dependent in dependents[current] ?? <Type>{}) {
+        inDegree[dependent] = inDegree[dependent]! - 1;
+        if (inDegree[dependent] == 0) {
+          queue.add(dependent);
+        }
+      }
+    }
+
+    // Check for cycles
+    if (sorted.length != systems.length) {
+      final remaining = systems
+          .where((s) => !sorted.contains(s))
+          .map((s) => s.runtimeType.toString())
+          .toList();
+      throw StateError(
+        'Circular dependency detected among systems: $remaining. '
+        'Check runAfter declarations for cycles.',
+      );
+    }
+
+    _logger.info(
+      'Systems sorted by dependencies',
+      {'order': sorted.map((s) => s.runtimeType.toString()).toList()},
+    );
+
+    return sorted;
   }
 
   /// Get all entity IDs that depend on a given template.
@@ -259,8 +293,8 @@ class World with WorldMappable implements IWorldView {
     tickId = newWorld.tickId;
     lastId = newWorld.lastId;
 
-    // Rebuild hierarchy cache (also clears it internally)
-    hierarchyCache.rebuild(this);
+    // Rebuild hierarchy service (clears and resubscribes)
+    _hierarchyService.resetState();
 
     // Reinitialize template resolver index
     templateResolver.reinitialize();
@@ -316,31 +350,30 @@ class World with WorldMappable implements IWorldView {
   }
 
   /// Executes a single ECS update tick.
-    void tick() {
-      Timeline.timeSync("World: tick", () {
-        _logger.fine("processing tick", {"tickId": tickId});
+  ///
+  /// Systems are executed in dependency order (computed once at startup).
+  void tick() {
+    Timeline.timeSync("World: tick", () {
+      _logger.fine("processing tick", {"tickId": tickId});
 
-        clearLifetimeComponents<BeforeTick>();
+      clearLifetimeComponents<BeforeTick>();
 
-        Timeline.timeSync("World: process systems", () {
-          // Sort systems by priority (lower numbers run first)
-          final sortedSystems = systems.toList()
-            ..sort((a, b) => a.priority.compareTo(b.priority));
-
-          for (var s in sortedSystems) {
-            Timeline.timeSync("World: process ${s.runtimeType}", () {
-              _logger.fine("processing system", {"system": s.runtimeType.toString()});
-              s.update(this);
-            });
-          }
-        });
-
-        clearLifetimeComponents<AfterTick>();
-
-        _logger.fine("processed tick", {"tickId": tickId});
-        tickId++;
+      Timeline.timeSync("World: process systems", () {
+        // Systems are pre-sorted by dependency order in constructor
+        for (var s in _sortedSystems) {
+          Timeline.timeSync("World: process ${s.runtimeType}", () {
+            _logger.fine("processing system", {"system": s.runtimeType.toString()});
+            s.update(this);
+          });
+        }
       });
-    }
+
+      clearLifetimeComponents<AfterTick>();
+
+      _logger.fine("processed tick", {"tickId": tickId});
+      tickId++;
+    });
+  }
 
     void clearLifetimeComponents<T extends Lifetime>() {
       Timeline.timeSync("World: clear $T", () {
@@ -369,6 +402,7 @@ class World with WorldMappable implements IWorldView {
   void dispose() {
     _events.dispose();
     templateResolver.dispose();
+    _hierarchyService.dispose();
     _spatialService.dispose();
   }
 }
