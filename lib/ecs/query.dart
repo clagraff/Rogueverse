@@ -1,4 +1,4 @@
-import 'dart:async' show StreamController;
+import 'dart:async' show StreamController, StreamSubscription;
 
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
@@ -177,16 +177,19 @@ class View implements IWorldView {
 
   /// Cached set of entity IDs currently matching the query
   final Set<int> _matchingEntities = {};
-  
+
   /// Stream controller for view membership changes (entities entering/leaving)
   final _membershipChanges = StreamController<ViewMembershipChange>.broadcast(sync: true);
-  
+
   /// Stream of entities entering or leaving this view
   Stream<ViewMembershipChange> get viewMembershipChanges => _membershipChanges.stream;
 
+  /// Subscription to world component changes
+  StreamSubscription<Change>? _subscription;
+
   View({required this.world, required this.query}) {
     _initializeCache();
-    _setupChangeListener();
+    _subscription = world.componentChanges.listen(_onComponentChange);
   }
 
   void _initializeCache() {
@@ -196,27 +199,32 @@ class View implements IWorldView {
     }
   }
 
-  void _setupChangeListener() {
-    world.componentChanges.listen((change) {
-      final wasMatching = _matchingEntities.contains(change.entityId);
-      final isMatching = query.isMatching(world, change.entityId);
+  void _onComponentChange(Change change) {
+    final wasMatching = _matchingEntities.contains(change.entityId);
+    final isMatching = query.isMatching(world, change.entityId);
 
-      if (isMatching && !wasMatching) {
-        // Entity entered the view
-        _matchingEntities.add(change.entityId);
-        _membershipChanges.add(ViewMembershipChange(
-          entityId: change.entityId,
-          kind: ViewMembershipKind.entered,
-        ));
-      } else if (!isMatching && wasMatching) {
-        // Entity left the view
-        _matchingEntities.remove(change.entityId);
-        _membershipChanges.add(ViewMembershipChange(
-          entityId: change.entityId,
-          kind: ViewMembershipKind.exited,
-        ));
-      }
-    });
+    if (isMatching && !wasMatching) {
+      // Entity entered the view
+      _matchingEntities.add(change.entityId);
+      _membershipChanges.add(ViewMembershipChange(
+        entityId: change.entityId,
+        kind: ViewMembershipKind.entered,
+      ));
+    } else if (!isMatching && wasMatching) {
+      // Entity left the view
+      _matchingEntities.remove(change.entityId);
+      _membershipChanges.add(ViewMembershipChange(
+        entityId: change.entityId,
+        kind: ViewMembershipKind.exited,
+      ));
+    }
+  }
+
+  /// Dispose of this View, cancelling the component change subscription
+  /// and closing the membership changes stream.
+  void dispose() {
+    _subscription?.cancel();
+    _membershipChanges.close();
   }
 
   // Read operations - filtered by query

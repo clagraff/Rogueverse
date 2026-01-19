@@ -7,7 +7,7 @@ import 'package:rogueverse/app/application.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/ecs.init.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
-import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/ecs/persistence.dart';
 import 'package:window_manager/window_manager.dart';
 
 
@@ -21,7 +21,7 @@ void main() async {
 
   // Migrate existing save.json to initial.json if needed (layered save system)
   if (!kIsWeb) {
-    await WorldSaves.migrateIfNeeded();
+    await Persistence.migrateIfNeeded();
   }
 
   if (!kIsWeb) {

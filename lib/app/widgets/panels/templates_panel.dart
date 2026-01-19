@@ -251,7 +251,7 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     widget.world.add(newComponents);
 
     // Save the world state
-    await WorldSaves.writeInitialState(widget.world);
+    await Persistence.writeInitialState(widget.world);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -292,7 +292,7 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
       templateEntity.destroy();
 
       // Save the world state
-      await WorldSaves.writeInitialState(widget.world);
+      await Persistence.writeInitialState(widget.world);
 
       if (widget.selectedTemplateIdNotifier.value == templateEntity.id) {
         widget.selectedTemplateIdNotifier.value = null;

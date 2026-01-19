@@ -4,15 +4,19 @@ library;
 
 import 'package:dart_mappable/dart_mappable.dart';
 
+export 'component_storage.dart';
 export 'components.dart';
 export 'disposable.dart';
 export 'entity.dart';
 export 'entity_template.dart';
+export 'event_bus.dart';
 export 'events.dart';
 export 'query.dart';
 export 'systems.dart';
 export 'template_registry.dart';
+export 'template_resolver.dart';
 export 'world.dart';
+export 'persistence.dart';
 export 'ai/ai.dart';
 
 extension HumanReadableDuration on Duration {

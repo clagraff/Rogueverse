@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
-import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/ecs/persistence.dart';
 
 /// View for loading an existing save game.
 class LoadGameView extends StatefulWidget {
@@ -43,7 +43,7 @@ class _LoadGameViewState extends State<LoadGameView> {
 
   Future<void> _loadSaves() async {
     try {
-      final saves = await WorldSaves.listSaves();
+      final saves = await Persistence.listSaves();
       if (mounted) {
         setState(() {
           _saves = saves;
@@ -87,7 +87,7 @@ class _LoadGameViewState extends State<LoadGameView> {
     _focusNode.requestFocus();
 
     if (confirmed == true) {
-      await WorldSaves.deleteSave(save.path);
+      await Persistence.deleteSave(save.path);
       _loadSaves();
     }
   }

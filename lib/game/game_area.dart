@@ -252,11 +252,11 @@ class GameArea extends FlameGame
 
     if (editTarget.value == EditTarget.initial) {
       // Editing initial state: save current progress as patch, reload pure initial
-      await WorldSaves.writeSavePatch(currentWorld);
-      currentWorld.loadFrom(WorldSaves.initialState);
+      await Persistence.writeSavePatch(currentWorld);
+      currentWorld.loadFrom(Persistence.initialState);
     } else {
       // Editing save state: save patch to preserve progress, keep current state
-      await WorldSaves.writeSavePatch(currentWorld);
+      await Persistence.writeSavePatch(currentWorld);
       // World already contains initial + patch, so no reload needed
     }
 
@@ -270,21 +270,21 @@ class GameArea extends FlameGame
   Future<void> _onExitEditorMode() async {
     if (editTarget.value == EditTarget.initial) {
       // Save the edited world as the new initial state
-      await WorldSaves.writeInitialState(currentWorld);
+      await Persistence.writeInitialState(currentWorld);
 
       // Reload initial state + apply save patch to restore player progress
       try {
-        var worldWithPatch = await WorldSaves.loadSaveWithPatch(savePatchPath);
+        var worldWithPatch = await Persistence.loadSaveWithPatch(savePatchPath);
         if (worldWithPatch != null) {
           currentWorld.loadFrom(worldWithPatch.toMap());
         }
       } catch (e) {
         _logger.severe("save patch could not be applied after editor changes", e);
-        await WorldSaves.clearSavePatch();
+        await Persistence.clearSavePatch();
       }
     } else {
       // Save the edited world as a patch (diff from initial)
-      await WorldSaves.writeSavePatch(currentWorld);
+      await Persistence.writeSavePatch(currentWorld);
       // World is already in the correct state, no reload needed
     }
 
@@ -300,15 +300,15 @@ class GameArea extends FlameGame
     if (editTarget.value == EditTarget.initial) {
       // Switched TO initial editing (from save)
       // Save current state as patch (we were editing the save state)
-      await WorldSaves.writeSavePatch(currentWorld);
+      await Persistence.writeSavePatch(currentWorld);
       // Load pure initial state for editing
-      currentWorld.loadFrom(WorldSaves.initialState);
+      currentWorld.loadFrom(Persistence.initialState);
     } else {
       // Switched TO save editing (from initial)
       // Save current state as initial (we were editing the initial state)
-      await WorldSaves.writeInitialState(currentWorld);
+      await Persistence.writeInitialState(currentWorld);
       // Load initial + patch for editing (creates empty patch if none exists)
-      var worldWithPatch = await WorldSaves.loadSaveWithPatch(savePatchPath);
+      var worldWithPatch = await Persistence.loadSaveWithPatch(savePatchPath);
       if (worldWithPatch != null) {
         currentWorld.loadFrom(worldWithPatch.toMap());
       }
@@ -457,7 +457,7 @@ class GameArea extends FlameGame
     ]);
 
     // Save the world state
-    await WorldSaves.writeInitialState(currentWorld);
+    await Persistence.writeInitialState(currentWorld);
 
     // Select template entity for editing
     selectedEntities.value = {templateEntity};

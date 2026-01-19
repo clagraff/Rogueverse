@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/ecs/persistence.dart';
 
 /// Dialog for creating a new game save.
 class NewGameDialog extends StatefulWidget {
@@ -54,7 +54,7 @@ class _NewGameDialogState extends State<NewGameDialog> {
 
     try {
       final name = _controller.text.trim();
-      final savePath = await WorldSaves.createNewSave(name);
+      final savePath = await Persistence.createNewSave(name);
       if (mounted) {
         Navigator.of(context).pop(savePath);
       }

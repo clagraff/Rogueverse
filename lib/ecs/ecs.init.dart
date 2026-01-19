@@ -16,8 +16,20 @@ import 'dialog/dialog_content_nodes.dart' as p8;
 import 'dialog/dialog_effects.dart' as p9;
 import 'dialog/dialog_nodes.dart' as p10;
 import 'entity_template.dart' as p11;
-import 'systems.dart' as p12;
-import 'world.dart' as p13;
+import 'systems/behavior_system.dart' as p12;
+import 'systems/collision_system.dart' as p13;
+import 'systems/combat_system.dart' as p14;
+import 'systems/control_system.dart' as p15;
+import 'systems/direction_system.dart' as p16;
+import 'systems/hierarchy_system.dart' as p17;
+import 'systems/inventory_system.dart' as p18;
+import 'systems/movement_system.dart' as p19;
+import 'systems/openable_system.dart' as p20;
+import 'systems/portal_system.dart' as p21;
+import 'systems/save_system.dart' as p22;
+import 'systems/system.dart' as p23;
+import 'systems/vision_system.dart' as p24;
+import 'world.dart' as p25;
 
 void initializeMappers() {
   p0.KeyComboMapper.ensureInitialized();
@@ -135,20 +147,20 @@ void initializeMappers() {
   p10.DialogChoiceMapper.ensureInitialized();
   p10.DialogNodeMapper.ensureInitialized();
   p11.EntityTemplateMapper.ensureInitialized();
-  p12.SystemMapper.ensureInitialized();
-  p12.BudgetedSystemMapper.ensureInitialized();
-  p12.HierarchySystemMapper.ensureInitialized();
-  p12.CollisionSystemMapper.ensureInitialized();
-  p12.MovementSystemMapper.ensureInitialized();
-  p12.DirectionSystemMapper.ensureInitialized();
-  p12.InventorySystemMapper.ensureInitialized();
-  p12.CombatSystemMapper.ensureInitialized();
   p12.BehaviorSystemMapper.ensureInitialized();
-  p12.VisionSystemMapper.ensureInitialized();
-  p12.ControlSystemMapper.ensureInitialized();
-  p12.OpenableSystemMapper.ensureInitialized();
-  p12.PortalSystemMapper.ensureInitialized();
-  p12.SaveSystemMapper.ensureInitialized();
-  p13.WorldMapper.ensureInitialized();
+  p13.CollisionSystemMapper.ensureInitialized();
+  p14.CombatSystemMapper.ensureInitialized();
+  p15.ControlSystemMapper.ensureInitialized();
+  p16.DirectionSystemMapper.ensureInitialized();
+  p17.HierarchySystemMapper.ensureInitialized();
+  p18.InventorySystemMapper.ensureInitialized();
+  p19.MovementSystemMapper.ensureInitialized();
+  p20.OpenableSystemMapper.ensureInitialized();
+  p21.PortalSystemMapper.ensureInitialized();
+  p22.SaveSystemMapper.ensureInitialized();
+  p23.SystemMapper.ensureInitialized();
+  p23.BudgetedSystemMapper.ensureInitialized();
+  p24.VisionSystemMapper.ensureInitialized();
+  p25.WorldMapper.ensureInitialized();
 }
 

@@ -697,7 +697,7 @@ class _TemplatesSection extends StatelessWidget {
     world.add(newComponents);
 
     // Save the world state
-    await WorldSaves.writeInitialState(world);
+    await Persistence.writeInitialState(world);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -738,7 +738,7 @@ class _TemplatesSection extends StatelessWidget {
       templateEntity.destroy();
 
       // Save the world state
-      await WorldSaves.writeInitialState(world);
+      await Persistence.writeInitialState(world);
 
       if (selectedTemplateIdNotifier.value == templateEntity.id) {
         selectedTemplateIdNotifier.value = null;
@@ -780,7 +780,7 @@ class _SaveAsTemplateButton extends StatelessWidget {
     world.add(components);
 
     // Save the world state
-    await WorldSaves.writeInitialState(world);
+    await Persistence.writeInitialState(world);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(

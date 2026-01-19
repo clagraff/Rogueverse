@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/ecs/world.dart' show WorldSaves, World;
+import 'package:rogueverse/ecs/world.dart' show World;
+import 'package:rogueverse/ecs/persistence.dart' show Persistence;
 import 'package:rogueverse/game/game_area.dart' show GameMode;
 
 /// Menu item definition for keyboard navigation.
@@ -121,7 +122,7 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
         label: 'Quit to Menu',
         onTap: () async {
           Navigator.pop(context);
-          await WorldSaves.writeSavePatch(widget.worldGetter());
+          await Persistence.writeSavePatch(widget.worldGetter());
           widget.onQuitToMenu();
         },
       ),
@@ -130,7 +131,7 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
         label: 'Quit to Desktop',
         onTap: () async {
           Navigator.pop(context);
-          await WorldSaves.writeSavePatch(widget.worldGetter());
+          await Persistence.writeSavePatch(widget.worldGetter());
           exit(0);
         },
       ),

@@ -13,7 +13,7 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/query.dart';
 import 'package:rogueverse/ecs/systems.dart';
-import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/ecs/persistence.dart';
 import 'package:rogueverse/game/components/agent.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 import 'package:rogueverse/game/components/drag_select_component.dart';
@@ -76,7 +76,7 @@ class GameScreen extends flame.World with Disposer {
 
     // Attempt to load world-state from local save file (initial + optional patch).
     // TODO this can only work when running on Desktop, not web!
-    var save = await WorldSaves.loadSaveWithPatch(savePatchPath);
+    var save = await Persistence.loadSaveWithPatch(savePatchPath);
     if (save != null) {
       // Use loadFrom() to properly initialize systems (especially VisionSystem's spatial index)
       // Direct assignment would bypass system initialization, breaking vision/control on load
@@ -86,7 +86,7 @@ class GameScreen extends flame.World with Disposer {
     } else {
       // No initial.json exists - write the current (empty) world as initial state.
       // This ensures _cachedInitialState is set for the editor to function.
-      await WorldSaves.writeInitialState(game.currentWorld);
+      await Persistence.writeInitialState(game.currentWorld);
     }
 
     // Create template entity spawner (listens to template selection and blank entity mode)
