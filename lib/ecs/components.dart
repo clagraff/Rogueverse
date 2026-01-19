@@ -4,6 +4,39 @@ import 'package:rogueverse/ecs/dialog/dialog_nodes.dart';
 
 part 'components.mapper.dart';
 
+// ============================================================================
+// Component Base Class
+// ============================================================================
+
+/// Base class for all ECS components.
+///
+/// # Component Type Identity
+///
+/// Components use string-based type identity (`componentType` getter) rather than
+/// Dart's `Type` system for two important reasons:
+///
+/// ## 1. Serialization Compatibility
+/// Dart's `Type` instances cannot be serialized to JSON via dart_mappable.
+/// Using strings allows components to be persisted and loaded correctly.
+///
+/// ## 2. Runtime Type Preservation
+/// In certain generic contexts, Dart's type erasure can cause a `LocalPosition`
+/// to appear as `dynamic` or `Component` at runtime. The string-based approach
+/// ensures the actual component type is always accessible regardless of how
+/// the component was obtained.
+///
+/// ## Implementation
+/// Each component implements:
+/// ```dart
+/// @override
+/// String get componentType => 'ComponentClassName';
+/// ```
+///
+/// This string is used for:
+/// - Component storage keys in World
+/// - Serialization type discriminators
+/// - Template inheritance lookups
+/// - Query matching
 @MappableClass()
 abstract class Component with ComponentMappable {
   String get componentType;

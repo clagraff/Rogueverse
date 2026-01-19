@@ -4,6 +4,8 @@ import 'package:collection/collection.dart';
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/ecs/spatial/spatial_index.dart';
+import 'package:rogueverse/ecs/spatial/spatial_service.dart';
 
 part 'world.mapper.dart';
 
@@ -139,6 +141,17 @@ class World with WorldMappable implements IWorldView {
   /// Not serialized - Entity objects are lightweight wrappers around data
   final Map<int, Entity> _entityCache = {};
 
+  /// Shared spatial index service for position-based queries.
+  /// Not serialized - rebuilt from LocalPosition components on world load.
+  late final SpatialService _spatialService;
+
+  /// Convenience accessor for the spatial index.
+  /// Use this for O(1) position lookups instead of scanning all entities.
+  SpatialIndex get spatial {
+    _spatialService.ensureInitialized();
+    return _spatialService.index;
+  }
+
   World(this.systems, this.components, [this.tickId = 0, this.lastId = 0]) {
     _storage = ComponentStorage(components, lastId);
     templateResolver = TemplateResolver(
@@ -147,6 +160,7 @@ class World with WorldMappable implements IWorldView {
       notifyChange: notifyChange,
       componentChanges: componentChanges,
     );
+    _spatialService = SpatialService(this);
   }
 
   /// Get all entity IDs that depend on a given template.
@@ -251,7 +265,10 @@ class World with WorldMappable implements IWorldView {
     // Reinitialize template resolver index
     templateResolver.reinitialize();
 
-    // Reset and rebuild systems that maintain state (e.g., spatial indexes)
+    // Reset the shared spatial index (must happen before system resets)
+    _spatialService.resetState();
+
+    // Reset systems that maintain their own state (e.g., dirty flagging, queues)
     // Must happen before emitting changes so subscribers see fresh data
     for (final system in systems) {
       if (system is VisionSystem) {
@@ -352,6 +369,7 @@ class World with WorldMappable implements IWorldView {
   void dispose() {
     _events.dispose();
     templateResolver.dispose();
+    _spatialService.dispose();
   }
 }
 

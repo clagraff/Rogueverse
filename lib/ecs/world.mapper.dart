@@ -45,6 +45,12 @@ class WorldMapper extends ClassMapperBase<World> {
     opt: true,
     def: 0,
   );
+  static TemplateResolver _$templateResolver(World v) => v.templateResolver;
+  static const Field<World, TemplateResolver> _f$templateResolver = Field(
+    'templateResolver',
+    _$templateResolver,
+    mode: FieldMode.member,
+  );
   static HierarchyCache _$hierarchyCache(World v) => v.hierarchyCache;
   static const Field<World, HierarchyCache> _f$hierarchyCache = Field(
     'hierarchyCache',
@@ -58,6 +64,7 @@ class WorldMapper extends ClassMapperBase<World> {
     #components: _f$components,
     #tickId: _f$tickId,
     #lastId: _f$lastId,
+    #templateResolver: _f$templateResolver,
     #hierarchyCache: _f$hierarchyCache,
   };
 

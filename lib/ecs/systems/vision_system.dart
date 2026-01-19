@@ -17,11 +17,6 @@ part 'vision_system.mapper.dart';
 class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
   static final _logger = Logger('VisionSystem');
 
-  /// Spatial index: parentId -> (x, y) -> Set of entityId
-  /// Enables O(1) position lookups instead of O(n) scans
-  /// null parentId = global entities without parent
-  final Map<int?, Map<(int, int), Set<int>>> _positionIndex = {};
-
   /// Track which observers need vision recalculation this tick
   final Set<int> _dirtyObservers = {};
 
@@ -33,18 +28,17 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
 
   final Queue<Entity> queue = Queue<Entity>();
 
-  /// Resets the spatial index and rebuilds it immediately.
-  /// Also recalculates vision for all observers so VisibleEntities is fresh.
+  /// Resets the vision system state and recalculates vision for all observers.
   /// Call this when the world is fully reloaded to force a rebuild.
+  /// Note: The spatial index is now managed by World.spatialService.
   void resetState(World world) {
-    _positionIndex.clear();
     _dirtyObservers.clear();
     queue.clear();
     // Cancel existing subscription to prevent processing stale changes
     _changeSubscription?.cancel();
     _changeSubscription = null;
     _initialized = false;
-    // Immediately rebuild spatial index
+    // Re-subscribe to changes
     _ensureInitialized(world);
     // Force recalculate vision for all observers so VisibleEntities is fresh
     final observers = world.get<VisionRadius>();
@@ -126,50 +120,29 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
     _updateVisionForObserver(world, observerId);
   }
 
-  /// Lazy initialization: build spatial index and subscribe to changes
+  /// Lazy initialization: subscribe to changes for dirty-flagging observers.
+  /// The spatial index is now managed by World.spatialService.
   void _ensureInitialized(World world) {
     if (_initialized) return;
 
     _logger.fine('vision system initializing');
 
-    // Build initial spatial index from all existing LocalPosition components
-    final positions = world.get<LocalPosition>();
-    for (final entry in positions.entries) {
-      final entityId = entry.key;
-      final pos = entry.value;
-      final parentId = world.getEntity(entityId).get<HasParent>()?.parentEntityId;
-
-      _positionIndex
-        .putIfAbsent(parentId, () => {})
-        .putIfAbsent((pos.x, pos.y), () => {})
-        .add(entityId);
-    }
-
-    // Subscribe to component changes for reactive updates
+    // Subscribe to component changes for reactive dirty-flagging
     _changeSubscription = world.componentChanges.listen((change) {
       _handleComponentChange(world, change);
     });
     toDispose(_changeSubscription!.cancel.asDisposable());
 
     _initialized = true;
-    _logger.fine('vision system initialized', {"indexPositionsCount": positions.length});
+    _logger.fine('vision system initialized');
   }
 
-  /// Handle component changes and mark observers dirty as needed
+  /// Handle component changes and mark observers dirty as needed.
+  /// Note: Spatial index updates are now handled by World.spatialService.
   void _handleComponentChange(World world, Change change) {
     final entity = world.getEntity(change.entityId);
 
-    // 1. Update spatial index for position changes
-    if (change.componentType == 'LocalPosition') {
-      _updatePositionIndex(change, world);
-    }
-
-    // 2. Handle HasParent changes (entity moving between hierarchy scopes)
-    if (change.componentType == 'HasParent') {
-      _handleParentChange(change, world);
-    }
-
-    // 3. Mark observers dirty when they change
+    // 1. Mark observers dirty when they change
     if (entity.has<VisionRadius>()) {
       // Observer moved, rotated, or vision config changed
       if (change.componentType == 'LocalPosition' ||
@@ -180,13 +153,18 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       }
     }
 
-    // 4. VisionRadius added (new observer)
+    // 2. VisionRadius added (new observer)
     if (change.componentType == 'VisionRadius' && change.kind == ChangeKind.added) {
       _markObserverDirty(change.entityId);
       _logger.finest("marked observer dirty", {"observer": entity, "componentType": change.componentType, "reason": change.kind});
     }
 
-    // 5. Blocker moved or BlocksSight changed
+    // 3. Handle HasParent changes for observers
+    if (change.componentType == 'HasParent' && entity.has<VisionRadius>()) {
+      _markObserverDirty(change.entityId);
+    }
+
+    // 4. Blocker moved or BlocksSight changed - mark affected observers dirty
     if (change.componentType == 'LocalPosition' && entity.has<BlocksSight>()) {
       final parentId = entity.get<HasParent>()?.parentEntityId;
       final newPos = entity.get<LocalPosition>();
@@ -210,59 +188,6 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
       if (pos != null) {
         _markObserversInRange(world, pos, parentId);
       }
-    }
-  }
-
-  /// Update spatial index when LocalPosition changes
-  void _updatePositionIndex(Change change, World world) {
-    final entity = world.getEntity(change.entityId);
-    final parentId = entity.get<HasParent>()?.parentEntityId;
-
-    // Remove from old position
-    if (change.oldValue != null) {
-      final oldPos = change.oldValue as LocalPosition;
-      _positionIndex[parentId]?[(oldPos.x, oldPos.y)]?.remove(change.entityId);
-    }
-
-    // Add to new position
-    if (change.kind == ChangeKind.added || change.kind == ChangeKind.updated) {
-      final newPos = entity.get<LocalPosition>();
-      if (newPos != null) {
-        _positionIndex
-          .putIfAbsent(parentId, () => {})
-          .putIfAbsent((newPos.x, newPos.y), () => {})
-          .add(change.entityId);
-      }
-    }
-  }
-
-  /// Handle entity reparenting (moving between hierarchy scopes)
-  void _handleParentChange(Change change, World world) {
-    final entity = world.getEntity(change.entityId);
-    final pos = entity.get<LocalPosition>();
-
-    if (pos != null) {
-      // Remove from old parent's spatial index
-      final oldParentId = (change.oldValue as HasParent?)?.parentEntityId;
-      _positionIndex[oldParentId]?[(pos.x, pos.y)]?.remove(change.entityId);
-
-      // Add to new parent's spatial index
-      final newParentId = entity.get<HasParent>()?.parentEntityId;
-      _positionIndex
-        .putIfAbsent(newParentId, () => {})
-        .putIfAbsent((pos.x, pos.y), () => {})
-        .add(change.entityId);
-
-      // Mark observers dirty in both old and new parent scopes
-      _markObserversInRange(world, pos, oldParentId);
-      _markObserversInRange(world, pos, newParentId);
-
-      _logger.finest('vision_dirty_marked: reason=parent_change, entity=${change.entityId}');
-    }
-
-    // If the entity being reparented is an observer, mark it dirty
-    if (entity.has<VisionRadius>()) {
-      _markObserverDirty(change.entityId);
     }
   }
 
@@ -339,9 +264,9 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
     return _angleDifference(targetAngle, facingAngle) <= halfFOV;
   }
 
-  /// Get entities at a specific position (O(1) lookup via spatial index)
-  Set<int> _getEntitiesAtPosition(int x, int y, int? parentId) {
-    return _positionIndex[parentId]?[(x, y)] ?? {};
+  /// Get entities at a specific position (O(1) lookup via shared spatial index)
+  Set<int> _getEntitiesAtPosition(World world, int x, int y, int? parentId) {
+    return world.spatial.getEntitiesAt(x, y, parentId: parentId);
   }
 
   void _updateVisionForObserver(World world, int observerId) {
@@ -478,7 +403,7 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
     }
 
     // Get all entities at this position (O(1) spatial index lookup)
-    final entitiesAtPos = _getEntitiesAtPosition(x, y, parentId);
+    final entitiesAtPos = _getEntitiesAtPosition(world, x, y, parentId);
 
     // Check if any of them block sight
     return entitiesAtPos.any((entityId) {
@@ -497,7 +422,7 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
 
     // For each visible position, get all entities there (O(1) lookup)
     for (final pos in positions) {
-      final entitiesAtPos = _getEntitiesAtPosition(pos.x, pos.y, parentId);
+      final entitiesAtPos = _getEntitiesAtPosition(world, pos.x, pos.y, parentId);
 
       // Add all except the observer itself
       for (final entityId in entitiesAtPos) {

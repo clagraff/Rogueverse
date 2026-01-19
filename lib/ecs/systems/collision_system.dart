@@ -19,7 +19,6 @@ class CollisionSystem extends System with CollisionSystemMappable {
   void update(World world) {
     Timeline.timeSync("CollisionSystem: update", () {
       Timeline.startSync("CollisionSystem: gets");
-      final positions = world.get<LocalPosition>();
       final blocks = world.get<BlocksMovement>();
       final moveIntents = world.get<MoveByIntent>();
 
@@ -35,42 +34,20 @@ class CollisionSystem extends System with CollisionSystemMappable {
 
         if (pos == null || intent == null) continue;
 
-        final dest = LocalPosition(x: pos.x + intent.dx, y: pos.y + intent.dy);
-        var blocked = false;
-
-        // Get entities to check for collisions
-        // If entity has parent, only check siblings (same parent)
-        // Otherwise, check all entities (backward compatibility)
+        final destX = pos.x + intent.dx;
+        final destY = pos.y + intent.dy;
         final parentId = e.get<HasParent>()?.parentEntityId;
 
-        if (parentId != null) {
-          // Hierarchy-scoped: check only siblings
-          final siblings = world.hierarchyCache.getSiblings(id);
-
-          for (final siblingId in siblings) {
-            final sibling = world.getEntity(siblingId);
-            if (!sibling.has<BlocksMovement>()) continue;
-
-            final siblingPos = sibling.get<LocalPosition>();
-            if (siblingPos != null &&
-                siblingPos.x == dest.x &&
-                siblingPos.y == dest.y) {
-              blocked = true;
-              break;
-            }
-          }
-        } else {
-          // No parent: check all entities (old behavior)
-          positions.forEach((key, value) {
-            if (value.x == dest.x &&
-                value.y == dest.y &&
-                world.getEntity(key).has<BlocksMovement>()) {
-              blocked = true;
-            }
-          });
-        }
+        // O(1) spatial index lookup instead of O(n) scan
+        final blocked = world.spatial.hasEntityAt(
+          destX,
+          destY,
+          parentId: parentId,
+          predicate: (entityId) => world.getEntity(entityId).has<BlocksMovement>(),
+        );
 
         if (blocked) {
+          final dest = LocalPosition(x: destX, y: destY);
           // Emit DirectionIntent even when movement is blocked (DirectionSystem will update Direction)
           // Skip if this is a strafe movement (maintain current direction)
           if (!intent.isStrafe) {
