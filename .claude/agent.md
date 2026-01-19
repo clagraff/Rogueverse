@@ -49,6 +49,12 @@ dart run build_runner build --delete-conflicting-outputs
 - Use `part 'filename.mapper.dart';` for files with `@MappableClass()` annotations
 - Prefer explicit types over `var` for public APIs
 
+### Component Immutability
+- **All component properties must be `final` (immutable)**
+- When updating state, create a new component instance and `upsert()` it
+- Reason: `entity.get<T>()` returns template components by reference, not copy. Mutating them affects all instances inheriting from that template.
+- TODO: Audit existing components to ensure all properties are `final`
+
 ### Naming Conventions
 - Classes: PascalCase (e.g., `LocalPosition`, `MoveByIntent`)
 - Files: snake_case matching class name (e.g., `components.dart`, `game_area.dart`)

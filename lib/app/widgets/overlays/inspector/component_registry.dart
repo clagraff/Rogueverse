@@ -84,6 +84,36 @@ class ComponentRegistry {
         .toList();
   }
 
+  /// Returns metadata for components that are directly on the entity (not inherited).
+  ///
+  /// Used by the split view to display the "Direct Components" section.
+  static List<ComponentMetadata> getDirectPresent(Entity entity) {
+    final directComponents = entity.getAllDirect();
+    return _metadata.values
+        .where((metadata) => directComponents.containsKey(metadata.componentName))
+        .toList();
+  }
+
+  /// Returns metadata for components inherited from template (not direct, not excluded).
+  ///
+  /// Used by the split view to display the "From Template" section.
+  static List<ComponentMetadata> getInheritedPresent(Entity entity) {
+    final inheritedComponents = entity.getAllInherited();
+    return _metadata.values
+        .where((metadata) => inheritedComponents.containsKey(metadata.componentName))
+        .toList();
+  }
+
+  /// Returns metadata for component types that are excluded from template.
+  ///
+  /// Used by the split view to display excluded components (greyed out) in the template section.
+  static List<ComponentMetadata> getExcludedTypes(Entity entity) {
+    final excludedTypes = entity.getExcludedTypes();
+    return _metadata.values
+        .where((metadata) => excludedTypes.contains(metadata.componentName))
+        .toList();
+  }
+
   /// Clears all registered components.
   ///
   /// Primarily used for testing. In production, components are typically

@@ -1,3 +1,3 @@
-[ ] Remove ghost of entity if Ghost is in vision cone (and the actual entity is not)
-[ ] Run vision system and vision cone immediately on game load?
-[ ] Trying to move to a tile that is blocked should still update Direction (and thus vision?)
+- Left-justify main menu options?
+- Combine template enitty list with normal entity list, maybe with a toggle or something
+- Modify the property panel to separate out properties directly on the entity versus properties on the template (unsure how we'd even do this)

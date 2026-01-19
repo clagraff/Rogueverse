@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_section.dart';
+import 'package:rogueverse/app/widgets/overlays/inspector/inherited_component_section.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/sections/sections.dart';
 
 /// Panel showing the currently selected entity's components for editing.
@@ -173,29 +174,22 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
                   return StreamBuilder<Change>(
                     stream: entity.parentCell.componentChanges.onEntityChange(entity.id),
                     builder: (context, snapshot) {
-                      var presentComponents = ComponentRegistry.getPresent(entity);
-                      if (!showTransientValue) {
-                        presentComponents = presentComponents
-                            .where((m) => !m.isTransient)
-                            .toList();
-                      }
-                      presentComponents.sort((a, b) => a.componentName.compareTo(b.componentName));
+                      // Check if entity has a template
+                      final hasTemplate = entity.getTemplateEntity() != null;
 
-                      return ListView(
-                        padding: const EdgeInsets.symmetric(vertical: 2),
-                        children: [
-                          ...presentComponents.map(
-                            (metadata) => ComponentSection(
-                              entity: entity,
-                              metadata: metadata,
-                            ),
-                          ),
-                          _AddComponentButton(
-                            entity: entity,
-                            showTransient: showTransientValue,
-                          ),
-                        ],
-                      );
+                      if (hasTemplate) {
+                        return _buildSplitView(
+                          context,
+                          entity,
+                          showTransientValue,
+                        );
+                      } else {
+                        return _buildFlatView(
+                          context,
+                          entity,
+                          showTransientValue,
+                        );
+                      }
                     },
                   );
                 },
@@ -205,6 +199,134 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
         );
       },
     );
+  }
+
+  /// Builds the flat view for entities without templates (original behavior).
+  Widget _buildFlatView(
+    BuildContext context,
+    Entity entity,
+    bool showTransient,
+  ) {
+    var presentComponents = ComponentRegistry.getPresent(entity);
+    if (!showTransient) {
+      presentComponents = presentComponents
+          .where((m) => !m.isTransient)
+          .toList();
+    }
+    presentComponents.sort((a, b) => a.componentName.compareTo(b.componentName));
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      children: [
+        ...presentComponents.map(
+          (metadata) => ComponentSection(
+            entity: entity,
+            metadata: metadata,
+          ),
+        ),
+        _AddComponentButton(
+          entity: entity,
+          showTransient: showTransient,
+        ),
+      ],
+    );
+  }
+
+  /// Builds the split view for entities with templates.
+  /// Shows direct components section and inherited components section separately.
+  Widget _buildSplitView(
+    BuildContext context,
+    Entity entity,
+    bool showTransient,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final templateEntity = entity.getTemplateEntity()!;
+    final templateName = templateEntity.get<Name>()?.name ?? 'Template';
+
+    // Get direct components
+    var directComponents = ComponentRegistry.getDirectPresent(entity);
+    if (!showTransient) {
+      directComponents = directComponents.where((m) => !m.isTransient).toList();
+    }
+    directComponents.sort((a, b) => a.componentName.compareTo(b.componentName));
+
+    // Get inherited (active) components
+    var inheritedComponents = ComponentRegistry.getInheritedPresent(entity);
+    if (!showTransient) {
+      inheritedComponents = inheritedComponents.where((m) => !m.isTransient).toList();
+    }
+    inheritedComponents.sort((a, b) => a.componentName.compareTo(b.componentName));
+
+    // Get excluded components
+    var excludedComponents = ComponentRegistry.getExcludedTypes(entity);
+    if (!showTransient) {
+      excludedComponents = excludedComponents.where((m) => !m.isTransient).toList();
+    }
+    excludedComponents.sort((a, b) => a.componentName.compareTo(b.componentName));
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      children: [
+        // Direct Components Section Header
+        _ComponentSectionHeader(
+          title: 'Direct Components',
+          count: directComponents.length,
+          color: colorScheme.primary,
+        ),
+
+        // Direct component sections
+        ...directComponents.map(
+          (metadata) => _DirectComponentSection(
+            entity: entity,
+            metadata: metadata,
+          ),
+        ),
+
+        // Add Component button
+        _AddComponentButton(
+          entity: entity,
+          showTransient: showTransient,
+        ),
+
+        const SizedBox(height: 8),
+
+        // From Template Section Header
+        _TemplateSectionHeader(
+          templateName: templateName,
+          count: inheritedComponents.length + excludedComponents.length,
+          color: colorScheme.tertiary,
+          onEditTemplate: () => _navigateToTemplate(entity),
+        ),
+
+        // Active inherited components
+        ...inheritedComponents.map(
+          (metadata) => InheritedComponentSection(
+            entity: entity,
+            metadata: metadata,
+            isExcluded: false,
+          ),
+        ),
+
+        // Excluded components (greyed out)
+        ...excludedComponents.map(
+          (metadata) => InheritedComponentSection(
+            entity: entity,
+            metadata: metadata,
+            isExcluded: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Navigate to the template entity when "Edit Template" is clicked.
+  void _navigateToTemplate(Entity entity) {
+    final templateEntity = entity.getTemplateEntity();
+    if (templateEntity != null) {
+      // Clear multi-selection if present
+      widget.selectedEntitiesNotifier?.value = {};
+      widget.entityNotifier.value = templateEntity;
+    }
   }
 
   Widget _buildSectionHeader(BuildContext context, bool showTransientValue) {
@@ -476,6 +598,7 @@ class _AddComponentButton extends StatelessWidget {
       builder: (context) => _AddComponentDialog(
         availableComponents: available,
         initialShowTransient: showTransient,
+        entity: entity,
       ),
     );
 
@@ -542,10 +665,12 @@ class _AddComponentButton extends StatelessWidget {
 class _AddComponentDialog extends StatefulWidget {
   final List<ComponentMetadata> availableComponents;
   final bool initialShowTransient;
+  final Entity entity;
 
   const _AddComponentDialog({
     required this.availableComponents,
     required this.initialShowTransient,
+    required this.entity,
   });
 
   @override
@@ -658,11 +783,43 @@ class _AddComponentDialogState extends State<_AddComponentDialog> {
                       itemCount: filtered.length,
                       itemBuilder: (context, index) {
                         final metadata = filtered[index];
+                        final templateEntity = widget.entity.getTemplateEntity();
+                        final isOnTemplate = templateEntity != null &&
+                            templateEntity.hasType(metadata.componentName);
+
                         return ListTile(
                           dense: true,
-                          title: Text(
-                            metadata.componentName,
-                            style: const TextStyle(fontSize: 13),
+                          title: Row(
+                            children: [
+                              Text(
+                                metadata.componentName,
+                                style: const TextStyle(fontSize: 13),
+                              ),
+                              if (isOnTemplate) ...[
+                                const SizedBox(width: 6),
+                                Tooltip(
+                                  message: 'Exists on template (will override)',
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 4,
+                                      vertical: 1,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.tertiaryContainer,
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      'T',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: colorScheme.onTertiaryContainer,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
                           ),
                           onTap: () => Navigator.of(context).pop(metadata),
                           hoverColor: colorScheme.primaryContainer.withValues(alpha: 0.3),
@@ -677,6 +834,210 @@ class _AddComponentDialogState extends State<_AddComponentDialog> {
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Cancel'),
+        ),
+      ],
+    );
+  }
+}
+
+/// Section header for grouping components (e.g., "Direct Components").
+class _ComponentSectionHeader extends StatelessWidget {
+  final String title;
+  final int count;
+  final Color color;
+
+  const _ComponentSectionHeader({
+    required this.title,
+    required this.count,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: color,
+            width: 3,
+          ),
+        ),
+        color: colorScheme.surfaceContainerLow,
+      ),
+      child: Row(
+        children: [
+          Text(
+            '$title ($count)',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: colorScheme.onSurface.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Section header for template components with "Edit Template" button.
+class _TemplateSectionHeader extends StatelessWidget {
+  final String templateName;
+  final int count;
+  final Color color;
+  final VoidCallback onEditTemplate;
+
+  const _TemplateSectionHeader({
+    required this.templateName,
+    required this.count,
+    required this.color,
+    required this.onEditTemplate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        border: Border(
+          left: BorderSide(
+            color: color,
+            width: 3,
+          ),
+        ),
+        color: colorScheme.surfaceContainerLow,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              'From Template ($count)',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: colorScheme.onSurface.withValues(alpha: 0.8),
+              ),
+            ),
+          ),
+          Tooltip(
+            message: 'Edit "$templateName"',
+            child: InkWell(
+              onTap: onEditTemplate,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Edit',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: color,
+                      ),
+                    ),
+                    const SizedBox(width: 2),
+                    Icon(
+                      Icons.arrow_forward,
+                      size: 12,
+                      color: color,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A component section for direct components in the split view.
+///
+/// Uses removeDirect instead of the standard remove to avoid creating
+/// exclusions when deleting a direct component that's also on the template.
+class _DirectComponentSection extends StatefulWidget {
+  final Entity entity;
+  final ComponentMetadata metadata;
+
+  const _DirectComponentSection({
+    required this.entity,
+    required this.metadata,
+  });
+
+  @override
+  State<_DirectComponentSection> createState() => _DirectComponentSectionState();
+}
+
+class _DirectComponentSectionState extends State<_DirectComponentSection> {
+  bool _expanded = false;
+
+  void _handleDelete() {
+    // Use removeDirectByName to avoid adding exclusions
+    widget.entity.removeDirectByName(widget.metadata.componentName);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        // Section header with expand/collapse toggle and delete button
+        Container(
+          height: 26,
+          padding: const EdgeInsets.only(left: 8, right: 2),
+          color: scheme.surfaceContainerHighest.withValues(alpha: 0.6),
+          child: Row(
+            children: [
+              // Expandable title area
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _expanded = !_expanded),
+                  child: Row(
+                    children: [
+                      Icon(
+                        _expanded
+                            ? Icons.keyboard_arrow_down
+                            : Icons.keyboard_arrow_right,
+                        size: 14,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        widget.metadata.componentName,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // Delete button
+              IconButton(
+                icon: const Icon(Icons.close, size: 13),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                onPressed: _handleDelete,
+                tooltip: 'Remove component',
+              ),
+            ],
+          ),
+        ),
+        // Component-specific content (only shown when expanded)
+        if (_expanded) widget.metadata.buildContent(widget.entity),
+        // Divider between sections
+        Divider(
+          height: 1,
+          thickness: 0.5,
+          color: scheme.outlineVariant,
         ),
       ],
     );

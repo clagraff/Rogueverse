@@ -315,8 +315,10 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       // Only animate if opacity is changing significantly
       if ((currentOpacity - targetOpacity).abs() > 0.01) {
         // Remove existing opacity effects to prevent stacking
+        // Note: toList() is needed to avoid concurrent modification during iteration
         _visual!.children
             .whereType<OpacityEffect>()
+            .toList()
             .forEach((e) => e.removeFromParent());
 
         // Animate to target opacity (100ms to match movement animation)

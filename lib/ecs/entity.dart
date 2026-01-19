@@ -393,4 +393,150 @@ class Entity {
     _logger.finest("destroyed entity", {"entity": this});
     parentCell.remove(id);
   }
+
+  // ============================================================
+  // Public API for direct vs inherited component access
+  // ============================================================
+
+  /// Check if component is directly on this entity (not inherited from template).
+  bool hasDirectByName(String typeName) {
+    final entitiesWithComponent = parentCell.components[typeName] ?? {};
+    return entitiesWithComponent.containsKey(id);
+  }
+
+  /// Check if component of type [C] is directly on this entity.
+  bool hasDirect<C extends Component>() {
+    return hasDirectByName(C.toString());
+  }
+
+  /// Get component only if it's directly on this entity (not from template).
+  /// Returns null if the component is inherited or doesn't exist.
+  Component? getDirectByName(String typeName) {
+    final entitiesWithComponent = parentCell.components[typeName] ?? {};
+    return entitiesWithComponent[id];
+  }
+
+  /// Get component of type [C] only if it's directly on this entity.
+  C? getDirect<C extends Component>() {
+    return getDirectByName(C.toString()) as C?;
+  }
+
+  /// Get all components that are directly on this entity (not inherited).
+  Map<String, Component> getAllDirect() {
+    final result = <String, Component>{};
+    parentCell.components.forEach((typeName, entitiesMap) {
+      if (entitiesMap.containsKey(id)) {
+        result[typeName] = entitiesMap[id]!;
+      }
+    });
+    return result;
+  }
+
+  /// Get all components inherited from template (not direct, not excluded).
+  /// Returns empty map if entity has no [FromTemplate].
+  Map<String, Component> getAllInherited() {
+    final result = <String, Component>{};
+
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate == null) return result;
+
+    final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
+    final excludedTypes = fromTemplate.excludedTypes;
+
+    // Get all components from template (recursively)
+    for (final component in templateEntity._getAllWithDepth(0)) {
+      final typeName = component.componentType;
+      // Skip if excluded, non-inheritable, or we have a direct override
+      if (excludedTypes.contains(typeName)) continue;
+      if (_nonInheritableTypes.contains(typeName)) continue;
+      if (hasDirectByName(typeName)) continue;
+
+      result[typeName] = component;
+    }
+
+    return result;
+  }
+
+  /// Get the template entity if this entity has [FromTemplate].
+  /// Returns null if no template reference exists.
+  Entity? getTemplateEntity() {
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate == null) return null;
+    return parentCell.getEntity(fromTemplate.templateEntityId);
+  }
+
+  /// Get the list of excluded types from [FromTemplate].
+  /// Returns empty set if no template reference exists.
+  Set<String> getExcludedTypes() {
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    return fromTemplate?.excludedTypes ?? {};
+  }
+
+  /// Remove ONLY the direct component, without affecting exclusions.
+  /// If template has this component, it will show through after removal.
+  /// Does nothing if the component is not directly on this entity.
+  void removeDirect<C>() {
+    removeDirectByName(C.toString());
+  }
+
+  /// Remove ONLY the direct component by name, without affecting exclusions.
+  /// If template has this component, it will show through after removal.
+  /// Does nothing if the component is not directly on this entity.
+  void removeDirectByName(String typeName) {
+    final entitiesWithComponent = parentCell.components[typeName] ?? {};
+    final existing = entitiesWithComponent[id];
+
+    if (existing != null) {
+      entitiesWithComponent.remove(id);
+      parentCell.notifyChange(Change(
+        entityId: id,
+        componentType: typeName,
+        oldValue: existing,
+        newValue: null,
+      ));
+    }
+    // Note: Unlike _removeByTypeName, we do NOT add an exclusion here
+  }
+
+  /// Add a type to [FromTemplate.excludedTypes] to block template inheritance.
+  /// Does nothing if entity has no [FromTemplate] or template doesn't have this type.
+  void excludeFromTemplate(String typeName) {
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate == null) return;
+
+    // Check if template actually has this component
+    final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
+    if (!templateEntity._hasWithDepth(typeName, 0)) return;
+
+    // Already excluded?
+    if (fromTemplate.excludedTypes.contains(typeName)) return;
+
+    _addExclusion(typeName, fromTemplate);
+  }
+
+  /// Remove a type from [FromTemplate.excludedTypes] to restore template inheritance.
+  /// Does nothing if entity has no [FromTemplate] or type isn't excluded.
+  void restoreFromTemplate(String typeName) {
+    final fromTemplate = _getDirectComponent<FromTemplate>('FromTemplate');
+    if (fromTemplate == null) return;
+
+    if (!fromTemplate.excludedTypes.contains(typeName)) return;
+
+    final newExclusions = Set<String>.from(fromTemplate.excludedTypes)..remove(typeName);
+    final newFromTemplate = FromTemplate(
+      fromTemplate.templateEntityId,
+      excludedTypes: newExclusions,
+    );
+    upsertByName(newFromTemplate);
+
+    // Emit synthetic change notification so systems know the component is "back"
+    final templateEntity = parentCell.getEntity(fromTemplate.templateEntityId);
+    final templateComponent = templateEntity.getByName(typeName);
+    parentCell.notifyChange(Change(
+      entityId: id,
+      componentType: typeName,
+      oldValue: null,
+      newValue: templateComponent,
+    ));
+  }
 }
