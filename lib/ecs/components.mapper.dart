@@ -170,6 +170,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
       PlayerMapper.ensureInitialized();
       BehaviorMapper.ensureInitialized();
       RenderableMapper.ensureInitialized();
+      EditorRenderableMapper.ensureInitialized();
       HealthMapper.ensureInitialized();
       DidAttackMapper.ensureInitialized();
       WasAttackedMapper.ensureInitialized();
@@ -2935,6 +2936,136 @@ class _RenderableCopyWithImpl<$R, $Out>
   RenderableCopyWith<$R2, Renderable, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _RenderableCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class EditorRenderableMapper extends SubClassMapperBase<EditorRenderable> {
+  EditorRenderableMapper._();
+
+  static EditorRenderableMapper? _instance;
+  static EditorRenderableMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = EditorRenderableMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      RenderableAssetMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'EditorRenderable';
+
+  static RenderableAsset _$asset(EditorRenderable v) => v.asset;
+  static const Field<EditorRenderable, RenderableAsset> _f$asset = Field(
+    'asset',
+    _$asset,
+  );
+
+  @override
+  final MappableFields<EditorRenderable> fields = const {#asset: _f$asset};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'EditorRenderable';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static EditorRenderable _instantiate(DecodingData data) {
+    return EditorRenderable(data.dec(_f$asset));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static EditorRenderable fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<EditorRenderable>(map);
+  }
+
+  static EditorRenderable fromJson(String json) {
+    return ensureInitialized().decodeJson<EditorRenderable>(json);
+  }
+}
+
+mixin EditorRenderableMappable {
+  String toJson() {
+    return EditorRenderableMapper.ensureInitialized()
+        .encodeJson<EditorRenderable>(this as EditorRenderable);
+  }
+
+  Map<String, dynamic> toMap() {
+    return EditorRenderableMapper.ensureInitialized()
+        .encodeMap<EditorRenderable>(this as EditorRenderable);
+  }
+
+  EditorRenderableCopyWith<EditorRenderable, EditorRenderable, EditorRenderable>
+  get copyWith =>
+      _EditorRenderableCopyWithImpl<EditorRenderable, EditorRenderable>(
+        this as EditorRenderable,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return EditorRenderableMapper.ensureInitialized().stringifyValue(
+      this as EditorRenderable,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return EditorRenderableMapper.ensureInitialized().equalsValue(
+      this as EditorRenderable,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return EditorRenderableMapper.ensureInitialized().hashValue(
+      this as EditorRenderable,
+    );
+  }
+}
+
+extension EditorRenderableValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, EditorRenderable, $Out> {
+  EditorRenderableCopyWith<$R, EditorRenderable, $Out>
+  get $asEditorRenderable =>
+      $base.as((v, t, t2) => _EditorRenderableCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class EditorRenderableCopyWith<$R, $In extends EditorRenderable, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  RenderableAssetCopyWith<$R, RenderableAsset, RenderableAsset> get asset;
+  @override
+  $R call({RenderableAsset? asset});
+  EditorRenderableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _EditorRenderableCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, EditorRenderable, $Out>
+    implements EditorRenderableCopyWith<$R, EditorRenderable, $Out> {
+  _EditorRenderableCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<EditorRenderable> $mapper =
+      EditorRenderableMapper.ensureInitialized();
+  @override
+  RenderableAssetCopyWith<$R, RenderableAsset, RenderableAsset> get asset =>
+      $value.asset.copyWith.$chain((v) => call(asset: v));
+  @override
+  $R call({RenderableAsset? asset}) =>
+      $apply(FieldCopyWithData({if (asset != null) #asset: asset}));
+  @override
+  EditorRenderable $make(CopyWithData data) =>
+      EditorRenderable(data.get(#asset, or: $value.asset));
+
+  @override
+  EditorRenderableCopyWith<$R2, EditorRenderable, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _EditorRenderableCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class HealthMapper extends SubClassMapperBase<Health> {

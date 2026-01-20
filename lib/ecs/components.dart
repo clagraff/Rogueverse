@@ -343,6 +343,19 @@ class Renderable with RenderableMappable implements Component {
   String get componentType => "Renderable";
 }
 
+/// Optional component that provides an alternate visual for editor mode.
+/// When present and in GameMode.editing, this is displayed instead of Renderable.
+/// Useful for distinguishing illusionary walls from real walls, etc.
+@MappableClass()
+class EditorRenderable with EditorRenderableMappable implements Component {
+  final RenderableAsset asset;
+
+  EditorRenderable(this.asset);
+
+  @override
+  String get componentType => "EditorRenderable";
+}
+
 @MappableClass()
 class Health with HealthMappable implements Component {
   int current;

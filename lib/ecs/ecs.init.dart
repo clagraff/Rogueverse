@@ -67,6 +67,7 @@ void initializeMappers() {
   p6.ImageAssetMapper.ensureInitialized();
   p6.TextAssetMapper.ensureInitialized();
   p6.RenderableMapper.ensureInitialized();
+  p6.EditorRenderableMapper.ensureInitialized();
   p6.HealthMapper.ensureInitialized();
   p6.AttackIntentMapper.ensureInitialized();
   p6.DidAttackMapper.ensureInitialized();

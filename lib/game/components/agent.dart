@@ -26,6 +26,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   // Vision-based rendering state
   StreamSubscription<Change>? _visionSubscription;
   StreamSubscription<Change>? _renderableSubscription;
+  StreamSubscription<Change>? _editorRenderableSubscription;
   VoidCallback? _observerChangeListener;
   VoidCallback? _gameModeChangeListener;
   int? _currentObserverId;
@@ -57,6 +58,9 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
 
     // Set up renderable change tracking (for doors, etc.)
     _setupRenderableTracking();
+
+    // Sync to correct visual for current mode (handles EditorRenderable in editor mode)
+    _syncVisualToCurrentMode();
 
     return super.onLoad();
   }
@@ -127,6 +131,16 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
         // If not visible, don't update - visual will sync when entity becomes visible
       }
     });
+
+    // Track EditorRenderable changes to update visual in editor mode
+    _editorRenderableSubscription = world.componentChanges
+        .onEntityOnComponent<EditorRenderable>(entity.id)
+        .listen((change) {
+      final game = parent?.findGame() as GameArea?;
+      if (game != null && game.gameMode.value == GameMode.editing) {
+        _syncVisualToCurrentMode();
+      }
+    });
   }
 
   /// Returns true if this entity is currently visible to the observer.
@@ -150,16 +164,29 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     return visibleEntities?.entityIds.contains(entity.id) ?? true;
   }
 
+  /// Returns the asset to display based on current game mode.
+  /// In editing mode, prefers EditorRenderable if present.
+  RenderableAsset? _getAssetForCurrentMode() {
+    final game = parent?.findGame() as GameArea?;
+    if (game != null && game.gameMode.value == GameMode.editing) {
+      final editorRenderable = entity.get<EditorRenderable>();
+      if (editorRenderable != null) return editorRenderable.asset;
+    }
+    return entity.get<Renderable>()?.asset;
+  }
+
+  /// Syncs the visual to the appropriate asset based on game mode.
+  void _syncVisualToCurrentMode() {
+    final targetAsset = _getAssetForCurrentMode();
+    if (targetAsset != null && !_assetsEqual(targetAsset, _currentAsset)) {
+      _swapVisual(targetAsset);
+    }
+  }
+
   /// Syncs the visual to the current Renderable state.
   /// Called when entity becomes visible to ensure visual matches current state.
   void _syncVisualToRenderable() {
-    final renderable = entity.get<Renderable>();
-    if (renderable == null) return;
-
-    final currentAsset = renderable.asset;
-    if (!_assetsEqual(currentAsset, _currentAsset)) {
-      _swapVisual(currentAsset);
-    }
+    _syncVisualToCurrentMode();
   }
 
   /// Compares two RenderableAssets for equality.
@@ -218,9 +245,13 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
         // In editing mode, all entities are fully visible
         _visual?.opacity = 1.0;
         healthBar?.isVisible = true;
+        // Swap to EditorRenderable if available
+        _syncVisualToCurrentMode();
       } else if (_currentObserverId != null) {
         // Re-apply vision filtering when switching back to gameplay
         _updateVisibility(_currentObserverId!);
+        // Swap back to regular Renderable
+        _syncVisualToCurrentMode();
       }
     };
 
@@ -390,6 +421,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     // Clean up subscriptions
     _visionSubscription?.cancel();
     _renderableSubscription?.cancel();
+    _editorRenderableSubscription?.cancel();
     final game = parent?.findGame() as GameArea?;
     if (game != null) {
       if (_observerChangeListener != null) {

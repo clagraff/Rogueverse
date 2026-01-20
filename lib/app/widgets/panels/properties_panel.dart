@@ -47,6 +47,7 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
     ComponentRegistry.register(DirectionMetadata());
     ComponentRegistry.register(HealthMetadata());
     ComponentRegistry.register(RenderableMetadata());
+    ComponentRegistry.register(EditorRenderableMetadata());
 
     // Hierarchy components
     ComponentRegistry.register(HasParentMetadata());

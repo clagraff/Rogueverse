@@ -155,13 +155,16 @@ class _TemplateCardState extends State<TemplateCard> {
 
   /// Builds the icon for the template.
   ///
-  /// If the template has a Renderable component, displays that asset.
-  /// Otherwise, shows a fallback icon. If the asset fails to load, falls back
-  /// to a default asset or placeholder icon.
+  /// Prefers EditorRenderable if present (since templates panel is in editor mode),
+  /// otherwise falls back to Renderable. If neither exists, shows a fallback icon.
+  /// If the asset fails to load, falls back to a default asset or placeholder icon.
   Widget _buildIcon(BuildContext context) {
+    // Prefer EditorRenderable for template icons (we're always in editor mode here)
+    final editorRenderable = widget.templateEntity.get<EditorRenderable>();
     final renderable = widget.templateEntity.get<Renderable>();
+    final asset = editorRenderable?.asset ?? renderable?.asset;
 
-    if (renderable == null) {
+    if (asset == null) {
       return Icon(
         Icons.help_outline,
         size: 24,
@@ -170,7 +173,6 @@ class _TemplateCardState extends State<TemplateCard> {
     }
 
     // Handle different asset types
-    final asset = renderable.asset;
     if (asset is ImageAsset) {
       // Use Flutter SVG to display the asset with error handling
       return _SafeSvgPicture(
