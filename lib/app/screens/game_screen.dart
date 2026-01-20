@@ -97,12 +97,15 @@ class GameScreen extends flame.World with Disposer {
       viewedParentNotifier: game.viewedParentId,
     ));
 
-    // Create entity drag mover (allows dragging entities when no template selected)
+    // Create entity drag mover (allows dragging entities when no template selected,
+    // or in editing mode with selected entities for multi-entity drag)
     add(EntityDragMover(
       world: game.currentWorld,
       templateIdNotifier: game.selectedTemplateId,
       game: game,
       viewedParentNotifier: game.viewedParentId,
+      selectedEntitiesNotifier: game.selectedEntities,
+      gameModeNotifier: game.gameMode,
     ));
 
     var gridNotifier = ValueNotifier<XY>(XY(0, 0));
