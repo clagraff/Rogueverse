@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:rogueverse/ecs/components.dart' show Dialog, Name;
 import 'package:rogueverse/ecs/dialog/dialog.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/app/screens/game/template_variables_screen.dart';
 import 'package:rogueverse/app/widgets/overlays/dialog_editor/dialog_tree_view.dart';
 import 'package:rogueverse/app/widgets/overlays/dialog_editor/dialog_node_editor.dart';
 
@@ -274,14 +275,23 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
           const SizedBox(width: 16),
         ],
       ),
-      body: CallbackShortcuts(
-        bindings: {
-          const SingleActivator(LogicalKeyboardKey.escape): _handleClose,
-          const SingleActivator(LogicalKeyboardKey.keyS, control: true): _saveAndClose,
+      body: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent) {
+            if (event.logicalKey == LogicalKeyboardKey.escape) {
+              _handleClose();
+              return KeyEventResult.handled;
+            }
+            if (event.logicalKey == LogicalKeyboardKey.keyS &&
+                HardwareKeyboard.instance.isControlPressed) {
+              _saveAndClose();
+              return KeyEventResult.handled;
+            }
+          }
+          return KeyEventResult.ignored;
         },
-        child: Focus(
-          autofocus: true,
-          child: Row(
+        child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Left panel - Tree view
@@ -326,7 +336,17 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
               ),
             ],
           ),
-        ),
+      ),
+      floatingActionButton: FloatingActionButton.small(
+        onPressed: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) => const TemplateVariablesScreen(),
+            ),
+          );
+        },
+        tooltip: 'Template Variables',
+        child: const Icon(Icons.data_object),
       ),
     );
   }

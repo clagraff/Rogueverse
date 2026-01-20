@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:rogueverse/ecs/dialog/dialog.dart';
+import 'package:rogueverse/app/screens/text_editor_screen.dart';
 import 'package:rogueverse/app/widgets/overlays/dialog_editor/condition_editor.dart';
 import 'package:rogueverse/app/widgets/overlays/dialog_editor/effect_editor.dart';
 
@@ -771,15 +772,45 @@ Widget _buildTextField({
   required void Function(String) onChanged,
   bool multiline = false,
 }) {
+  final colorScheme = Theme.of(context).colorScheme;
+
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
-          fontSize: 12,
-        ),
+      Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.7),
+              fontSize: 12,
+            ),
+          ),
+          if (multiline) ...[
+            const Spacer(),
+            IconButton(
+              icon: Icon(
+                Icons.open_in_full,
+                size: 16,
+                color: colorScheme.primary,
+              ),
+              onPressed: () async {
+                final result = await TextEditorScreen.show(
+                  context,
+                  title: label,
+                  initialValue: value,
+                );
+                if (result != null) {
+                  onChanged(result);
+                }
+              },
+              tooltip: 'Edit in expanded view',
+              visualDensity: VisualDensity.compact,
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            ),
+          ],
+        ],
       ),
       const SizedBox(height: 4),
       TextFormField(

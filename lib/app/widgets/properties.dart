@@ -659,11 +659,13 @@ class _PropertySectionState extends State<PropertySection> {
 class PropertyRow extends StatelessWidget {
   final PropertyItem item;
   final PropertyPanelThemeData theme;
+  final Widget? trailing;
 
   const PropertyRow({
     super.key,
     required this.item,
     required this.theme,
+    this.trailing,
   });
 
   @override
@@ -691,6 +693,10 @@ class PropertyRow extends StatelessWidget {
           Expanded(
             child: item.buildEditor(context),
           ),
+          if (trailing != null) ...[
+            const SizedBox(width: 4),
+            trailing!,
+          ],
         ],
       ),
     );

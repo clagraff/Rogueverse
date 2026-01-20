@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/app/screens/game/template_variables_screen.dart';
+import 'package:rogueverse/app/screens/text_editor_screen.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/properties.dart';
 
@@ -49,7 +51,7 @@ class RenderableMetadata extends ComponentMetadata {
 
             // Conditional fields based on asset type
             if (asset is ImageAsset) ..._buildImageFields(entity, asset),
-            if (asset is TextAsset) ..._buildTextFields(entity, asset),
+            if (asset is TextAsset) ..._buildTextFields(context, entity, asset),
           ],
         );
       },
@@ -124,19 +126,27 @@ class RenderableMetadata extends ComponentMetadata {
   }
 
   /// Builds property rows for TextAsset fields.
-  List<Widget> _buildTextFields(Entity entity, TextAsset txt) {
+  List<Widget> _buildTextFields(BuildContext context, Entity entity, TextAsset txt) {
     return [
       PropertyRow(
         key: ValueKey('renderable_text_${txt.text}'),
         item: StringPropertyItem(
           id: "text",
           label: "Text",
-          value: txt.text,
+          // Show escaped newlines in preview
+          value: txt.text.replaceAll('\n', r'\n'),
           onChanged: (String newValue) {
-            entity.upsert(Renderable(txt.copyWith(text: newValue)));
+            // Convert escaped newlines back to actual newlines
+            entity.upsert(Renderable(txt.copyWith(text: newValue.replaceAll(r'\n', '\n'))));
           },
         ),
         theme: _theme,
+        trailing: _TextFieldTrailingButtons(
+          text: txt.text,
+          onTextChanged: (String newValue) {
+            entity.upsert(Renderable(txt.copyWith(text: newValue)));
+          },
+        ),
       ),
       PropertyRow(
         key: ValueKey('renderable_fontSize_${txt.fontSize}'),
@@ -215,7 +225,7 @@ class EditorRenderableMetadata extends ComponentMetadata {
 
             // Conditional fields based on asset type
             if (asset is ImageAsset) ..._buildImageFields(entity, asset),
-            if (asset is TextAsset) ..._buildTextFields(entity, asset),
+            if (asset is TextAsset) ..._buildTextFields(context, entity, asset),
           ],
         );
       },
@@ -290,19 +300,27 @@ class EditorRenderableMetadata extends ComponentMetadata {
   }
 
   /// Builds property rows for TextAsset fields.
-  List<Widget> _buildTextFields(Entity entity, TextAsset txt) {
+  List<Widget> _buildTextFields(BuildContext context, Entity entity, TextAsset txt) {
     return [
       PropertyRow(
         key: ValueKey('editor_renderable_text_${txt.text}'),
         item: StringPropertyItem(
           id: "text",
           label: "Text",
-          value: txt.text,
+          // Show escaped newlines in preview
+          value: txt.text.replaceAll('\n', r'\n'),
           onChanged: (String newValue) {
-            entity.upsert(EditorRenderable(txt.copyWith(text: newValue)));
+            // Convert escaped newlines back to actual newlines
+            entity.upsert(EditorRenderable(txt.copyWith(text: newValue.replaceAll(r'\n', '\n'))));
           },
         ),
         theme: _theme,
+        trailing: _TextFieldTrailingButtons(
+          text: txt.text,
+          onTextChanged: (String newValue) {
+            entity.upsert(EditorRenderable(txt.copyWith(text: newValue)));
+          },
+        ),
       ),
       PropertyRow(
         key: ValueKey('editor_renderable_fontSize_${txt.fontSize}'),
@@ -336,4 +354,67 @@ class EditorRenderableMetadata extends ComponentMetadata {
 
   @override
   void removeComponent(Entity entity) => entity.remove<EditorRenderable>();
+}
+
+/// Trailing buttons for text property field: template variables and expand to multiline editor.
+class _TextFieldTrailingButtons extends StatelessWidget {
+  final String text;
+  final ValueChanged<String> onTextChanged;
+
+  const _TextFieldTrailingButtons({
+    required this.text,
+    required this.onTextChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Template Variables button
+        IconButton(
+          icon: Icon(
+            Icons.data_object,
+            size: 18,
+            color: colorScheme.primary,
+          ),
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const TemplateVariablesScreen(),
+              ),
+            );
+          },
+          tooltip: 'Template Variables',
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+        // Expand to multiline editor button
+        IconButton(
+          icon: Icon(
+            Icons.open_in_full,
+            size: 16,
+            color: colorScheme.primary,
+          ),
+          onPressed: () async {
+            final result = await TextEditorScreen.show(
+              context,
+              title: 'Edit Text',
+              initialValue: text,
+            );
+            if (result != null) {
+              onTextChanged(result);
+            }
+          },
+          tooltip: 'Edit multiline text',
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+      ],
+    );
+  }
 }

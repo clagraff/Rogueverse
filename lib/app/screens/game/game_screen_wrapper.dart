@@ -12,6 +12,7 @@ import 'package:rogueverse/app/widgets/overlays/dialog_overlay.dart';
 import 'package:rogueverse/app/widgets/overlays/interaction_context_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/navigation_menu.dart';
 import 'package:rogueverse/app/widgets/overlays/vision_observer_panel.dart';
+import 'package:rogueverse/app/screens/game/template_variables_screen.dart';
 
 /// Wrapper screen for the game that manages the GameArea and all game UI.
 ///
@@ -199,6 +200,13 @@ class _GameScreenWrapperState extends State<GameScreenWrapper> {
             onToggleEditModePressed: _toggleGameMode,
             onQuitToMenu: () {
               Navigator.of(context).pop();
+            },
+            onTemplateVariablesPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => const TemplateVariablesScreen(),
+                ),
+              );
             },
             gameModeNotifier: _game.gameMode,
             selectedEntityNotifier: _game.selectedEntity,

@@ -40,6 +40,9 @@ class NavigationDrawerContent extends StatefulWidget {
   /// Callback when "Quit to Menu" is clicked.
   final VoidCallback onQuitToMenu;
 
+  /// Callback when "Template Variables" is clicked.
+  final VoidCallback onTemplateVariablesPressed;
+
   /// Notifier for the current game mode.
   final ValueNotifier<GameMode> gameModeNotifier;
 
@@ -56,6 +59,7 @@ class NavigationDrawerContent extends StatefulWidget {
     required this.onVisionObserverPressed,
     required this.onToggleEditModePressed,
     required this.onQuitToMenu,
+    required this.onTemplateVariablesPressed,
     required this.gameModeNotifier,
     required this.selectedEntityNotifier,
     required this.worldGetter,
@@ -115,6 +119,14 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
         onTap: () async {
           Navigator.pop(context);
           widget.onVisionObserverPressed();
+        },
+      ),
+      _MenuItem(
+        icon: Icons.code,
+        label: 'Template Variables',
+        onTap: () async {
+          Navigator.pop(context);
+          widget.onTemplateVariablesPressed();
         },
       ),
       _MenuItem(
@@ -240,7 +252,7 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
                       final isSelected = index == _selectedIndex;
 
                       // Add divider before quit options
-                      final needsDivider = index == 3;
+                      final needsDivider = index == 4;
 
                       return Column(
                         mainAxisSize: MainAxisSize.min,

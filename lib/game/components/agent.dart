@@ -15,6 +15,8 @@ import 'package:rogueverse/game/components/svg_visual_component.dart';
 import 'package:rogueverse/game/components/png_visual_component.dart';
 import 'package:rogueverse/game/components/text_visual_component.dart';
 import 'package:rogueverse/game/game_area.dart';
+import 'package:rogueverse/app/services/text_template_service.dart';
+import 'package:rogueverse/app/services/keybinding_service.dart';
 
 class Agent extends PositionComponent with HasVisibility, Disposer {
   final World world;
@@ -29,6 +31,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   StreamSubscription<Change>? _editorRenderableSubscription;
   VoidCallback? _observerChangeListener;
   VoidCallback? _gameModeChangeListener;
+  VoidCallback? _keybindingListener;
   int? _currentObserverId;
   Vector2? _lastSeenPosition;
 
@@ -62,7 +65,21 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     // Sync to correct visual for current mode (handles EditorRenderable in editor mode)
     _syncVisualToCurrentMode();
 
+    // Set up keybinding change listener for text template refresh
+    _setupKeybindingTracking();
+
     return super.onLoad();
+  }
+
+  /// Sets up tracking of keybinding changes to refresh text templates.
+  void _setupKeybindingTracking() {
+    _keybindingListener = () {
+      // Only refresh if the current asset is a TextAsset
+      if (_currentAsset is TextAsset) {
+        _swapVisual(_currentAsset);
+      }
+    };
+    KeyBindingService.instance.changeNotifier.addListener(_keybindingListener!);
   }
 
   /// Creates the appropriate visual component based on asset type.
@@ -71,7 +88,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     return switch (asset) {
       ImageAsset img => _createImageVisual(img, size),
       TextAsset txt => TextVisualComponent(
-        text: txt.text,
+        text: TextTemplateService.instance.resolve(txt.text),
         fontSize: txt.fontSize,
         color: Color(txt.color),
         position: tileCenter, // Center text in the tile
@@ -430,6 +447,11 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       if (_gameModeChangeListener != null) {
         game.gameMode.removeListener(_gameModeChangeListener!);
       }
+    }
+
+    // Clean up keybinding listener
+    if (_keybindingListener != null) {
+      KeyBindingService.instance.changeNotifier.removeListener(_keybindingListener!);
     }
 
     disposeAll();

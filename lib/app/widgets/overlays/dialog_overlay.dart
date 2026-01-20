@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/services/text_template_service.dart';
 import 'package:rogueverse/ecs/dialog/dialog.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 
@@ -113,20 +115,24 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<DialogState?>(
-      valueListenable: widget.handler.dialogState,
-      builder: (context, state, child) {
-        if (state == null) {
-          return const SizedBox.shrink();
-        }
+    // Wrap in keybinding listener to refresh templates when bindings change
+    return ValueListenableBuilder<int>(
+      valueListenable: KeyBindingService.instance.changeNotifier,
+      builder: (context, _, __) => ValueListenableBuilder<DialogState?>(
+        valueListenable: widget.handler.dialogState,
+        builder: (context, state, child) {
+          if (state == null) {
+            return const SizedBox.shrink();
+          }
 
-        final result = state.result;
-        if (result is! DialogAwaitingChoice) {
-          return const SizedBox.shrink();
-        }
+          final result = state.result;
+          if (result is! DialogAwaitingChoice) {
+            return const SizedBox.shrink();
+          }
 
-        return _buildDialogUI(context, state, result);
-      },
+          return _buildDialogUI(context, state, result);
+        },
+      ),
     );
   }
 
@@ -227,7 +233,10 @@ class _DialogOverlayState extends State<DialogOverlay> {
             child: SingleChildScrollView(
               controller: _textScrollController,
               child: Text(
-                result.text,
+                TextTemplateService.instance.resolve(
+                  result.text,
+                  context: TemplateContext(player: state.player, npc: state.npc),
+                ),
                 style: TextStyle(
                   color: colorScheme.onSurface,
                   fontSize: 16,
@@ -336,7 +345,10 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
                   // Choice text
                   Text(
-                    choice.text,
+                    TextTemplateService.instance.resolve(
+                      choice.text,
+                      context: TemplateContext(player: state.player, npc: state.npc),
+                    ),
                     style: TextStyle(
                       color: textColor,
                       fontSize: 14,
