@@ -110,7 +110,6 @@ class PortalSystem extends System with PortalSystemMappable {
     }
 
     // Check if destination is blocked
-    // TODO: double-check this logic.
     if (_isDestinationBlocked(
         world, portalConfig.destParentId, portalConfig.destLocation, traveler.id)) {
       _logger.warning("portal destination blocked", {"traveler": traveler, "portal": portal, "portalConfig": portalConfig});
@@ -303,8 +302,6 @@ class PortalSystem extends System with PortalSystemMappable {
       usedAnchorId: usedAnchorId,
     ));
 
-    // TODO: set entity direction based on Portal component (as an optional field in there).
-
     _logger.finest("portaled traveler", {
       "traveler": traveler,
       "portalId": portalId,
@@ -316,14 +313,10 @@ class PortalSystem extends System with PortalSystemMappable {
     });
   }
 
-  // TODO: uh do we need this? we already have log statements for most of the failure conditions at the place they happened.
   void _fail(Entity traveler, int portalId, PortalFailureReason reason) {
     traveler.upsert(FailedToPortal(
       portalEntityId: portalId,
       reason: reason,
     ));
-
-    _logger.warning(
-        'portal_failed: entity=${traveler.id}, portal=$portalId, reason=$reason');
   }
 }
