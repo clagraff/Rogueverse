@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/app/widgets/keyboard/menu_keyboard_navigation.dart';
 
 /// Represents a grouped inventory item for display.
 class InventoryItem {
@@ -34,9 +35,48 @@ class InventoryTabContent extends StatefulWidget {
 }
 
 class _InventoryTabContentState extends State<InventoryTabContent> {
+  final FocusNode _focusNode = FocusNode();
   int _sortColumnIndex = 0;
   bool _sortAscending = true;
   int _selectedIndex = -1;
+  int _focusedIndex = 0;
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    final items = _sortItems(_groupItems());
+    if (items.isEmpty) return;
+
+    final nav = MenuKeyboardNavigation(
+      itemCount: items.length,
+      selectedIndex: _focusedIndex,
+      onIndexChanged: (index) {
+        setState(() {
+          _focusedIndex = index.clamp(0, items.length - 1);
+        });
+      },
+      onActivate: () {
+        // Select/deselect the focused item
+        setState(() {
+          _selectedIndex = _selectedIndex == _focusedIndex ? -1 : _focusedIndex;
+        });
+      },
+      onBack: () {
+        // Deselect if selected
+        if (_selectedIndex != -1) {
+          setState(() {
+            _selectedIndex = -1;
+          });
+        }
+      },
+    );
+
+    nav.handleKeyEvent(event);
+  }
 
   /// Groups inventory items by name and calculates quantities.
   List<InventoryItem> _groupItems() {
@@ -110,8 +150,25 @@ class _InventoryTabContentState extends State<InventoryTabContent> {
       );
     }
 
-    return SingleChildScrollView(
-      child: DataTable(
+    // Clamp focused index when items change
+    if (_focusedIndex >= items.length && items.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            _focusedIndex = items.length - 1;
+          });
+        }
+      });
+    }
+
+    return KeyboardListener(
+      focusNode: _focusNode,
+      onKeyEvent: _handleKeyEvent,
+      child: GestureDetector(
+        onTap: () => _focusNode.requestFocus(),
+        behavior: HitTestBehavior.translucent,
+        child: SingleChildScrollView(
+          child: DataTable(
         columnSpacing: 24,
         horizontalMargin: 16,
         sortColumnIndex: _sortColumnIndex,
@@ -121,6 +178,7 @@ class _InventoryTabContentState extends State<InventoryTabContent> {
           colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
         ),
         dataRowColor: WidgetStateProperty.resolveWith((states) {
+          // Note: Focus state is handled via row index below
           if (states.contains(WidgetState.selected)) {
             return colorScheme.primaryContainer.withValues(alpha: 0.3);
           }
@@ -144,15 +202,36 @@ class _InventoryTabContentState extends State<InventoryTabContent> {
           final index = entry.key;
           final item = entry.value;
           final isSelected = index == _selectedIndex;
+          final isFocused = _focusNode.hasFocus && index == _focusedIndex;
 
           return DataRow(
             selected: isSelected,
-            onSelectChanged: (_) => _onRowTap(index),
+            color: WidgetStateProperty.resolveWith((states) {
+              if (isFocused && !isSelected) {
+                return colorScheme.primaryContainer.withValues(alpha: 0.15);
+              }
+              return null; // Let default handling take over
+            }),
+            onSelectChanged: (_) {
+              setState(() {
+                _focusedIndex = index;
+              });
+              _focusNode.requestFocus();
+              _onRowTap(index);
+            },
             cells: [
               DataCell(
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    // Focus indicator
+                    if (isFocused)
+                      Container(
+                        width: 3,
+                        height: 24,
+                        color: colorScheme.primary,
+                        margin: const EdgeInsets.only(right: 8),
+                      ),
                     // Icon (24x24)
                     SizedBox(
                       width: 24,
@@ -170,6 +249,8 @@ class _InventoryTabContentState extends State<InventoryTabContent> {
             ],
           );
         }).toList(),
+          ),
+        ),
       ),
     );
   }

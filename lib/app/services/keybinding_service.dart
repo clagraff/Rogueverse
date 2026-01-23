@@ -393,6 +393,14 @@ class KeyBindingService {
     // Overlay toggles
     'overlay.editor': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyE]),
     'overlay.templates': KeyCombo.fromKeys([LogicalKeyboardKey.control, LogicalKeyboardKey.keyT]),
+
+    // Menu navigation (configurable alternatives to arrow keys)
+    'menu.up': KeyCombo.fromKeys([LogicalKeyboardKey.keyW]),
+    'menu.down': KeyCombo.fromKeys([LogicalKeyboardKey.keyS]),
+    'menu.left': KeyCombo.fromKeys([LogicalKeyboardKey.keyA]),
+    'menu.right': KeyCombo.fromKeys([LogicalKeyboardKey.keyD]),
+    'menu.select': KeyCombo.fromKeys([LogicalKeyboardKey.keyE]),
+    'menu.back': KeyCombo.fromKeys([LogicalKeyboardKey.escape]),
   };
 
   /// Clears all keybindings from memory.

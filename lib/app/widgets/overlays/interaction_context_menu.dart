@@ -214,8 +214,8 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
 
     final key = event.logicalKey;
 
-    // Handle escape - close submenu or dismiss menu
-    if (key == LogicalKeyboardKey.escape) {
+    // Handle escape/menu.back - close submenu or dismiss menu
+    if (key == LogicalKeyboardKey.escape || _keybindings.matches('menu.back', {key})) {
       if (_expandedIndex != null) {
         setState(() => _expandedIndex = null);
         _notifyHighlightChanged();
@@ -225,12 +225,14 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
       return;
     }
 
-    // Check for interact key (same key that opens menu can select/expand)
+    // Check for interact key and menu.select (same key that opens menu can select/expand)
     final isInteractKey = _keybindings.matches('entity.interact', {key});
+    final isSelectKey = _keybindings.matches('menu.select', {key});
 
-    // Handle enter/space/interact - select current item
+    // Handle enter/space/menu.select/interact - select current item
     if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.space ||
+        isSelectKey ||
         isInteractKey) {
       _selectCurrentItem();
       return;
@@ -265,15 +267,16 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
       return;
     }
 
-    // Navigation keys: arrows and WASD (but not if WASD is used for interact)
+    // Navigation keys: arrows and menu.* keybindings
+    // Avoid navigation if the key is used for interact/select (e.g., WASD might be bound to interact)
     final isUp = key == LogicalKeyboardKey.arrowUp ||
-        (!isInteractKey && key == LogicalKeyboardKey.keyW);
+        (!isInteractKey && !isSelectKey && _keybindings.matches('menu.up', {key}));
     final isDown = key == LogicalKeyboardKey.arrowDown ||
-        (!isInteractKey && key == LogicalKeyboardKey.keyS);
+        (!isInteractKey && !isSelectKey && _keybindings.matches('menu.down', {key}));
     final isLeft = key == LogicalKeyboardKey.arrowLeft ||
-        (!isInteractKey && key == LogicalKeyboardKey.keyA);
+        (!isInteractKey && !isSelectKey && _keybindings.matches('menu.left', {key}));
     final isRight = key == LogicalKeyboardKey.arrowRight ||
-        (!isInteractKey && key == LogicalKeyboardKey.keyD);
+        (!isInteractKey && !isSelectKey && _keybindings.matches('menu.right', {key}));
 
     if (_expandedIndex != null) {
       // Navigating within submenu

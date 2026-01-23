@@ -88,21 +88,22 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
     if (event is! KeyDownEvent) return;
 
     final key = event.logicalKey;
+    final keybindings = KeyBindingService.instance;
 
-    // Navigation
-    if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyW) {
+    // Navigation using menu.* keybindings (with arrow key fallbacks)
+    if (key == LogicalKeyboardKey.arrowUp || keybindings.matches('menu.up', {key})) {
       setState(() {
         _selectedIndex = (_selectedIndex - 1).clamp(0, _menuItemCount - 1);
       });
-    } else if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.keyS) {
+    } else if (key == LogicalKeyboardKey.arrowDown || keybindings.matches('menu.down', {key})) {
       setState(() {
         _selectedIndex = (_selectedIndex + 1).clamp(0, _menuItemCount - 1);
       });
     }
-    // Selection (Enter, Space, or interact key)
+    // Selection (Enter, Space, or menu.select)
     else if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.space ||
-        KeyBindingService.instance.matches('entity.interact', {key})) {
+        keybindings.matches('menu.select', {key})) {
       _activateSelectedItem();
     }
   }

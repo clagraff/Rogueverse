@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/app/widgets/keyboard/menu_keyboard_navigation.dart';
 
 import 'entity_tree_node.dart';
 
@@ -35,11 +36,13 @@ class EntityListPanel extends StatefulWidget {
 
 class _EntityListPanelState extends State<EntityListPanel> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   String _searchQuery = '';
   final Map<int, bool> _expandedNodes = {};
   StreamSubscription<Change>? _entityChangeSubscription;
   _SortColumn _sortColumn = _SortColumn.id;
   bool _sortAscending = true;
+  int? _focusedEntityId;
 
   @override
   void initState() {
@@ -62,9 +65,118 @@ class _EntityListPanelState extends State<EntityListPanel> {
   void dispose() {
     _entityChangeSubscription?.cancel();
     _searchController.dispose();
+    _focusNode.dispose();
     widget.selectedEntitiesNotifier.removeListener(_onExternalSelectionChanged);
     widget.viewedParentIdNotifier.removeListener(_onViewedParentChanged);
     super.dispose();
+  }
+
+  /// Build a flat list of visible entities in tree order for keyboard navigation.
+  List<Entity> _buildVisibleEntityList() {
+    final visible = <Entity>[];
+    final rootEntities = _getRootEntities();
+
+    void addVisibleChildren(Entity entity, int depth) {
+      visible.add(entity);
+      if (_expandedNodes[entity.id] == true) {
+        final hasParentMap = widget.world.get<HasParent>();
+        final childIds = hasParentMap.entries
+            .where((e) => e.value.parentEntityId == entity.id)
+            .map((e) => e.key)
+            .toList();
+
+        // Sort children same as the main list
+        final children = childIds.map((id) => widget.world.getEntity(id)).toList();
+        _sortEntities(children);
+
+        for (final child in children) {
+          addVisibleChildren(child, depth + 1);
+        }
+      }
+    }
+
+    for (final root in rootEntities) {
+      addVisibleChildren(root, 0);
+    }
+
+    return visible;
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    // Don't handle keys if search field has focus
+    if (FocusManager.instance.primaryFocus != _focusNode) return;
+
+    final visibleEntities = _searchQuery.isNotEmpty
+        ? _getFilteredEntities(widget.viewedParentIdNotifier.value)
+        : _buildVisibleEntityList();
+
+    if (visibleEntities.isEmpty) return;
+
+    // Find current index
+    final currentIndex = _focusedEntityId != null
+        ? visibleEntities.indexWhere((e) => e.id == _focusedEntityId)
+        : -1;
+    final safeIndex = currentIndex == -1 ? 0 : currentIndex;
+
+    final nav = MenuKeyboardNavigation(
+      itemCount: visibleEntities.length,
+      selectedIndex: safeIndex,
+      onIndexChanged: (index) {
+        setState(() {
+          _focusedEntityId = visibleEntities[index].id;
+        });
+      },
+      onActivate: () {
+        if (safeIndex >= 0 && safeIndex < visibleEntities.length) {
+          _selectEntity(visibleEntities[safeIndex]);
+        }
+      },
+      onBack: () {
+        // Deselect if selected
+        if (widget.selectedEntitiesNotifier.value.isNotEmpty) {
+          widget.selectedEntitiesNotifier.value = {};
+        }
+      },
+      onDelete: () {
+        final selected = widget.selectedEntitiesNotifier.value;
+        if (selected.isNotEmpty) {
+          _showDeleteConfirmation(context, selected);
+        }
+      },
+      onLeft: () {
+        // Collapse current node or go to parent
+        if (_focusedEntityId != null) {
+          if (_expandedNodes[_focusedEntityId!] == true) {
+            // Collapse current node
+            setState(() {
+              _expandedNodes[_focusedEntityId!] = false;
+            });
+          } else {
+            // Go to parent
+            final parentId = widget.world.hierarchyCache.getParent(_focusedEntityId!);
+            if (parentId != null) {
+              setState(() {
+                _focusedEntityId = parentId;
+              });
+            }
+          }
+        }
+      },
+      onRight: () {
+        // Expand current node
+        if (_focusedEntityId != null) {
+          final hasParentMap = widget.world.get<HasParent>();
+          final hasChildren = hasParentMap.values.any((hp) => hp.parentEntityId == _focusedEntityId);
+          if (hasChildren) {
+            setState(() {
+              _expandedNodes[_focusedEntityId!] = true;
+            });
+          }
+        }
+      },
+    );
+
+    nav.handleKeyEvent(event);
   }
 
   void _onEntityChanged(Change change) {
@@ -219,35 +331,43 @@ class _EntityListPanelState extends State<EntityListPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<int?>(
-      valueListenable: widget.viewedParentIdNotifier,
-      builder: (context, viewedParentId, _) {
-        return ValueListenableBuilder<Set<Entity>>(
-          valueListenable: widget.selectedEntitiesNotifier,
-          builder: (context, selectedEntities, _) {
-            final selectableEntities = _getFilteredEntities(viewedParentId);
+    return KeyboardListener(
+      focusNode: _focusNode,
+      onKeyEvent: _handleKeyEvent,
+      child: GestureDetector(
+        onTap: () => _focusNode.requestFocus(),
+        behavior: HitTestBehavior.translucent,
+        child: ValueListenableBuilder<int?>(
+          valueListenable: widget.viewedParentIdNotifier,
+          builder: (context, viewedParentId, _) {
+            return ValueListenableBuilder<Set<Entity>>(
+              valueListenable: widget.selectedEntitiesNotifier,
+              builder: (context, selectedEntities, _) {
+                final selectableEntities = _getFilteredEntities(viewedParentId);
 
-            return Column(
-              children: [
-                // Breadcrumb navigation
-                _buildBreadcrumb(context, viewedParentId),
-                // Search bar
-                _buildSearchBar(context),
-                // Toolbar
-                _buildToolbar(context, selectableEntities, selectedEntities),
-                // Column headers
-                _buildColumnHeaders(context),
-                // Entity tree or list
-                Expanded(
-                  child: _searchQuery.isNotEmpty
-                      ? _buildFlatList(context, selectableEntities, selectedEntities)
-                      : _buildTreeView(context, viewedParentId, selectedEntities),
-                ),
-              ],
+                return Column(
+                  children: [
+                    // Breadcrumb navigation
+                    _buildBreadcrumb(context, viewedParentId),
+                    // Search bar
+                    _buildSearchBar(context),
+                    // Toolbar
+                    _buildToolbar(context, selectableEntities, selectedEntities),
+                    // Column headers
+                    _buildColumnHeaders(context),
+                    // Entity tree or list
+                    Expanded(
+                      child: _searchQuery.isNotEmpty
+                          ? _buildFlatList(context, selectableEntities, selectedEntities)
+                          : _buildTreeView(context, viewedParentId, selectedEntities),
+                    ),
+                  ],
+                );
+              },
             );
           },
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -513,6 +633,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
           onToggleExpand: _toggleExpand,
           onSelect: _selectEntity,
           onNavigate: _handleNavigate,
+          focusedEntityId: _focusNode.hasFocus ? _focusedEntityId : null,
         );
       }).toList(),
     );
@@ -529,10 +650,17 @@ class _EntityListPanelState extends State<EntityListPanel> {
       itemBuilder: (context, index) {
         final entity = entities[index];
         final isSelected = selectedEntities.contains(entity);
+        final isFocused = _focusNode.hasFocus && _focusedEntityId == entity.id;
         return _EntityListItem(
           entity: entity,
           isSelected: isSelected,
-          onTap: () => _selectEntity(entity),
+          isFocused: isFocused,
+          onTap: () {
+            setState(() {
+              _focusedEntityId = entity.id;
+            });
+            _selectEntity(entity);
+          },
         );
       },
     );
@@ -691,11 +819,13 @@ class _ToolbarButton extends StatelessWidget {
 class _EntityListItem extends StatelessWidget {
   final Entity entity;
   final bool isSelected;
+  final bool isFocused;
   final VoidCallback onTap;
 
   const _EntityListItem({
     required this.entity,
     required this.isSelected,
+    this.isFocused = false,
     required this.onTap,
   });
 
@@ -706,13 +836,31 @@ class _EntityListItem extends StatelessWidget {
     final renderable = entity.get<Renderable>();
 
     return Material(
-      color: isSelected
-          ? colorScheme.primaryContainer.withValues(alpha: 0.3)
-          : Colors.transparent,
+      color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+        child: Container(
+          decoration: BoxDecoration(
+            color: isSelected
+                ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+                : isFocused
+                    ? colorScheme.primaryContainer.withValues(alpha: 0.15)
+                    : Colors.transparent,
+            border: isFocused
+                ? Border(
+                    left: BorderSide(
+                      color: colorScheme.primary,
+                      width: 3,
+                    ),
+                  )
+                : null,
+          ),
+          padding: EdgeInsets.only(
+            left: isFocused ? 3 : 6,
+            right: 6,
+            top: 4,
+            bottom: 4,
+          ),
           child: Row(
             children: [
               // Icon from Renderable asset or generic fallback

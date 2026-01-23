@@ -5,13 +5,16 @@ import 'package:rogueverse/ecs/ecs.dart';
 /// A card displaying a single entity template in the grid.
 ///
 /// Shows the template's Renderable asset as an icon and its display name below.
-/// Highlights when selected and provides action buttons on hover.
+/// Highlights when selected and provides action buttons on hover or focus.
 class TemplateCard extends StatefulWidget {
   /// The template entity to display (must have IsTemplate component).
   final Entity templateEntity;
 
   /// Whether this template is currently selected for placement.
   final bool isSelected;
+
+  /// Whether this card has keyboard focus (shows action buttons like hover).
+  final bool isFocused;
 
   /// Callback when the card is tapped.
   final VoidCallback onTap;
@@ -29,6 +32,7 @@ class TemplateCard extends StatefulWidget {
     super.key,
     required this.templateEntity,
     required this.isSelected,
+    this.isFocused = false,
     required this.onTap,
     required this.onDelete,
     required this.onEdit,
@@ -61,11 +65,22 @@ class _TemplateCardState extends State<TemplateCard> {
                 : colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: widget.isSelected
+              color: widget.isFocused
                   ? colorScheme.primary
-                  : colorScheme.outline.withValues(alpha: 0.2),
-              width: widget.isSelected ? 2 : 1,
+                  : widget.isSelected
+                      ? colorScheme.primary
+                      : colorScheme.outline.withValues(alpha: 0.2),
+              width: widget.isFocused || widget.isSelected ? 2 : 1,
             ),
+            boxShadow: widget.isFocused
+                ? [
+                    BoxShadow(
+                      color: colorScheme.primary.withValues(alpha: 0.3),
+                      blurRadius: 4,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
           ),
           child: Stack(
             children: [
@@ -115,8 +130,8 @@ class _TemplateCardState extends State<TemplateCard> {
                   ),
                 ],
               ),
-              // Action buttons (show on hover)
-              if (_isHovering)
+              // Action buttons (show on hover or focus)
+              if (_isHovering || widget.isFocused)
                 Positioned(
                   top: 2,
                   right: 2,

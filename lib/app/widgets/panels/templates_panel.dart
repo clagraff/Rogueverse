@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/app/widgets/keyboard/menu_keyboard_navigation.dart';
 import 'package:rogueverse/app/widgets/overlays/template_panel/template_card.dart';
 
 /// Filter tabs for the templates panel.
@@ -32,8 +33,13 @@ class TemplatesPanel extends StatefulWidget {
 
 class _TemplatesPanelState extends State<TemplatesPanel> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _focusNode = FocusNode();
   String _searchQuery = '';
   TemplateFilter _filter = TemplateFilter.all;
+  int _focusedIndex = 0;
+
+  /// Number of columns in the grid (must match GridView's crossAxisCount).
+  static const int _gridColumnCount = 4;
 
   @override
   void initState() {
@@ -54,7 +60,52 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
   @override
   void dispose() {
     _searchController.dispose();
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _handleKeyEvent(KeyEvent event) {
+    // Don't handle keys if search field has focus
+    if (FocusManager.instance.primaryFocus != _focusNode) return;
+
+    final templates = _getTemplateEntities();
+    if (templates.isEmpty) return;
+
+    final nav = MenuKeyboardNavigation(
+      itemCount: templates.length,
+      selectedIndex: _focusedIndex,
+      columnCount: _gridColumnCount,
+      onIndexChanged: (index) {
+        setState(() {
+          _focusedIndex = index.clamp(0, templates.length - 1);
+        });
+      },
+      onActivate: () {
+        if (_focusedIndex >= 0 && _focusedIndex < templates.length) {
+          final template = templates[_focusedIndex];
+          final currentSelected = widget.selectedTemplateIdNotifier.value;
+          // Toggle selection
+          if (currentSelected == template.id) {
+            widget.selectedTemplateIdNotifier.value = null;
+          } else {
+            widget.selectedTemplateIdNotifier.value = template.id;
+          }
+        }
+      },
+      onBack: () {
+        // Deselect if selected, otherwise do nothing
+        if (widget.selectedTemplateIdNotifier.value != null) {
+          widget.selectedTemplateIdNotifier.value = null;
+        }
+      },
+      onDelete: () {
+        if (_focusedIndex >= 0 && _focusedIndex < templates.length) {
+          _deleteTemplate(context, templates[_focusedIndex]);
+        }
+      },
+    );
+
+    nav.handleKeyEvent(event);
   }
 
   /// Gets all template entities (entities with IsTemplate component).
@@ -88,24 +139,42 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Top action buttons
-        _buildTopActions(context),
-        // Filter tabs
-        _buildFilterTabs(context),
-        // Search bar
-        _buildSearchBar(context),
-        // Template grid
-        Expanded(
-          child: Builder(
-            builder: (context) {
-              final templates = _getTemplateEntities();
-              return _buildTemplateGrid(context, templates);
-            },
-          ),
+    return KeyboardListener(
+      focusNode: _focusNode,
+      onKeyEvent: _handleKeyEvent,
+      child: GestureDetector(
+        onTap: () => _focusNode.requestFocus(),
+        behavior: HitTestBehavior.translucent,
+        child: Column(
+          children: [
+            // Top action buttons
+            _buildTopActions(context),
+            // Filter tabs
+            _buildFilterTabs(context),
+            // Search bar
+            _buildSearchBar(context),
+            // Template grid
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  final templates = _getTemplateEntities();
+                  // Clamp focused index when templates change
+                  if (_focusedIndex >= templates.length && templates.isNotEmpty) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (mounted) {
+                        setState(() {
+                          _focusedIndex = templates.length - 1;
+                        });
+                      }
+                    });
+                  }
+                  return _buildTemplateGrid(context, templates);
+                },
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -223,11 +292,18 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
           itemBuilder: (context, index) {
             final templateEntity = templates[index];
             final isSelected = selectedTemplateId == templateEntity.id;
+            final isFocused = index == _focusedIndex && _focusNode.hasFocus;
 
             return TemplateCard(
               templateEntity: templateEntity,
               isSelected: isSelected,
+              isFocused: isFocused,
               onTap: () {
+                // Update focused index on click
+                setState(() {
+                  _focusedIndex = index;
+                });
+                _focusNode.requestFocus();
                 if (isSelected) {
                   widget.selectedTemplateIdNotifier.value = null;
                 } else {

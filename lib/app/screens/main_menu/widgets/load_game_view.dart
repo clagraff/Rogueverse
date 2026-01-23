@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/keyboard/confirmation_dialog.dart';
 import 'package:rogueverse/ecs/persistence.dart';
 
 /// View for loading an existing save game.
@@ -18,12 +19,16 @@ class LoadGameView extends StatefulWidget {
   State<LoadGameView> createState() => _LoadGameViewState();
 }
 
+/// Actions available within each save row.
+enum _RowAction { row, delete, play }
+
 class _LoadGameViewState extends State<LoadGameView> {
   final FocusNode _focusNode = FocusNode();
   List<SaveFileInfo>? _saves;
   bool _isLoading = true;
   String? _error;
   int _selectedIndex = 0;
+  _RowAction _focusedAction = _RowAction.row;
 
   @override
   void initState() {
@@ -62,31 +67,18 @@ class _LoadGameViewState extends State<LoadGameView> {
   }
 
   Future<void> _deleteSave(SaveFileInfo save) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmationDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Save'),
-        content: Text('Are you sure you want to delete "${save.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
+      title: 'Delete Save',
+      message: 'Are you sure you want to delete "${save.name}"?',
+      confirmLabel: 'Delete',
+      isDestructive: true,
     );
 
     // Re-request focus after dialog closes
     _focusNode.requestFocus();
 
-    if (confirmed == true) {
+    if (confirmed) {
       await Persistence.deleteSave(save.path);
       _loadSaves();
     }
@@ -94,9 +86,12 @@ class _LoadGameViewState extends State<LoadGameView> {
 
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
+    final keybindings = KeyBindingService.instance;
+
     if (_saves == null || _saves!.isEmpty) {
-      // Only handle Escape when no saves
-      if (event.logicalKey == LogicalKeyboardKey.escape) {
+      // Only handle Escape/menu.back when no saves
+      if (event.logicalKey == LogicalKeyboardKey.escape ||
+          keybindings.matches('menu.back', {event.logicalKey})) {
         widget.onBack();
       }
       return;
@@ -104,29 +99,67 @@ class _LoadGameViewState extends State<LoadGameView> {
 
     final key = event.logicalKey;
 
-    // Navigation
-    if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyW) {
+    // Vertical navigation - move between save rows
+    if (key == LogicalKeyboardKey.arrowUp || keybindings.matches('menu.up', {key})) {
       setState(() {
         _selectedIndex = (_selectedIndex - 1).clamp(0, _saves!.length - 1);
+        _focusedAction = _RowAction.row; // Reset to row when changing rows
       });
-    } else if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.keyS) {
+    } else if (key == LogicalKeyboardKey.arrowDown || keybindings.matches('menu.down', {key})) {
       setState(() {
         _selectedIndex = (_selectedIndex + 1).clamp(0, _saves!.length - 1);
+        _focusedAction = _RowAction.row; // Reset to row when changing rows
       });
     }
-    // Load selected save (Enter, Space, or interact key)
+    // Horizontal navigation - move between actions within a row
+    else if (key == LogicalKeyboardKey.arrowRight || keybindings.matches('menu.right', {key})) {
+      setState(() {
+        _focusedAction = switch (_focusedAction) {
+          _RowAction.row => _RowAction.delete,
+          _RowAction.delete => _RowAction.play,
+          _RowAction.play => _RowAction.play, // Stay at play
+        };
+      });
+    } else if (key == LogicalKeyboardKey.arrowLeft || keybindings.matches('menu.left', {key})) {
+      setState(() {
+        _focusedAction = switch (_focusedAction) {
+          _RowAction.row => _RowAction.row, // Stay at row
+          _RowAction.delete => _RowAction.row,
+          _RowAction.play => _RowAction.delete,
+        };
+      });
+    }
+    // Activate the focused action (Enter, Space, or menu.select)
     else if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.space ||
-        KeyBindingService.instance.matches('entity.interact', {key})) {
-      widget.onLoadSave(_saves![_selectedIndex].path);
+        keybindings.matches('menu.select', {key})) {
+      _activateFocusedAction();
     }
-    // Delete selected save
+    // Delete shortcut (always deletes, regardless of focused action)
     else if (key == LogicalKeyboardKey.delete || key == LogicalKeyboardKey.backspace) {
       _deleteSave(_saves![_selectedIndex]);
     }
-    // Go back
-    else if (key == LogicalKeyboardKey.escape) {
-      widget.onBack();
+    // Go back (Escape or menu.back)
+    else if (key == LogicalKeyboardKey.escape || keybindings.matches('menu.back', {key})) {
+      // If focused on an action, go back to row first
+      if (_focusedAction != _RowAction.row) {
+        setState(() {
+          _focusedAction = _RowAction.row;
+        });
+      } else {
+        widget.onBack();
+      }
+    }
+  }
+
+  void _activateFocusedAction() {
+    final save = _saves![_selectedIndex];
+    switch (_focusedAction) {
+      case _RowAction.row:
+      case _RowAction.play:
+        widget.onLoadSave(save.path);
+      case _RowAction.delete:
+        _deleteSave(save);
     }
   }
 
@@ -170,12 +203,22 @@ class _LoadGameViewState extends State<LoadGameView> {
               ),
               const Spacer(),
               if (_saves != null && _saves!.isNotEmpty)
-                Text(
-                  'Enter to load, Delete to remove',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: colorScheme.outline,
-                  ),
+                Builder(
+                  builder: (context) {
+                    final keybindings = KeyBindingService.instance;
+                    final upKey = keybindings.getCombo('menu.up')?.toDisplayString() ?? 'W';
+                    final downKey = keybindings.getCombo('menu.down')?.toDisplayString() ?? 'S';
+                    final leftKey = keybindings.getCombo('menu.left')?.toDisplayString() ?? 'A';
+                    final rightKey = keybindings.getCombo('menu.right')?.toDisplayString() ?? 'D';
+                    final selectKey = keybindings.getCombo('menu.select')?.toDisplayString() ?? 'E';
+                    return Text(
+                      '$upKey/$downKey navigate, $leftKey/$rightKey select action, $selectKey confirm',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.outline,
+                      ),
+                    );
+                  },
                 ),
             ],
           ),
@@ -253,9 +296,15 @@ class _LoadGameViewState extends State<LoadGameView> {
           itemBuilder: (context, index) {
         final save = _saves![index];
         final isSelected = index == _selectedIndex;
+        final isDeleteFocused = isSelected && _focusedAction == _RowAction.delete;
+        final isPlayFocused = isSelected && _focusedAction == _RowAction.play;
+        final isRowFocused = isSelected && _focusedAction == _RowAction.row;
 
         return MouseRegion(
-          onEnter: (_) => setState(() => _selectedIndex = index),
+          onEnter: (_) => setState(() {
+            _selectedIndex = index;
+            _focusedAction = _RowAction.row;
+          }),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
             margin: const EdgeInsets.only(bottom: 8),
@@ -267,7 +316,11 @@ class _LoadGameViewState extends State<LoadGameView> {
             ),
             child: Card(
               margin: EdgeInsets.zero,
-              color: isSelected ? colorScheme.primaryContainer : null,
+              color: isRowFocused
+                  ? colorScheme.primaryContainer
+                  : isSelected
+                      ? colorScheme.primaryContainer.withValues(alpha: 0.5)
+                      : null,
               child: ListTile(
                 leading: Icon(
                   Icons.save,
@@ -292,16 +345,31 @@ class _LoadGameViewState extends State<LoadGameView> {
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    IconButton(
-                      icon: Icon(Icons.delete_outline, color: colorScheme.error),
-                      onPressed: () => _deleteSave(save),
-                      tooltip: 'Delete (Del)',
+                    // Delete button with focus indicator
+                    Container(
+                      decoration: isDeleteFocused
+                          ? BoxDecoration(
+                              border: Border.all(color: colorScheme.error, width: 2),
+                              borderRadius: BorderRadius.circular(20),
+                            )
+                          : null,
+                      child: IconButton(
+                        icon: Icon(Icons.delete_outline, color: colorScheme.error),
+                        onPressed: () => _deleteSave(save),
+                        tooltip: 'Delete',
+                      ),
                     ),
                     const SizedBox(width: 8),
-                    FilledButton.tonal(
-                      onPressed: () => widget.onLoadSave(save.path),
-                      child: const Text('Play'),
-                    ),
+                    // Load button with focus indicator
+                    isPlayFocused
+                        ? FilledButton(
+                            onPressed: () => widget.onLoadSave(save.path),
+                            child: const Text('Load'),
+                          )
+                        : FilledButton.tonal(
+                            onPressed: () => widget.onLoadSave(save.path),
+                            child: const Text('Load'),
+                          ),
                   ],
                 ),
                 onTap: () => widget.onLoadSave(save.path),

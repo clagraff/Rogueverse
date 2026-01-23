@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/keybindings_editor.dart';
 
 /// Settings view with keybindings configuration.
@@ -40,7 +41,11 @@ class _SettingsViewState extends State<SettingsView> {
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
 
-    if (event.logicalKey == LogicalKeyboardKey.escape) {
+    final key = event.logicalKey;
+
+    // Escape or menu.back - go back
+    if (key == LogicalKeyboardKey.escape ||
+        KeyBindingService.instance.matches('menu.back', {key})) {
       widget.onBack();
     }
   }

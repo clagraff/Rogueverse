@@ -176,26 +176,27 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
     if (event is! KeyDownEvent) return;
 
     final key = event.logicalKey;
+    final keybindings = KeyBindingService.instance;
     final items = _buildMenuItems(context);
 
-    // Navigation
-    if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyW) {
+    // Navigation using menu.* keybindings (with arrow key fallbacks)
+    if (key == LogicalKeyboardKey.arrowUp || keybindings.matches('menu.up', {key})) {
       setState(() {
         _selectedIndex = (_selectedIndex - 1).clamp(0, items.length - 1);
       });
-    } else if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.keyS) {
+    } else if (key == LogicalKeyboardKey.arrowDown || keybindings.matches('menu.down', {key})) {
       setState(() {
         _selectedIndex = (_selectedIndex + 1).clamp(0, items.length - 1);
       });
     }
-    // Selection (Enter, Space, or interact key)
+    // Selection (Enter, Space, or menu.select)
     else if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.space ||
-        KeyBindingService.instance.matches('entity.interact', {key})) {
+        keybindings.matches('menu.select', {key})) {
       items[_selectedIndex].onTap();
     }
-    // Close drawer
-    else if (key == LogicalKeyboardKey.escape) {
+    // Close drawer (Escape or menu.back)
+    else if (key == LogicalKeyboardKey.escape || keybindings.matches('menu.back', {key})) {
       Navigator.pop(context);
     }
     // Number keys for quick selection (1-9)

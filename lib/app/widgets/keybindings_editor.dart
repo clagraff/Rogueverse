@@ -131,6 +131,7 @@ class _KeybindingsEditorState extends State<KeybindingsEditor> {
     ('Game', 'game.'),
     ('Camera', 'camera.'),
     ('Overlays', 'overlay.'),
+    ('Menu', 'menu.'),
   ];
 
   /// Human-readable names for actions.
@@ -157,6 +158,12 @@ class _KeybindingsEditorState extends State<KeybindingsEditor> {
     'camera.toggleFollow': 'Toggle Camera Follow',
     'overlay.editor': 'Open Editor',
     'overlay.templates': 'Open Templates',
+    'menu.up': 'Navigate Up',
+    'menu.down': 'Navigate Down',
+    'menu.left': 'Navigate Left',
+    'menu.right': 'Navigate Right',
+    'menu.select': 'Select',
+    'menu.back': 'Back/Close',
   };
 
   Future<void> _startRebind(String action) async {

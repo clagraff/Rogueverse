@@ -58,30 +58,31 @@ class _DialogOverlayState extends State<DialogOverlay> {
     if (event is! KeyDownEvent) return;
 
     final key = event.logicalKey;
+    final keybindings = KeyBindingService.instance;
 
-    // Escape - close dialog
-    if (key == LogicalKeyboardKey.escape) {
+    // Escape/menu.back - close dialog
+    if (key == LogicalKeyboardKey.escape || keybindings.matches('menu.back', {key})) {
       widget.handler.endDialog();
       return;
     }
 
-    // Navigation
-    if (key == LogicalKeyboardKey.arrowUp || key == LogicalKeyboardKey.keyW) {
+    // Navigation using menu.* keybindings (with arrow key fallbacks)
+    if (key == LogicalKeyboardKey.arrowUp || keybindings.matches('menu.up', {key})) {
       widget.handler.moveSelectionUp();
       _ensureSelectedVisible();
       return;
     }
 
-    if (key == LogicalKeyboardKey.arrowDown || key == LogicalKeyboardKey.keyS) {
+    if (key == LogicalKeyboardKey.arrowDown || keybindings.matches('menu.down', {key})) {
       widget.handler.moveSelectionDown();
       _ensureSelectedVisible();
       return;
     }
 
-    // Selection
+    // Selection using menu.select (with Enter/Space fallbacks)
     if (key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.space ||
-        key == LogicalKeyboardKey.keyE) {
+        keybindings.matches('menu.select', {key})) {
       widget.handler.confirmSelection();
       return;
     }

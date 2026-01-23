@@ -36,6 +36,9 @@ class EntityTreeNode extends StatelessWidget {
   /// Callback for navigation (double-click on parent)
   final void Function(int? parentId) onNavigate;
 
+  /// The currently focused entity ID (for keyboard navigation)
+  final int? focusedEntityId;
+
   const EntityTreeNode({
     super.key,
     required this.entity,
@@ -47,6 +50,7 @@ class EntityTreeNode extends StatelessWidget {
     required this.onToggleExpand,
     required this.onSelect,
     required this.onNavigate,
+    this.focusedEntityId,
   });
 
   /// Whether this entity is selectable (under the current viewed parent)
@@ -71,6 +75,8 @@ class EntityTreeNode extends StatelessWidget {
   bool get _isExpanded => expandedNodes[entity.id] ?? false;
 
   bool get _isSelected => selectedEntities.contains(entity);
+
+  bool get _isFocused => focusedEntityId == entity.id;
 
   @override
   Widget build(BuildContext context) {
@@ -100,6 +106,7 @@ class EntityTreeNode extends StatelessWidget {
               onToggleExpand: onToggleExpand,
               onSelect: onSelect,
               onNavigate: onNavigate,
+              focusedEntityId: focusedEntityId,
             );
           }),
       ],
@@ -120,11 +127,23 @@ class EntityTreeNode extends StatelessWidget {
       onTap: _isSelectable ? () => onSelect(entity) : null,
       onDoubleTap: () => onNavigate(entity.id),
       child: Container(
-        color: _isSelected && _isSelectable
-            ? colorScheme.primaryContainer.withValues(alpha: 0.3)
-            : Colors.transparent,
+        decoration: BoxDecoration(
+          color: _isSelected && _isSelectable
+              ? colorScheme.primaryContainer.withValues(alpha: 0.3)
+              : _isFocused
+                  ? colorScheme.primaryContainer.withValues(alpha: 0.15)
+                  : Colors.transparent,
+          border: _isFocused
+              ? Border(
+                  left: BorderSide(
+                    color: colorScheme.primary,
+                    width: 3,
+                  ),
+                )
+              : null,
+        ),
         padding: EdgeInsets.only(
-          left: depth * 16.0 + 4,
+          left: _isFocused ? depth * 16.0 + 1 : depth * 16.0 + 4,
           right: 4,
           top: 2,
           bottom: 2,
