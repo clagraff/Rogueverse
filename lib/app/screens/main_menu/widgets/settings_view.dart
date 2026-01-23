@@ -3,8 +3,13 @@ import 'package:flutter/services.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/keybindings_editor.dart';
+import 'package:rogueverse/app/widgets/general_settings_editor.dart';
 
-/// Settings view with keybindings configuration.
+/// Settings view with tabbed layout for General and Keybindings settings.
+///
+/// Implements hierarchical keyboard navigation:
+/// - Sub-tab level: A/D to switch between General/Keybindings, S to enter content
+/// - When focus is on sub-tab level, Escape goes back to main menu
 class SettingsView extends StatefulWidget {
   final VoidCallback onBack;
 
@@ -17,69 +22,199 @@ class SettingsView extends StatefulWidget {
   State<SettingsView> createState() => _SettingsViewState();
 }
 
+enum _SettingsSection { general, keybindings }
+
 class _SettingsViewState extends State<SettingsView> {
-  final FocusNode _focusNode = FocusNode();
+  _SettingsSection _currentSection = _SettingsSection.general;
+
+  /// Our own focus node for sub-tab level navigation.
+  final _focusNode = FocusNode();
+
+  /// Focus node for the GeneralSettingsEditor (we control when it gets focus).
+  final _generalSettingsFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
-    _requestFocus();
+    // Request focus on sub-tab level after build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   @override
   void dispose() {
     _focusNode.dispose();
+    _generalSettingsFocusNode.dispose();
     super.dispose();
-  }
-
-  void _requestFocus() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _focusNode.requestFocus();
-    });
   }
 
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
 
     final key = event.logicalKey;
+    final keybindings = KeyBindingService.instance;
 
-    // Escape or menu.back - go back
+    // Escape: go back to main menu
     if (key == LogicalKeyboardKey.escape ||
-        KeyBindingService.instance.matches('menu.back', {key})) {
+        keybindings.matches('menu.back', {key})) {
       widget.onBack();
+      return;
+    }
+
+    // A/Left: switch to General sub-tab
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        keybindings.matches('menu.left', {key})) {
+      setState(() => _currentSection = _SettingsSection.general);
+      return;
+    }
+
+    // D/Right: switch to Keybindings sub-tab
+    if (key == LogicalKeyboardKey.arrowRight ||
+        keybindings.matches('menu.right', {key})) {
+      setState(() => _currentSection = _SettingsSection.keybindings);
+      return;
+    }
+
+    // S/Down/Enter/Space: Enter content level
+    if (key == LogicalKeyboardKey.arrowDown ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.space ||
+        keybindings.matches('menu.down', {key}) ||
+        keybindings.matches('menu.select', {key})) {
+      if (_currentSection == _SettingsSection.general) {
+        _generalSettingsFocusNode.requestFocus();
+      }
+      // Keybindings section doesn't have keyboard navigation yet
+      return;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: Column(
-        children: [
-          // Header with back button
-          Row(
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return ListenableBuilder(
+      listenable: _focusNode,
+      builder: (context, child) {
+        final hasSubTabFocus = _focusNode.hasFocus;
+
+        return KeyboardListener(
+          focusNode: _focusNode,
+          onKeyEvent: _handleKeyEvent,
+          child: Column(
             children: [
-              IconButton(
-                icon: const Icon(Icons.arrow_back),
-                onPressed: widget.onBack,
-                tooltip: 'Back (Escape)',
+              // Header with back button
+              Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: widget.onBack,
+                    tooltip: 'Back (Escape)',
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Settings',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Text(
-                'Settings',
-                style: Theme.of(context).textTheme.headlineSmall,
+              const SizedBox(height: 16),
+
+              // Tab buttons - show selection highlight only when sub-tab level has focus
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    _buildTabButton(
+                      context,
+                      label: 'General',
+                      isSelected: _currentSection == _SettingsSection.general,
+                      showHighlight: hasSubTabFocus && _currentSection == _SettingsSection.general,
+                      onTap: () {
+                        setState(() => _currentSection = _SettingsSection.general);
+                        _focusNode.requestFocus();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    _buildTabButton(
+                      context,
+                      label: 'Keybindings',
+                      isSelected: _currentSection == _SettingsSection.keybindings,
+                      showHighlight: hasSubTabFocus && _currentSection == _SettingsSection.keybindings,
+                      onTap: () {
+                        setState(() => _currentSection = _SettingsSection.keybindings);
+                        _focusNode.requestFocus();
+                      },
+                    ),
+                  ],
+                ),
+              ),
+
+              Divider(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                height: 24,
+              ),
+
+              // Content based on selected tab
+              Expanded(
+                child: _currentSection == _SettingsSection.general
+                    ? GeneralSettingsEditor(
+                        focusNode: _generalSettingsFocusNode,
+                        parentFocusNode: _focusNode,
+                      )
+                    : const KeybindingsEditor(),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+        );
+      },
+    );
+  }
 
-          // Keybindings editor
-          const Expanded(
-            child: KeybindingsEditor(),
+  Widget _buildTabButton(
+    BuildContext context, {
+    required String label,
+    required bool isSelected,
+    required bool showHighlight,
+    required VoidCallback onTap,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // showHighlight: true when sub-tab level has focus AND this tab is selected
+    // isSelected: true when this is the current section (determines content)
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 100),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: showHighlight
+              ? colorScheme.primaryContainer
+              : isSelected
+                  ? colorScheme.surfaceContainerHighest
+                  : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(4),
+          border: showHighlight
+              ? Border.all(color: colorScheme.primary, width: 2)
+              : isSelected
+                  ? Border.all(color: colorScheme.outlineVariant)
+                  : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: showHighlight
+                ? colorScheme.onPrimaryContainer
+                : isSelected
+                    ? colorScheme.onSurface
+                    : colorScheme.onSurface.withValues(alpha: 0.7),
+            fontWeight: showHighlight || isSelected ? FontWeight.bold : FontWeight.normal,
           ),
-        ],
+        ),
       ),
     );
   }

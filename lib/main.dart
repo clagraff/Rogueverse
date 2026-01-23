@@ -4,7 +4,9 @@ import 'package:flutter/foundation.dart' show kDebugMode, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:logging/logging.dart';
 import 'package:rogueverse/app/application.dart';
+import 'package:rogueverse/app/services/game_settings_service.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/overlays/inspector/component_registrations.dart';
 import 'package:rogueverse/ecs/ecs.init.dart';
 import 'package:rogueverse/ecs/template_registry.dart';
 import 'package:rogueverse/ecs/persistence.dart';
@@ -18,6 +20,8 @@ void main() async {
 
   await TemplateRegistry.instance.load();
   await KeyBindingService.instance.load();
+  await GameSettingsService.instance.load();
+  registerAllComponents();
 
   // Migrate existing save.json to initial.json if needed (layered save system)
   if (!kIsWeb) {

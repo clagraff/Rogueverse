@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
+import 'package:rogueverse/app/ui_constants.dart';
 import 'package:rogueverse/app/widgets/overlays/character_screen/inventory_tab.dart';
 import 'package:rogueverse/app/widgets/overlays/character_screen/settings_tab.dart';
 import 'package:rogueverse/ecs/entity.dart';
@@ -37,28 +39,14 @@ class CharacterScreenOverlay extends StatefulWidget {
 }
 
 class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
-  final FocusNode _focusNode = FocusNode();
   final _keybindings = KeyBindingService.instance;
+  final _focusNode = FocusNode();
   CharacterTab _selectedTab = CharacterTab.inventory;
-
-  @override
-  void initState() {
-    super.initState();
-    _requestFocusAfterBuild();
-  }
 
   @override
   void dispose() {
     _focusNode.dispose();
     super.dispose();
-  }
-
-  void _requestFocusAfterBuild() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
-    });
   }
 
   void _close() {
@@ -117,8 +105,7 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
   }
 
   Widget _buildUI(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Stack(
       children: [
@@ -135,39 +122,38 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
 
         // Centered panel
         Center(
-          child: KeyboardListener(
+          child: AutoFocusKeyboardListener(
             focusNode: _focusNode,
-            autofocus: true,
             onKeyEvent: _handleKeyEvent,
             child: ConstrainedBox(
               constraints: const BoxConstraints(
-                maxWidth: 700,
-                maxHeight: 500,
+                maxWidth: kCharacterScreenMaxWidth,
+                maxHeight: kCharacterScreenMaxHeight,
               ),
               child: Material(
-                elevation: 16,
-                borderRadius: BorderRadius.circular(8),
+                elevation: kElevationHigh,
+                borderRadius: BorderRadius.circular(kRadiusL),
                 color: colorScheme.surface,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Tab bar
-                    _buildTabBar(context),
+                    _buildTabBar(colorScheme),
 
                     // Divider
                     Divider(height: 1, color: colorScheme.outlineVariant),
 
                     // Content area
                     Expanded(
-                      child: _buildContent(context),
+                      child: _buildContent(),
                     ),
 
                     // Divider
                     Divider(height: 1, color: colorScheme.outlineVariant),
 
                     // Footer with hints
-                    _buildFooter(context),
+                    _buildFooter(colorScheme),
                   ],
                 ),
               ),
@@ -178,22 +164,20 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
     );
   }
 
-  Widget _buildTabBar(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _buildTabBar(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: kSpacingM, vertical: kSpacingM),
       child: Row(
         children: [
           _buildTabButton(
-            context,
+            colorScheme,
             tab: CharacterTab.inventory,
             icon: Icons.inventory_2_outlined,
             label: 'Inventory',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: kSpacingM),
           _buildTabButton(
-            context,
+            colorScheme,
             tab: CharacterTab.settings,
             icon: Icons.settings_outlined,
             label: 'Settings',
@@ -212,22 +196,21 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
   }
 
   Widget _buildTabButton(
-    BuildContext context, {
+    ColorScheme colorScheme, {
     required CharacterTab tab,
     required IconData icon,
     required String label,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
     final isSelected = _selectedTab == tab;
 
     return InkWell(
       onTap: () => _selectTab(tab),
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(kRadiusM),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: kSpacingXL, vertical: kSpacingM),
         decoration: BoxDecoration(
           color: isSelected ? colorScheme.primaryContainer : null,
-          borderRadius: BorderRadius.circular(6),
+          borderRadius: BorderRadius.circular(kRadiusM),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -239,7 +222,7 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
                   ? colorScheme.onPrimaryContainer
                   : colorScheme.onSurface.withValues(alpha: 0.7),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: kSpacingM),
             Text(
               label,
               style: TextStyle(
@@ -255,37 +238,35 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
     );
   }
 
-  Widget _buildContent(BuildContext context) {
+  Widget _buildContent() {
     switch (_selectedTab) {
       case CharacterTab.inventory:
         return InventoryTabContent(inventory: widget.inventory);
       case CharacterTab.settings:
-        return const SettingsTabContent();
+        return SettingsTabContent(parentFocusNode: _focusNode);
     }
   }
 
-  Widget _buildFooter(BuildContext context) {
+  Widget _buildFooter(ColorScheme colorScheme) {
     final prevKey = _keybindings.getCombo('ui.tab_prev')?.toDisplayString() ?? 'Q';
     final nextKey = _keybindings.getCombo('ui.tab_next')?.toDisplayString() ?? 'E';
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: kSpacingXL, vertical: kSpacingM),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          _buildHint(context, prevKey, 'Prev tab'),
-          const SizedBox(width: 16),
-          _buildHint(context, nextKey, 'Next tab'),
-          const SizedBox(width: 16),
-          _buildHint(context, 'Tab/Esc', 'Close'),
+          _buildHint(colorScheme, prevKey, 'Prev tab'),
+          const SizedBox(width: kSpacingXL),
+          _buildHint(colorScheme, nextKey, 'Next tab'),
+          const SizedBox(width: kSpacingXL),
+          _buildHint(colorScheme, 'Tab/Esc', 'Close'),
         ],
       ),
     );
   }
 
-  Widget _buildHint(BuildContext context, String key, String action) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _buildHint(ColorScheme colorScheme, String key, String action) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -297,7 +278,7 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
             fontFamily: 'monospace',
           ),
         ),
-        const SizedBox(width: 4),
+        const SizedBox(width: kSpacingS),
         Text(
           action,
           style: TextStyle(

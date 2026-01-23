@@ -1,12 +1,12 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:rogueverse/app/screens/main_menu/widgets/load_game_view.dart';
-import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/screens/main_menu/widgets/menu_button.dart';
 import 'package:rogueverse/app/screens/main_menu/widgets/new_game_dialog.dart';
 import 'package:rogueverse/app/screens/main_menu/widgets/settings_view.dart';
+import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
+import 'package:rogueverse/app/widgets/keyboard/menu_keyboard_navigation.dart';
 
 /// The view state for the main menu.
 enum _MenuView {
@@ -25,18 +25,10 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen> {
   _MenuView _currentView = _MenuView.main;
+  // Owned by this widget for manual refocus after dialogs/sub-views.
   final FocusNode _focusNode = FocusNode();
   int _selectedIndex = 0;
   static const int _menuItemCount = 4;
-
-  @override
-  void initState() {
-    super.initState();
-    // Request focus after build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
-  }
 
   @override
   void dispose() {
@@ -85,27 +77,13 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   void _handleKeyEvent(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
-
-    final key = event.logicalKey;
-    final keybindings = KeyBindingService.instance;
-
-    // Navigation using menu.* keybindings (with arrow key fallbacks)
-    if (key == LogicalKeyboardKey.arrowUp || keybindings.matches('menu.up', {key})) {
-      setState(() {
-        _selectedIndex = (_selectedIndex - 1).clamp(0, _menuItemCount - 1);
-      });
-    } else if (key == LogicalKeyboardKey.arrowDown || keybindings.matches('menu.down', {key})) {
-      setState(() {
-        _selectedIndex = (_selectedIndex + 1).clamp(0, _menuItemCount - 1);
-      });
-    }
-    // Selection (Enter, Space, or menu.select)
-    else if (key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.space ||
-        keybindings.matches('menu.select', {key})) {
-      _activateSelectedItem();
-    }
+    final nav = MenuKeyboardNavigation(
+      itemCount: _menuItemCount,
+      selectedIndex: _selectedIndex,
+      onIndexChanged: (index) => setState(() => _selectedIndex = index),
+      onActivate: _activateSelectedItem,
+    );
+    nav.handleKeyEvent(event);
   }
 
   void _activateSelectedItem() {
@@ -152,9 +130,8 @@ class _MainMenuScreenState extends State<MainMenuScreen> {
   }
 
   Widget _buildMainMenu() {
-    return KeyboardListener(
+    return AutoFocusKeyboardListener(
       focusNode: _focusNode,
-      autofocus: true,
       onKeyEvent: _handleKeyEvent,
       child: Center(
         child: Column(

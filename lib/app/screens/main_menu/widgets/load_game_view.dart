@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
 import 'package:rogueverse/app/widgets/keyboard/confirmation_dialog.dart';
 import 'package:rogueverse/ecs/persistence.dart';
 
@@ -23,6 +24,7 @@ class LoadGameView extends StatefulWidget {
 enum _RowAction { row, delete, play }
 
 class _LoadGameViewState extends State<LoadGameView> {
+  // Owned by this widget for manual refocus after dialogs.
   final FocusNode _focusNode = FocusNode();
   List<SaveFileInfo>? _saves;
   bool _isLoading = true;
@@ -34,10 +36,6 @@ class _LoadGameViewState extends State<LoadGameView> {
   void initState() {
     super.initState();
     _loadSaves();
-    // Request focus after build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
   }
 
   @override
@@ -182,9 +180,8 @@ class _LoadGameViewState extends State<LoadGameView> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return KeyboardListener(
+    return AutoFocusKeyboardListener(
       focusNode: _focusNode,
-      autofocus: true,
       onKeyEvent: _handleKeyEvent,
       child: Column(
         children: [

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
 import 'package:rogueverse/app/services/text_template_service.dart';
+import 'package:rogueverse/app/ui_constants.dart';
 import 'package:rogueverse/ecs/dialog/dialog.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 
@@ -28,30 +30,14 @@ class DialogOverlay extends StatefulWidget {
 }
 
 class _DialogOverlayState extends State<DialogOverlay> {
-  final FocusNode _focusNode = FocusNode();
   final ScrollController _textScrollController = ScrollController();
   final ScrollController _choicesScrollController = ScrollController();
 
   @override
-  void initState() {
-    super.initState();
-    _requestFocusAfterBuild();
-  }
-
-  @override
   void dispose() {
-    _focusNode.dispose();
     _textScrollController.dispose();
     _choicesScrollController.dispose();
     super.dispose();
-  }
-
-  void _requestFocusAfterBuild() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _focusNode.requestFocus();
-      }
-    });
   }
 
   void _handleKeyEvent(KeyEvent event) {
@@ -142,8 +128,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
     DialogState state,
     DialogAwaitingChoice result,
   ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Stack(
       children: [
@@ -160,23 +145,21 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
         // Dialog box centered at bottom
         Positioned(
-          left: 32,
-          right: 32,
-          bottom: 32,
+          left: kSpacingMax,
+          right: kSpacingMax,
+          bottom: kSpacingMax,
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: KeyboardListener(
-                focusNode: _focusNode,
-                autofocus: true,
+              constraints: const BoxConstraints(maxWidth: kDialogMaxWidth),
+              child: AutoFocusKeyboardListener(
                 onKeyEvent: _handleKeyEvent,
                 child: Material(
-                  elevation: 16,
-                  borderRadius: BorderRadius.circular(8),
+                  elevation: kElevationHigh,
+                  borderRadius: BorderRadius.circular(kRadiusL),
                   color: colorScheme.surface,
                   child: Container(
                     constraints: const BoxConstraints(
-                      maxHeight: 400,
+                      maxHeight: kDialogMaxHeight,
                       minHeight: 100,
                     ),
                     child: Column(
@@ -184,16 +167,16 @@ class _DialogOverlayState extends State<DialogOverlay> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // NPC text section
-                        _buildNpcTextSection(context, state, result),
+                        _buildNpcTextSection(colorScheme, state, result),
 
                         // Divider
                         Divider(height: 1, color: colorScheme.outlineVariant),
 
                         // Player choices section
-                        _buildChoicesSection(context, state, result),
+                        _buildChoicesSection(colorScheme, state, result),
 
                         // Hint footer
-                        _buildHintFooter(context),
+                        _buildHintFooter(colorScheme),
                       ],
                     ),
                   ),
@@ -207,16 +190,13 @@ class _DialogOverlayState extends State<DialogOverlay> {
   }
 
   Widget _buildNpcTextSection(
-    BuildContext context,
+    ColorScheme colorScheme,
     DialogState state,
     DialogAwaitingChoice result,
   ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
     return Container(
-      padding: const EdgeInsets.all(16),
-      constraints: const BoxConstraints(maxHeight: 200),
+      padding: const EdgeInsets.all(kSpacingXL),
+      constraints: const BoxConstraints(maxHeight: kPanelMaxHeight),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,7 +210,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: kSpacingM),
 
           // NPC text (scrollable if long)
           Flexible(
@@ -255,31 +235,30 @@ class _DialogOverlayState extends State<DialogOverlay> {
   }
 
   Widget _buildChoicesSection(
-    BuildContext context,
+    ColorScheme colorScheme,
     DialogState state,
     DialogAwaitingChoice result,
   ) {
     return Container(
-      constraints: const BoxConstraints(maxHeight: 200),
+      constraints: const BoxConstraints(maxHeight: kPanelMaxHeight),
       child: ListView.builder(
         controller: _choicesScrollController,
         shrinkWrap: true,
-        padding: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(vertical: kSpacingM),
         itemCount: result.choices.length,
         itemBuilder: (context, index) {
           final choice = result.choices[index];
           // Check if this choice was previously visited (only for actual choices, not "(done)")
           final isVisited = choice.choiceIndex != -1 && state.isChoiceVisited(choice.choiceIndex);
-          return _buildChoiceItem(context, state, choice, index, isVisited);
+          return _buildChoiceItem(colorScheme, state, choice, index, isVisited);
         },
       ),
     );
   }
 
-  Widget _buildHintFooter(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildHintFooter(ColorScheme colorScheme) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: kSpacingXL, vertical: kSpacingM),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
@@ -291,7 +270,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
               fontFamily: 'monospace',
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: kSpacingS),
           Text(
             'Close',
             style: TextStyle(
@@ -305,14 +284,12 @@ class _DialogOverlayState extends State<DialogOverlay> {
   }
 
   Widget _buildChoiceItem(
-    BuildContext context,
+    ColorScheme colorScheme,
     DialogState state,
     DialogChoice choice,
     int index,
     bool isVisited,
   ) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isSelected = index == state.selectedIndex;
     final isAvailable = choice.isAvailable;
 
@@ -339,7 +316,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
         }
       },
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: kSpacingXL, vertical: 10),
         decoration: BoxDecoration(
           color: isSelected ? colorScheme.primaryContainer : null,
           border: isSelected
@@ -379,7 +356,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: kSpacingXS),
                   ],
 
                   // Choice text with visited indicator
@@ -392,7 +369,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
                           size: 14,
                           color: textColor.withValues(alpha: 0.5),
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: kSpacingS),
                       ],
                       Expanded(
                         child: Text(

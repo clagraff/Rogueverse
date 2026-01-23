@@ -1,8 +1,10 @@
 import 'dart:io' show exit;
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/ui_constants.dart';
+import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
+import 'package:rogueverse/app/widgets/keyboard/menu_keyboard_navigation.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart' show World;
 import 'package:rogueverse/ecs/persistence.dart' show Persistence;
@@ -70,24 +72,9 @@ class NavigationDrawerContent extends StatefulWidget {
 }
 
 class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
-  final FocusNode _focusNode = FocusNode();
   int _selectedIndex = 0;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  List<_MenuItem> _buildMenuItems(BuildContext context) {
+  List<_MenuItem> _buildMenuItems(BuildContext context, ColorScheme colorScheme) {
     final isEditing = widget.gameModeNotifier.value == GameMode.editing;
     final toggleKeyCombo =
         KeyBindingService.instance.getCombo('game.toggleMode')?.toDisplayString() ?? 'Ctrl+`';
@@ -102,7 +89,7 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
           Navigator.pop(context);
           widget.onToggleEditModePressed();
         },
-        trailing: _buildModeIndicator(context, isEditing),
+        trailing: _buildModeIndicator(colorScheme, isEditing),
       ),
       _MenuItem(
         icon: Icons.dashboard_customize,
@@ -150,14 +137,14 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
     ];
   }
 
-  Widget _buildModeIndicator(BuildContext context, bool isEditing) {
+  Widget _buildModeIndicator(ColorScheme colorScheme, bool isEditing) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: kSpacingM, vertical: kSpacingXS),
       decoration: BoxDecoration(
         color: isEditing
-            ? Theme.of(context).colorScheme.primaryContainer
-            : Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(4),
+            ? colorScheme.primaryContainer
+            : colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(kRadiusS),
       ),
       child: Text(
         isEditing ? 'EDITING' : 'GAMEPLAY',
@@ -165,79 +152,43 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
           fontSize: 10,
           fontWeight: FontWeight.w600,
           color: isEditing
-              ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              ? colorScheme.primary
+              : colorScheme.onSurface.withValues(alpha: 0.6),
         ),
       ),
     );
   }
 
-  void _handleKeyEvent(KeyEvent event) {
-    if (event is! KeyDownEvent) return;
-
-    final key = event.logicalKey;
-    final keybindings = KeyBindingService.instance;
-    final items = _buildMenuItems(context);
-
-    // Navigation using menu.* keybindings (with arrow key fallbacks)
-    if (key == LogicalKeyboardKey.arrowUp || keybindings.matches('menu.up', {key})) {
-      setState(() {
-        _selectedIndex = (_selectedIndex - 1).clamp(0, items.length - 1);
-      });
-    } else if (key == LogicalKeyboardKey.arrowDown || keybindings.matches('menu.down', {key})) {
-      setState(() {
-        _selectedIndex = (_selectedIndex + 1).clamp(0, items.length - 1);
-      });
-    }
-    // Selection (Enter, Space, or menu.select)
-    else if (key == LogicalKeyboardKey.enter ||
-        key == LogicalKeyboardKey.space ||
-        keybindings.matches('menu.select', {key})) {
-      items[_selectedIndex].onTap();
-    }
-    // Close drawer (Escape or menu.back)
-    else if (key == LogicalKeyboardKey.escape || keybindings.matches('menu.back', {key})) {
-      Navigator.pop(context);
-    }
-    // Number keys for quick selection (1-9)
-    else {
-      final numberKeys = [
-        LogicalKeyboardKey.digit1,
-        LogicalKeyboardKey.digit2,
-        LogicalKeyboardKey.digit3,
-        LogicalKeyboardKey.digit4,
-        LogicalKeyboardKey.digit5,
-        LogicalKeyboardKey.digit6,
-        LogicalKeyboardKey.digit7,
-        LogicalKeyboardKey.digit8,
-        LogicalKeyboardKey.digit9,
-      ];
-      final keyIndex = numberKeys.indexOf(key);
-      if (keyIndex != -1 && keyIndex < items.length) {
-        items[keyIndex].onTap();
-      }
-    }
+  void _handleKeyEvent(KeyEvent event, List<_MenuItem> items) {
+    final nav = MenuKeyboardNavigation(
+      itemCount: items.length,
+      selectedIndex: _selectedIndex,
+      onIndexChanged: (index) => setState(() => _selectedIndex = index),
+      onActivate: () => items[_selectedIndex].onTap(),
+      onBack: () => Navigator.pop(context),
+    );
+    nav.handleKeyEvent(event);
   }
 
   @override
   Widget build(BuildContext context) {
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
-      onKeyEvent: _handleKeyEvent,
-      child: ValueListenableBuilder<GameMode>(
-        valueListenable: widget.gameModeNotifier,
-        builder: (context, mode, _) {
-          final items = _buildMenuItems(context);
-          final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
 
-          return Drawer(
+    return ValueListenableBuilder<GameMode>(
+      valueListenable: widget.gameModeNotifier,
+      builder: (context, mode, _) {
+        final items = _buildMenuItems(context, colorScheme);
+
+        return AutoFocusKeyboardListener(
+          onKeyEvent: (event) => _handleKeyEvent(event, items),
+          child: Drawer(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Header
                 Container(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(kSpacingXL, kSpacingXL, kSpacingXL, kSpacingL),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                   ),
@@ -249,12 +200,12 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
                       children: [
                         Text(
                           'Menu',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                color: colorScheme.onPrimaryContainer,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style: textTheme.titleLarge?.copyWith(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: kSpacingS),
                         Text(
                           'Arrow keys to navigate, Enter to select',
                           style: TextStyle(
@@ -315,9 +266,9 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
                 ),
               ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/app/ui_constants.dart';
 import 'package:rogueverse/app/widgets/keyboard/menu_keyboard_navigation.dart';
 
 import 'entity_tree_node.dart';
@@ -331,6 +332,8 @@ class _EntityListPanelState extends State<EntityListPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return KeyboardListener(
       focusNode: _focusNode,
       onKeyEvent: _handleKeyEvent,
@@ -348,18 +351,18 @@ class _EntityListPanelState extends State<EntityListPanel> {
                 return Column(
                   children: [
                     // Breadcrumb navigation
-                    _buildBreadcrumb(context, viewedParentId),
+                    _buildBreadcrumb(colorScheme, viewedParentId),
                     // Search bar
-                    _buildSearchBar(context),
+                    _buildSearchBar(colorScheme),
                     // Toolbar
-                    _buildToolbar(context, selectableEntities, selectedEntities),
+                    _buildToolbar(colorScheme, selectableEntities, selectedEntities),
                     // Column headers
-                    _buildColumnHeaders(context),
+                    _buildColumnHeaders(colorScheme),
                     // Entity tree or list
                     Expanded(
                       child: _searchQuery.isNotEmpty
-                          ? _buildFlatList(context, selectableEntities, selectedEntities)
-                          : _buildTreeView(context, viewedParentId, selectedEntities),
+                          ? _buildFlatList(colorScheme, selectableEntities, selectedEntities)
+                          : _buildTreeView(colorScheme, viewedParentId, selectedEntities),
                     ),
                   ],
                 );
@@ -371,12 +374,11 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildBreadcrumb(BuildContext context, int? viewedParentId) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildBreadcrumb(ColorScheme colorScheme, int? viewedParentId) {
     final path = _buildPathToRoot(viewedParentId);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: kSpacingM, vertical: kSpacingS),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: Border(
@@ -393,7 +395,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
             size: 14,
             color: colorScheme.onSurface.withValues(alpha: 0.6),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: kSpacingS),
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -404,6 +406,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
                     label: 'Root',
                     isActive: viewedParentId == null,
                     onTap: () => _handleNavigate(null),
+                    colorScheme: colorScheme,
                   ),
                   // Path segments
                   ...path.map((entityId) {
@@ -425,6 +428,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
                           label: name,
                           isActive: isCurrent,
                           onTap: () => _handleNavigate(entityId),
+                          colorScheme: colorScheme,
                         ),
                       ],
                     );
@@ -435,7 +439,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
           ),
           // Go up button (when not at root)
           if (viewedParentId != null) ...[
-            const SizedBox(width: 4),
+            const SizedBox(width: kSpacingS),
             Tooltip(
               message: 'Go up',
               child: InkWell(
@@ -443,9 +447,9 @@ class _EntityListPanelState extends State<EntityListPanel> {
                   final parentOfCurrent = widget.world.hierarchyCache.getParent(viewedParentId);
                   _handleNavigate(parentOfCurrent);
                 },
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(kRadiusS),
                 child: Padding(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(kSpacingS),
                   child: Icon(
                     Icons.arrow_upward,
                     size: 14,
@@ -460,9 +464,9 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildSearchBar(BuildContext context) {
+  Widget _buildSearchBar(ColorScheme colorScheme) {
     return Padding(
-      padding: const EdgeInsets.all(6.0),
+      padding: const EdgeInsets.all(kSpacingM),
       child: TextField(
         controller: _searchController,
         style: const TextStyle(fontSize: 11),
@@ -471,9 +475,9 @@ class _EntityListPanelState extends State<EntityListPanel> {
           hintStyle: const TextStyle(fontSize: 11),
           prefixIcon: const Icon(Icons.search, size: 16),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(6),
+            borderRadius: BorderRadius.circular(kRadiusM),
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+          contentPadding: const EdgeInsets.symmetric(horizontal: kSpacingM, vertical: kSpacingS),
           isDense: true,
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
@@ -489,12 +493,11 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildToolbar(BuildContext context, List<Entity> entities, Set<Entity> selectedEntities) {
-    final colorScheme = Theme.of(context).colorScheme;
+  Widget _buildToolbar(ColorScheme colorScheme, List<Entity> entities, Set<Entity> selectedEntities) {
     final hasSelection = selectedEntities.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: kSpacingM, vertical: kSpacingS),
       decoration: BoxDecoration(
         border: Border(
           bottom: BorderSide(
@@ -527,11 +530,9 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildColumnHeaders(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _buildColumnHeaders(ColorScheme colorScheme) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: kSpacingM, vertical: kSpacingS),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
         border: Border(
@@ -551,6 +552,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
               label: 'Name',
               isActive: _sortColumn == _SortColumn.name,
               ascending: _sortAscending,
+              colorScheme: colorScheme,
               onTap: () {
                 setState(() {
                   if (_sortColumn == _SortColumn.name) {
@@ -570,6 +572,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
               label: 'ID',
               isActive: _sortColumn == _SortColumn.id,
               ascending: _sortAscending,
+              colorScheme: colorScheme,
               onTap: () {
                 setState(() {
                   if (_sortColumn == _SortColumn.id) {
@@ -588,6 +591,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
   }
 
   void _showDeleteConfirmation(BuildContext context, Set<Entity> selected) {
+    final colorScheme = Theme.of(context).colorScheme;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -604,7 +608,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
               _deleteSelected(selected);
             },
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: colorScheme.error,
             ),
             child: const Text('Delete'),
           ),
@@ -613,15 +617,15 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildTreeView(BuildContext context, int? viewedParentId, Set<Entity> selectedEntities) {
+  Widget _buildTreeView(ColorScheme colorScheme, int? viewedParentId, Set<Entity> selectedEntities) {
     final rootEntities = _getRootEntities();
 
     if (rootEntities.isEmpty) {
-      return _buildEmptyState(context);
+      return _buildEmptyState(colorScheme);
     }
 
     return ListView(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: kSpacingXS),
       children: rootEntities.map((entity) {
         return EntityTreeNode(
           entity: entity,
@@ -639,13 +643,13 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildFlatList(BuildContext context, List<Entity> entities, Set<Entity> selectedEntities) {
+  Widget _buildFlatList(ColorScheme colorScheme, List<Entity> entities, Set<Entity> selectedEntities) {
     if (entities.isEmpty) {
-      return _buildEmptyState(context);
+      return _buildEmptyState(colorScheme);
     }
 
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(vertical: 2),
+      padding: const EdgeInsets.symmetric(vertical: kSpacingXS),
       itemCount: entities.length,
       itemBuilder: (context, index) {
         final entity = entities[index];
@@ -655,6 +659,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
           entity: entity,
           isSelected: isSelected,
           isFocused: isFocused,
+          colorScheme: colorScheme,
           onTap: () {
             setState(() {
               _focusedEntityId = entity.id;
@@ -666,12 +671,10 @@ class _EntityListPanelState extends State<EntityListPanel> {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
+  Widget _buildEmptyState(ColorScheme colorScheme) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(kSpacingXL),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -680,7 +683,7 @@ class _EntityListPanelState extends State<EntityListPanel> {
               size: 32,
               color: colorScheme.onSurface.withValues(alpha: 0.3),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: kSpacingM),
             Text(
               _searchQuery.isEmpty ? 'No entities' : 'No matches',
               style: TextStyle(
@@ -700,22 +703,22 @@ class _BreadcrumbSegment extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final ColorScheme colorScheme;
 
   const _BreadcrumbSegment({
     required this.label,
     required this.isActive,
     required this.onTap,
+    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(kRadiusS),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: kSpacingS, vertical: kSpacingXS),
         child: Text(
           label,
           style: TextStyle(
@@ -736,23 +739,23 @@ class _SortableColumnHeader extends StatelessWidget {
   final bool isActive;
   final bool ascending;
   final VoidCallback onTap;
+  final ColorScheme colorScheme;
 
   const _SortableColumnHeader({
     required this.label,
     required this.isActive,
     required this.ascending,
     required this.onTap,
+    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(4),
+      borderRadius: BorderRadius.circular(kRadiusS),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+        padding: const EdgeInsets.symmetric(horizontal: kSpacingXS, vertical: kSpacingXS),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -767,7 +770,7 @@ class _SortableColumnHeader extends StatelessWidget {
               ),
             ),
             if (isActive) ...[
-              const SizedBox(width: 2),
+              const SizedBox(width: kSpacingXS),
               Icon(
                 ascending ? Icons.arrow_upward : Icons.arrow_downward,
                 size: 12,
@@ -802,9 +805,9 @@ class _ToolbarButton extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(kRadiusS),
         child: Padding(
-          padding: const EdgeInsets.all(4),
+          padding: const EdgeInsets.all(kSpacingS),
           child: Icon(
             icon,
             size: 16,
@@ -821,17 +824,18 @@ class _EntityListItem extends StatelessWidget {
   final bool isSelected;
   final bool isFocused;
   final VoidCallback onTap;
+  final ColorScheme colorScheme;
 
   const _EntityListItem({
     required this.entity,
     required this.isSelected,
     this.isFocused = false,
     required this.onTap,
+    required this.colorScheme,
   });
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final name = entity.get<Name>()?.name ?? 'Entity #${entity.id}';
     final renderable = entity.get<Renderable>();
 
@@ -856,10 +860,10 @@ class _EntityListItem extends StatelessWidget {
                 : null,
           ),
           padding: EdgeInsets.only(
-            left: isFocused ? 3 : 6,
-            right: 6,
-            top: 4,
-            bottom: 4,
+            left: isFocused ? 3 : kSpacingM,
+            right: kSpacingM,
+            top: kSpacingS,
+            bottom: kSpacingS,
           ),
           child: Row(
             children: [
@@ -882,7 +886,7 @@ class _EntityListItem extends StatelessWidget {
                         color: colorScheme.onSurface.withValues(alpha: 0.5),
                       ),
               ),
-              const SizedBox(width: 6),
+              const SizedBox(width: kSpacingM),
               // Name
               Expanded(
                 child: Text(

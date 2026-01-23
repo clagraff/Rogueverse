@@ -15,6 +15,7 @@ import 'package:rogueverse/ecs/systems/death_system.dart';
 import 'package:rogueverse/game/components/camera_controller.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 import 'package:rogueverse/game/components/interaction_control_handler.dart';
+import 'package:rogueverse/game/components/editor_mode_manager.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
 import 'package:rogueverse/game/tick_scheduler.dart';
 
@@ -85,6 +86,9 @@ class GameArea extends FlameGame
 
   /// Manages periodic game ticks (OSRS-style 0.6s intervals).
   late final TickScheduler tickScheduler;
+
+  /// Manages transitions between gameplay and editing modes.
+  late final EditorModeManager editorModeManager;
 
   /// Reference to the interaction control handler for overlay access.
   /// Set by GameScreen during initialization.
@@ -176,24 +180,18 @@ class GameArea extends FlameGame
       },
     );
 
-    // Pause tick scheduler when entering editing mode, resume when in gameplay
-    // This listener handles the layered save system:
-    // - On entering editor: save progress as patch, reload pure initial state
-    // - On exiting editor: save initial state, reload with patch applied
-    gameMode.addListener(() {
-      if (gameMode.value == GameMode.editing) {
-        _onEnterEditorMode();
-      } else {
-        _onExitEditorMode();
-      }
-    });
-
-    // Handle switching edit targets while already in edit mode
-    editTarget.addListener(() {
-      if (gameMode.value == GameMode.editing) {
-        _onEditTargetChanged();
-      }
-    });
+    // Initialize editor mode manager (handles mode transitions and persistence)
+    editorModeManager = EditorModeManager(
+      world: currentWorld,
+      tickScheduler: tickScheduler,
+      gameModeNotifier: gameMode,
+      editTargetNotifier: editTarget,
+      selectedEntitiesNotifier: selectedEntities,
+      selectedEntityNotifier: selectedEntity,
+      observerEntityIdNotifier: observerEntityId,
+      viewedParentIdNotifier: viewedParentId,
+      savePatchPath: savePatchPath,
+    );
 
     // Listen for Controlling component changes to update selectedEntity
     currentWorld.componentChanges
@@ -246,108 +244,6 @@ class GameArea extends FlameGame
         selectedTemplateId.value = null;
       }
     });
-  }
-
-  /// Handles entering editor mode: saves progress and loads appropriate state.
-  Future<void> _onEnterEditorMode() async {
-    tickScheduler.pause();
-
-    if (editTarget.value == EditTarget.initial) {
-      // Editing initial state: save current progress as patch, reload pure initial
-      await Persistence.writeSavePatch(currentWorld);
-      currentWorld.loadFrom(Persistence.initialState);
-    } else {
-      // Editing save state: save patch to preserve progress, keep current state
-      await Persistence.writeSavePatch(currentWorld);
-      // World already contains initial + patch, so no reload needed
-    }
-
-    // Clear selections since we may have reloaded the world
-    selectedEntities.value = {};
-    selectedEntity.value = null;
-    observerEntityId.value = null;
-  }
-
-  /// Handles exiting editor mode: saves to appropriate target, restores gameplay.
-  Future<void> _onExitEditorMode() async {
-    if (editTarget.value == EditTarget.initial) {
-      // Save the edited world as the new initial state
-      await Persistence.writeInitialState(currentWorld);
-
-      // Reload initial state + apply save patch to restore player progress
-      try {
-        var worldWithPatch = await Persistence.loadSaveWithPatch(savePatchPath);
-        if (worldWithPatch != null) {
-          currentWorld.loadFrom(worldWithPatch.toMap());
-        }
-      } catch (e) {
-        _logger.severe("save patch could not be applied after editor changes", e);
-        await Persistence.clearSavePatch();
-      }
-    } else {
-      // Save the edited world as a patch (diff from initial)
-      await Persistence.writeSavePatch(currentWorld);
-      // World is already in the correct state, no reload needed
-    }
-
-    // Restore player control after potential world reload
-    _restorePlayerControl();
-
-    tickScheduler.resume();
-  }
-
-  /// Handles switching edit targets while already in edit mode.
-  /// Always saves current state to the old target before loading the new one.
-  Future<void> _onEditTargetChanged() async {
-    if (editTarget.value == EditTarget.initial) {
-      // Switched TO initial editing (from save)
-      // Save current state as patch (we were editing the save state)
-      await Persistence.writeSavePatch(currentWorld);
-      // Load pure initial state for editing
-      currentWorld.loadFrom(Persistence.initialState);
-    } else {
-      // Switched TO save editing (from initial)
-      // Save current state as initial (we were editing the initial state)
-      await Persistence.writeInitialState(currentWorld);
-      // Load initial + patch for editing (creates empty patch if none exists)
-      var worldWithPatch = await Persistence.loadSaveWithPatch(savePatchPath);
-      if (worldWithPatch != null) {
-        currentWorld.loadFrom(worldWithPatch.toMap());
-      }
-      // If no patch existed, worldWithPatch returns the initial state anyway
-    }
-
-    // Clear selections since we've reloaded the world
-    selectedEntities.value = {};
-    selectedEntity.value = null;
-    observerEntityId.value = null;
-  }
-
-  /// Finds the Player entity and restores selection, observer, and view to it.
-  void _restorePlayerControl() {
-    final playerEntity = currentWorld.entities().firstWhereOrNull(
-          (e) => e.has<Player>(),
-        );
-
-    if (playerEntity != null) {
-      // Set the view to the player's parent FIRST (room/location)
-      // This must be done before setting selectedEntities/observerEntityId because
-      // the viewedParentId listener clears those values when the view changes
-      final playerParent = playerEntity.get<HasParent>();
-      if (playerParent != null) {
-        viewedParentId.value = playerParent.parentEntityId;
-      }
-      // Now set the player as the selected/controlled entity
-      selectedEntities.value = {playerEntity};
-      // Set the player as the vision observer
-      observerEntityId.value = playerEntity.id;
-      _logger.info('Restored player control: entity ${playerEntity.id}');
-    } else {
-      // No player found, just clear selection
-      selectedEntities.value = {};
-      observerEntityId.value = null;
-      _logger.warning('No Player entity found to restore control');
-    }
   }
 
   /// Initializes the game area by setting up the camera anchor, camera controls,

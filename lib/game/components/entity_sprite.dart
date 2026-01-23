@@ -9,7 +9,7 @@ import 'package:rogueverse/ecs/disposable.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
-import 'package:rogueverse/game/components/agent_health_bar.dart';
+import 'package:rogueverse/game/components/entity_health_bar.dart';
 import 'package:rogueverse/game/components/floating_damage_text.dart';
 import 'package:rogueverse/game/components/visual_component.dart';
 import 'package:rogueverse/game/components/svg_visual_component.dart';
@@ -19,11 +19,19 @@ import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/app/services/text_template_service.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 
-class Agent extends PositionComponent with HasVisibility, Disposer {
+/// Visual representation of an ECS entity in the Flame game world.
+///
+/// Responsibilities:
+/// - Renders the entity's visual asset (SVG, PNG, or text)
+/// - Manages visibility/opacity based on vision system (fog of war)
+/// - Animates position changes smoothly
+/// - Shows health bar and floating damage text
+/// - Swaps visuals when Renderable component changes (e.g., door opening)
+class EntitySprite extends PositionComponent with HasVisibility, Disposer {
   final World world;
   final Entity entity;
   RenderableAsset _currentAsset;
-  AgentHealthBar? healthBar;
+  EntityHealthBar? healthBar;
   VisualComponent? _visual;
 
   // Vision-based rendering state
@@ -39,7 +47,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   int? _currentObserverId;
   Vector2? _lastSeenPosition;
 
-  Agent({
+  EntitySprite({
     required this.world,
     required this.entity,
     required RenderableAsset asset,
@@ -56,7 +64,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     _visual = _createVisualComponent(_currentAsset, size);
     await add(_visual!);
 
-    healthBar = AgentHealthBar(
+    healthBar = EntityHealthBar(
         entity: entity, position: Vector2(0, -3), size: Vector2(size.x, 3));
     add(healthBar!);
 
@@ -310,7 +318,8 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       if (game.gameMode.value == GameMode.editing) {
         // In editing mode, all entities are fully visible
         _visual?.opacity = 1.0;
-        healthBar?.isVisible = true;
+        healthBar?.setEntityInFOV(true);
+        healthBar?.updateBar();
         // Swap to EditorRenderable if available
         _syncVisualToCurrentMode();
       } else if (_currentObserverId != null) {
@@ -341,7 +350,8 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     if (observerId == null) {
       // Default to visible if no observer
       _visual?.opacity = 1.0;
-      healthBar?.isVisible = true;
+      healthBar?.setEntityInFOV(true);
+      healthBar?.updateBar();
       return;
     }
 
@@ -350,7 +360,8 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     if (!observer.has<VisionRadius>()) {
       // Show all entities if observer has no vision system
       _visual?.opacity = 1.0;
-      healthBar?.isVisible = true;
+      healthBar?.setEntityInFOV(true);
+      healthBar?.updateBar();
       return;
     }
 
@@ -368,13 +379,14 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     _updateVisibility(observerId);
   }
 
-  /// Updates this agent's opacity based on visibility from the observer's perspective.
+  /// Updates this entity's opacity based on visibility from the observer's perspective.
   void _updateVisibility(int observerId) {
     // In editing mode, all entities are fully visible
     final game = parent?.findGame() as GameArea?;
     if (game != null && game.gameMode.value == GameMode.editing) {
       _visual?.opacity = 1.0;
-      healthBar?.isVisible = true;
+      healthBar?.setEntityInFOV(true);
+      healthBar?.updateBar();
       return;
     }
 
@@ -387,12 +399,14 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     // The observer itself is always fully visible
     if (entity.id == observerId) {
       targetOpacity = 1.0;
-      healthBar?.isVisible = true;
+      healthBar?.setEntityInFOV(true);
+      healthBar?.updateBar();
     }
     // Check if currently visible
     else if (visibleEntities?.entityIds.contains(entity.id) ?? false) {
       targetOpacity = 1.0;
-      healthBar?.isVisible = true;
+      healthBar?.setEntityInFOV(true);
+      healthBar?.updateBar();
       // Update last-seen position
       final localPos = entity.get<LocalPosition>();
       if (localPos != null) {
@@ -403,33 +417,40 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     }
     // Check if in vision memory (seen before but not currently visible)
     else if (visionMemory?.hasSeenEntity(entity.id) ?? false) {
-      targetOpacity = 0.3; // Very transparent for remembered entities
-      healthBar?.isVisible = false;
+      targetOpacity = 0.3; // Dimmed for remembered entities
+      healthBar?.setEntityInFOV(false);
     }
     // Not visible and never seen
     else {
       targetOpacity = 0.0; // Invisible
-      healthBar?.isVisible = false;
+      healthBar?.setEntityInFOV(false);
     }
 
-    // Apply opacity to visual component with animation
+    // Apply opacity - avoid animation stacking issues
     if (_visual != null) {
       final currentOpacity = _visual!.opacity;
 
-      // Only animate if opacity is changing significantly
-      if ((currentOpacity - targetOpacity).abs() > 0.01) {
-        // Remove existing opacity effects to prevent stacking
-        // Note: toList() is needed to avoid concurrent modification during iteration
-        _visual!.children
-            .whereType<OpacityEffect>()
-            .toList()
-            .forEach((e) => e.removeFromParent());
+      // If already at target (within tolerance), do nothing
+      if ((currentOpacity - targetOpacity).abs() <= 0.01) {
+        return;
+      }
 
-        // Animate to target opacity (100ms to match movement animation)
+      // Remove ALL existing opacity effects before adding new one
+      _visual!.children
+          .whereType<OpacityEffect>()
+          .toList()
+          .forEach((e) => e.removeFromParent());
+
+      // For large opacity jumps (visible→memory or vice versa), animate
+      // For small adjustments, set directly to avoid flicker
+      if ((currentOpacity - targetOpacity).abs() > 0.5) {
         _visual!.add(OpacityEffect.to(
           targetOpacity,
           EffectController(duration: 0.100),
         ));
+      } else {
+        // Set directly to avoid animation stacking issues
+        _visual!.opacity = targetOpacity;
       }
     }
   }
@@ -461,7 +482,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       removeFromParent();
     }
 
-    // Dead entities are removed by DeathSystem; Agent just cleans up rendering
+    // Dead entities are removed by DeathSystem; EntitySprite just cleans up rendering
     if (entity.has<Dead>()) {
       removeFromParent();
     }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
 
 /// A confirmation dialog with keyboard navigation support.
 ///
@@ -61,22 +62,7 @@ class ConfirmationDialog extends StatefulWidget {
 }
 
 class _ConfirmationDialogState extends State<ConfirmationDialog> {
-  final FocusNode _focusNode = FocusNode();
   bool _confirmSelected = false;
-
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _focusNode.requestFocus();
-    });
-  }
-
-  @override
-  void dispose() {
-    _focusNode.dispose();
-    super.dispose();
-  }
 
   void _handleKeyEvent(KeyEvent event) {
     if (event is! KeyDownEvent) return;
@@ -113,9 +99,7 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
     final colorScheme = Theme.of(context).colorScheme;
     final destructiveColor = colorScheme.error;
 
-    return KeyboardListener(
-      focusNode: _focusNode,
-      autofocus: true,
+    return AutoFocusKeyboardListener(
       onKeyEvent: _handleKeyEvent,
       child: AlertDialog(
         title: Text(widget.title),

@@ -339,15 +339,16 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
     final visibleEntityIds =
         _findEntitiesAtPositions(world, visibleTiles, observerId);
 
-    // Update observer's VisibleEntities component
+    // Update memory FIRST (so it's ready when VisibleEntities triggers subscriptions)
+    // This ensures EntitySprite._updateVisibility has correct VisionMemory when it runs
+    _updateMemory(observer, visibleEntityIds, world);
+
+    // THEN update VisibleEntities (triggers EntitySprite subscriptions)
     _logger.finest('vision_update: entity=$observerId, visible_tiles=${visibleTiles.length}, visible_entities=${visibleEntityIds.length}, position=(${observerPos.x},${observerPos.y})');
     observer.upsert(VisibleEntities(
       entityIds: visibleEntityIds,
       visibleTiles: visibleTiles,
     ));
-
-    // Update memory (simple: just store last seen positions)
-    _updateMemory(observer, visibleEntityIds, world);
   }
 
   /// Calculate FOV using Bresenham raycasting with line-of-sight blocking
