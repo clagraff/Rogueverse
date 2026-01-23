@@ -366,7 +366,7 @@ class GameScreen extends flame.World with Disposer {
     add(VisionConeComponent(
       world: game.currentWorld,
       observerIdNotifier: game.observerEntityId,
-    )..priority = -1000);
+    ));
 
     // DEBUG: Uncomment to show crosshair where camera thinks the center is
     // add(CameraCenterDebug()..priority = 1000);

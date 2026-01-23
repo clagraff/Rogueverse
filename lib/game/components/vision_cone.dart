@@ -36,7 +36,10 @@ class VisionConeComponent extends PositionComponent {
   VisionConeComponent({
     required this.world,
     required this.observerIdNotifier,
-  });
+  }) {
+    // Render below all other game components (entities, highlights, etc.)
+    priority = -1000;
+  }
 
   @override
   Future<void> onLoad() async {
