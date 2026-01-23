@@ -36,12 +36,45 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
   /// Whether changes have been made since opening.
   bool _hasChanges = false;
 
+  /// Node ID registry for validation and lookups.
+  NodeIdRegistry _nodeRegistry = {};
+
   @override
   void initState() {
     super.initState();
     // Clone the dialog tree for editing
     final dialog = widget.entity.get<Dialog>();
     _rootNode = dialog?.root;
+    _rebuildRegistry();
+  }
+
+  /// Rebuilds the node ID registry from the current root node.
+  void _rebuildRegistry() {
+    _nodeRegistry = {};
+    if (_rootNode != null) {
+      _collectNodeIds(_rootNode!, _nodeRegistry);
+    }
+  }
+
+  /// Recursively collects all node IDs into the registry.
+  void _collectNodeIds(DialogNode node, NodeIdRegistry registry) {
+    registry[node.id] = node;
+
+    if (node is SpeakNode) {
+      for (final choice in node.choices) {
+        _collectNodeIds(choice.child, registry);
+      }
+    } else if (node is TextNode) {
+      if (node.next != null) {
+        _collectNodeIds(node.next!, registry);
+      }
+    } else if (node is EffectNode) {
+      _collectNodeIds(node.next, registry);
+    } else if (node is ConditionalNode) {
+      _collectNodeIds(node.onPass, registry);
+      _collectNodeIds(node.onFail, registry);
+    }
+    // GotoNode and EndNode have no children
   }
 
   /// Gets the node at the current selection path.
@@ -126,11 +159,26 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
   void _onUpdateNode(List<int> path, DialogNode? newNode) {
     setState(() {
       _hasChanges = true;
+
+      // Get the old node's ID for detecting ID changes
+      final oldNode = path.isEmpty ? _rootNode : _selectedNode;
+      final oldId = oldNode?.id;
+      final newId = newNode?.id;
+
+      // Update the node in the tree
       if (path.isEmpty) {
         _rootNode = newNode;
       } else {
         _rootNode = _updateNodeAtPath(_rootNode, path, newNode);
       }
+
+      // If the node ID changed, update all GotoNode references
+      if (oldId != null && newId != null && oldId != newId && _rootNode != null) {
+        _rootNode = _updateGotoTargets(_rootNode!, oldId, newId);
+      }
+
+      // Rebuild registry after any tree modification
+      _rebuildRegistry();
     });
   }
 
@@ -158,10 +206,11 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
           condition: choice.condition,
           conditionLabel: choice.conditionLabel,
           showWhenUnavailable: choice.showWhenUnavailable,
-          child: updatedChild ?? const EndNode(),
+          child: updatedChild ?? EndNode(id: generateNodeId()),
         );
       }
       return SpeakNode(
+        id: current.id,
         speakerName: current.speakerName,
         text: current.text,
         choices: newChoices,
@@ -173,6 +222,7 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
             ? newNode
             : _updateNodeAtPath(current.next, remainingPath, newNode);
         return TextNode(
+          id: current.id,
           speakerName: current.speakerName,
           text: current.text,
           next: updatedNext,
@@ -185,8 +235,9 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
             ? newNode
             : _updateNodeAtPath(current.next, remainingPath, newNode);
         return EffectNode(
+          id: current.id,
           effects: current.effects,
-          next: updatedNext ?? const EndNode(),
+          next: updatedNext ?? EndNode(id: generateNodeId()),
         );
       }
     } else if (current is ConditionalNode) {
@@ -195,8 +246,9 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
             ? newNode
             : _updateNodeAtPath(current.onPass, remainingPath, newNode);
         return ConditionalNode(
+          id: current.id,
           condition: current.condition,
-          onPass: updatedPass ?? const EndNode(),
+          onPass: updatedPass ?? EndNode(id: generateNodeId()),
           onFail: current.onFail,
         );
       } else if (index == 1) {
@@ -204,9 +256,10 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
             ? newNode
             : _updateNodeAtPath(current.onFail, remainingPath, newNode);
         return ConditionalNode(
+          id: current.id,
           condition: current.condition,
           onPass: current.onPass,
-          onFail: updatedFail ?? const EndNode(),
+          onFail: updatedFail ?? EndNode(id: generateNodeId()),
         );
       }
     }
@@ -214,20 +267,72 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
     return current;
   }
 
+  /// Recursively updates all GotoNode targetIds from oldId to newId.
+  DialogNode _updateGotoTargets(DialogNode node, String oldId, String newId) {
+    if (node is GotoNode) {
+      if (node.targetId == oldId) {
+        return GotoNode(id: node.id, targetId: newId);
+      }
+      return node;
+    } else if (node is SpeakNode) {
+      final newChoices = node.choices.map((choice) {
+        return Choice(
+          text: choice.text,
+          condition: choice.condition,
+          conditionLabel: choice.conditionLabel,
+          showWhenUnavailable: choice.showWhenUnavailable,
+          child: _updateGotoTargets(choice.child, oldId, newId),
+        );
+      }).toList();
+      return SpeakNode(
+        id: node.id,
+        speakerName: node.speakerName,
+        text: node.text,
+        choices: newChoices,
+        effects: node.effects,
+      );
+    } else if (node is TextNode) {
+      return TextNode(
+        id: node.id,
+        speakerName: node.speakerName,
+        text: node.text,
+        next: node.next != null ? _updateGotoTargets(node.next!, oldId, newId) : null,
+        effects: node.effects,
+      );
+    } else if (node is EffectNode) {
+      return EffectNode(
+        id: node.id,
+        effects: node.effects,
+        next: _updateGotoTargets(node.next, oldId, newId),
+      );
+    } else if (node is ConditionalNode) {
+      return ConditionalNode(
+        id: node.id,
+        condition: node.condition,
+        onPass: _updateGotoTargets(node.onPass, oldId, newId),
+        onFail: _updateGotoTargets(node.onFail, oldId, newId),
+      );
+    }
+    // EndNode has no children
+    return node;
+  }
+
   void _onAddRootNode() {
     setState(() {
       _hasChanges = true;
-      _rootNode = const SpeakNode(
+      _rootNode = SpeakNode(
+        id: generateNodeId(),
         speakerName: 'Speaker',
         text: 'Hello!',
         choices: [
           Choice(
             text: 'Goodbye',
-            child: EndNode(),
+            child: EndNode(id: generateNodeId()),
           ),
         ],
       );
       _selectedPath = [];
+      _rebuildRegistry();
     });
   }
 
@@ -291,51 +396,54 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
           }
           return KeyEventResult.ignored;
         },
-        child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Left panel - Tree view
-              SizedBox(
-                width: 350,
-                child: Container(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      right: BorderSide(color: colorScheme.outlineVariant),
+        child: DialogTreeContext(
+          registry: _nodeRegistry,
+          child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Left panel - Tree view
+                SizedBox(
+                  width: 350,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      border: Border(
+                        right: BorderSide(color: colorScheme.outlineVariant),
+                      ),
+                    ),
+                    child: DialogTreeView(
+                      root: _rootNode,
+                      selectedPath: _selectedPath,
+                      onSelect: _onSelectNode,
+                      onUpdate: _onUpdateNode,
+                      onAddRootNode: _onAddRootNode,
                     ),
                   ),
-                  child: DialogTreeView(
-                    root: _rootNode,
-                    selectedPath: _selectedPath,
-                    onSelect: _onSelectNode,
-                    onUpdate: _onUpdateNode,
-                    onAddRootNode: _onAddRootNode,
+                ),
+
+                // Right panel - Node editor
+                Expanded(
+                  child: DialogNodeEditor(
+                    node: _selectedNode,
+                    path: _selectedPath,
+                    onUpdate: (newNode) => _onUpdateNode(_selectedPath, newNode),
+                    onNavigateToChild: (childIndex) {
+                      setState(() {
+                        _selectedPath = [..._selectedPath, childIndex];
+                      });
+                    },
+                    onNavigateUp: () {
+                      if (_selectedPath.isNotEmpty) {
+                        setState(() {
+                          _selectedPath = _selectedPath.sublist(
+                              0, _selectedPath.length - 1);
+                        });
+                      }
+                    },
                   ),
                 ),
-              ),
-
-              // Right panel - Node editor
-              Expanded(
-                child: DialogNodeEditor(
-                  node: _selectedNode,
-                  path: _selectedPath,
-                  onUpdate: (newNode) => _onUpdateNode(_selectedPath, newNode),
-                  onNavigateToChild: (childIndex) {
-                    setState(() {
-                      _selectedPath = [..._selectedPath, childIndex];
-                    });
-                  },
-                  onNavigateUp: () {
-                    if (_selectedPath.isNotEmpty) {
-                      setState(() {
-                        _selectedPath = _selectedPath.sublist(
-                            0, _selectedPath.length - 1);
-                      });
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
+              ],
+            ),
+        ),
       ),
       floatingActionButton: FloatingActionButton.small(
         onPressed: () {

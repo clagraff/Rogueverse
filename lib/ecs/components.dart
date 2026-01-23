@@ -1,6 +1,6 @@
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:rogueverse/ecs/ai/nodes.dart';
-import 'package:rogueverse/ecs/dialog/dialog_nodes.dart';
+import 'package:rogueverse/ecs/dialog/dialog.dart';
 
 part 'components.mapper.dart';
 
@@ -901,6 +901,38 @@ class Dialog with DialogMappable implements Component {
 
   @override
   String get componentType => "Dialog";
+
+  /// Builds a registry mapping node IDs to their nodes.
+  ///
+  /// Walks the entire dialog tree and collects all nodes.
+  /// If duplicate IDs exist, the first match (depth-first) wins.
+  NodeIdRegistry buildNodeIdRegistry() {
+    final registry = <String, DialogNode>{};
+    _collectNodes(root, registry);
+    return registry;
+  }
+
+  void _collectNodes(DialogNode node, Map<String, DialogNode> registry) {
+    // Add this node if the ID isn't already taken
+    if (!registry.containsKey(node.id)) {
+      registry[node.id] = node;
+    }
+
+    // Recurse into children
+    if (node is SpeakNode) {
+      for (final choice in node.choices) {
+        _collectNodes(choice.child, registry);
+      }
+    } else if (node is TextNode && node.next != null) {
+      _collectNodes(node.next!, registry);
+    } else if (node is EffectNode) {
+      _collectNodes(node.next, registry);
+    } else if (node is ConditionalNode) {
+      _collectNodes(node.onPass, registry);
+      _collectNodes(node.onFail, registry);
+    }
+    // EndNode and GotoNode have no children to recurse into
+  }
 }
 
 /// Intent to start a dialog with an NPC.

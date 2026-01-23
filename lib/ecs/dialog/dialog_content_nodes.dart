@@ -60,6 +60,7 @@ class SpeakNode extends DialogNode with SpeakNodeMappable {
   final List<DialogEffect> effects;
 
   const SpeakNode({
+    required super.id,
     required this.speakerName,
     required this.text,
     required this.choices,
@@ -67,7 +68,7 @@ class SpeakNode extends DialogNode with SpeakNodeMappable {
   });
 
   @override
-  DialogResult advance(Entity player, Entity npc) {
+  DialogResult advance(Entity player, Entity npc, NodeIdRegistry nodeRegistry) {
     // Execute any effects first
     for (final effect in effects) {
       effect.execute(player, npc);
@@ -89,15 +90,8 @@ class SpeakNode extends DialogNode with SpeakNodeMappable {
       }
     }
 
-    // Always add "(done)" option
-    dialogChoices.add(DialogChoice(
-      text: "(done)",
-      conditionLabel: null,
-      isAvailable: true,
-      choiceIndex: -1, // Special index for exit
-    ));
-
     return DialogAwaitingChoice(
+      sourceNodeId: id,
       speakerName: speakerName,
       text: text,
       choices: dialogChoices,
@@ -137,32 +131,36 @@ class TextNode extends DialogNode with TextNodeMappable {
   /// Effects to execute when this node is reached.
   final List<DialogEffect> effects;
 
+  /// Custom text for the continue button. Defaults to "(continue)".
+  final String continueText;
+
   const TextNode({
+    required super.id,
     required this.speakerName,
     required this.text,
     this.next,
     this.effects = const [],
+    this.continueText = '(continue)',
   });
 
   @override
-  DialogResult advance(Entity player, Entity npc) {
+  DialogResult advance(Entity player, Entity npc, NodeIdRegistry nodeRegistry) {
     // Execute effects
     for (final effect in effects) {
       effect.execute(player, npc);
     }
 
-    // Show text with appropriate continuation option
-    // Use "(done)" if no next node or next is EndNode
-    final choiceText = (next == null || next is EndNode) ? "(done)" : "(continue)";
+    // Show text with continuation option (ESC handles early exit)
     return DialogAwaitingChoice(
+      sourceNodeId: id,
       speakerName: speakerName,
       text: text,
       choices: [
         DialogChoice(
-          text: choiceText,
+          text: continueText,
           conditionLabel: null,
           isAvailable: true,
-          choiceIndex: 0, // Use 0 to indicate "continue to next"
+          choiceIndex: 0,
         ),
       ],
     );
@@ -188,10 +186,10 @@ class EndNode extends DialogNode with EndNodeMappable {
   /// Effects to execute when dialog ends.
   final List<DialogEffect> effects;
 
-  const EndNode({this.effects = const []});
+  const EndNode({required super.id, this.effects = const []});
 
   @override
-  DialogResult advance(Entity player, Entity npc) {
+  DialogResult advance(Entity player, Entity npc, NodeIdRegistry nodeRegistry) {
     // Execute any final effects
     for (final effect in effects) {
       effect.execute(player, npc);
@@ -216,16 +214,17 @@ class EffectNode extends DialogNode with EffectNodeMappable {
   final DialogNode next;
 
   const EffectNode({
+    required super.id,
     required this.effects,
     required this.next,
   });
 
   @override
-  DialogResult advance(Entity player, Entity npc) {
+  DialogResult advance(Entity player, Entity npc, NodeIdRegistry nodeRegistry) {
     for (final effect in effects) {
       effect.execute(player, npc);
     }
-    return next.advance(player, npc);
+    return next.advance(player, npc, nodeRegistry);
   }
 
   @override
@@ -255,17 +254,18 @@ class ConditionalNode extends DialogNode with ConditionalNodeMappable {
   final DialogNode onFail;
 
   const ConditionalNode({
+    required super.id,
     required this.condition,
     required this.onPass,
     required this.onFail,
   });
 
   @override
-  DialogResult advance(Entity player, Entity npc) {
+  DialogResult advance(Entity player, Entity npc, NodeIdRegistry nodeRegistry) {
     if (condition.evaluate(player, npc)) {
-      return onPass.advance(player, npc);
+      return onPass.advance(player, npc, nodeRegistry);
     } else {
-      return onFail.advance(player, npc);
+      return onFail.advance(player, npc, nodeRegistry);
     }
   }
 
@@ -279,5 +279,41 @@ class ConditionalNode extends DialogNode with ConditionalNodeMappable {
   void reset() {
     onPass.reset();
     onFail.reset();
+  }
+}
+
+/// Node that jumps to another node by ID.
+///
+/// Looks up the target node by ID and continues from there.
+/// If the target ID is not found, the dialog ends gracefully.
+@MappableClass()
+class GotoNode extends DialogNode with GotoNodeMappable {
+  /// The ID of the target node to jump to.
+  final String targetId;
+
+  const GotoNode({
+    required super.id,
+    required this.targetId,
+  });
+
+  @override
+  DialogResult advance(Entity player, Entity npc, NodeIdRegistry nodeRegistry) {
+    final targetNode = nodeRegistry[targetId];
+    if (targetNode == null) {
+      // Target not found - end dialog gracefully
+      return const DialogEnded();
+    }
+    return targetNode.advance(player, npc, nodeRegistry);
+  }
+
+  @override
+  DialogNode? selectChoice(int choiceIndex) {
+    // GotoNode doesn't present choices directly
+    return null;
+  }
+
+  @override
+  void reset() {
+    // Nothing to reset - the target node will be reset when the tree is reset
   }
 }

@@ -190,6 +190,9 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
                         // Player choices section
                         _buildChoicesSection(context, state, result),
+
+                        // Hint footer
+                        _buildHintFooter(context),
                       ],
                     ),
                   ),
@@ -263,8 +266,39 @@ class _DialogOverlayState extends State<DialogOverlay> {
         padding: const EdgeInsets.symmetric(vertical: 8),
         itemCount: result.choices.length,
         itemBuilder: (context, index) {
-          return _buildChoiceItem(context, state, result.choices[index], index);
+          final choice = result.choices[index];
+          // Check if this choice was previously visited (only for actual choices, not "(done)")
+          final isVisited = choice.choiceIndex != -1 && state.isChoiceVisited(choice.choiceIndex);
+          return _buildChoiceItem(context, state, choice, index, isVisited);
         },
+      ),
+    );
+  }
+
+  Widget _buildHintFooter(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Text(
+            'Esc',
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
+              fontSize: 11,
+              fontFamily: 'monospace',
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Close',
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.4),
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -274,6 +308,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
     DialogState state,
     DialogChoice choice,
     int index,
+    bool isVisited,
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -281,11 +316,14 @@ class _DialogOverlayState extends State<DialogOverlay> {
     final isAvailable = choice.isAvailable;
 
     // Determine text color based on state
+    // Visited choices are dimmed slightly to indicate they've been selected before
     Color textColor;
     if (!isAvailable) {
       textColor = colorScheme.onSurface.withValues(alpha: 0.4);
     } else if (isSelected) {
       textColor = colorScheme.onPrimaryContainer;
+    } else if (isVisited) {
+      textColor = colorScheme.onSurface.withValues(alpha: 0.6);
     } else {
       textColor = colorScheme.onSurface;
     }
@@ -343,18 +381,33 @@ class _DialogOverlayState extends State<DialogOverlay> {
                     const SizedBox(height: 2),
                   ],
 
-                  // Choice text
-                  Text(
-                    TextTemplateService.instance.resolve(
-                      choice.text,
-                      context: TemplateContext(player: state.player, npc: state.npc),
-                    ),
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 14,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                      fontStyle: isAvailable ? FontStyle.normal : FontStyle.italic,
-                    ),
+                  // Choice text with visited indicator
+                  Row(
+                    children: [
+                      // Visited checkmark
+                      if (isVisited) ...[
+                        Icon(
+                          Icons.check,
+                          size: 14,
+                          color: textColor.withValues(alpha: 0.5),
+                        ),
+                        const SizedBox(width: 4),
+                      ],
+                      Expanded(
+                        child: Text(
+                          TextTemplateService.instance.resolve(
+                            choice.text,
+                            context: TemplateContext(player: state.player, npc: state.npc),
+                          ),
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 14,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                            fontStyle: isAvailable ? FontStyle.normal : FontStyle.italic,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

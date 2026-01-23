@@ -183,6 +183,8 @@ class SpeakNodeMapper extends SubClassMapperBase<SpeakNode> {
   @override
   final String id = 'SpeakNode';
 
+  static String _$id(SpeakNode v) => v.id;
+  static const Field<SpeakNode, String> _f$id = Field('id', _$id);
   static String _$speakerName(SpeakNode v) => v.speakerName;
   static const Field<SpeakNode, String> _f$speakerName = Field(
     'speakerName',
@@ -205,6 +207,7 @@ class SpeakNodeMapper extends SubClassMapperBase<SpeakNode> {
 
   @override
   final MappableFields<SpeakNode> fields = const {
+    #id: _f$id,
     #speakerName: _f$speakerName,
     #text: _f$text,
     #choices: _f$choices,
@@ -220,6 +223,7 @@ class SpeakNodeMapper extends SubClassMapperBase<SpeakNode> {
 
   static SpeakNode _instantiate(DecodingData data) {
     return SpeakNode(
+      id: data.dec(_f$id),
       speakerName: data.dec(_f$speakerName),
       text: data.dec(_f$text),
       choices: data.dec(_f$choices),
@@ -291,6 +295,7 @@ abstract class SpeakNodeCopyWith<$R, $In extends SpeakNode, $Out>
   get effects;
   @override
   $R call({
+    String? id,
     String? speakerName,
     String? text,
     List<Choice>? choices,
@@ -323,12 +328,14 @@ class _SpeakNodeCopyWithImpl<$R, $Out>
   );
   @override
   $R call({
+    String? id,
     String? speakerName,
     String? text,
     List<Choice>? choices,
     List<DialogEffect>? effects,
   }) => $apply(
     FieldCopyWithData({
+      if (id != null) #id: id,
       if (speakerName != null) #speakerName: speakerName,
       if (text != null) #text: text,
       if (choices != null) #choices: choices,
@@ -337,6 +344,7 @@ class _SpeakNodeCopyWithImpl<$R, $Out>
   );
   @override
   SpeakNode $make(CopyWithData data) => SpeakNode(
+    id: data.get(#id, or: $value.id),
     speakerName: data.get(#speakerName, or: $value.speakerName),
     text: data.get(#text, or: $value.text),
     choices: data.get(#choices, or: $value.choices),
@@ -366,6 +374,8 @@ class TextNodeMapper extends SubClassMapperBase<TextNode> {
   @override
   final String id = 'TextNode';
 
+  static String _$id(TextNode v) => v.id;
+  static const Field<TextNode, String> _f$id = Field('id', _$id);
   static String _$speakerName(TextNode v) => v.speakerName;
   static const Field<TextNode, String> _f$speakerName = Field(
     'speakerName',
@@ -386,13 +396,22 @@ class TextNodeMapper extends SubClassMapperBase<TextNode> {
     opt: true,
     def: const [],
   );
+  static String _$continueText(TextNode v) => v.continueText;
+  static const Field<TextNode, String> _f$continueText = Field(
+    'continueText',
+    _$continueText,
+    opt: true,
+    def: '(continue)',
+  );
 
   @override
   final MappableFields<TextNode> fields = const {
+    #id: _f$id,
     #speakerName: _f$speakerName,
     #text: _f$text,
     #next: _f$next,
     #effects: _f$effects,
+    #continueText: _f$continueText,
   };
 
   @override
@@ -404,10 +423,12 @@ class TextNodeMapper extends SubClassMapperBase<TextNode> {
 
   static TextNode _instantiate(DecodingData data) {
     return TextNode(
+      id: data.dec(_f$id),
       speakerName: data.dec(_f$speakerName),
       text: data.dec(_f$text),
       next: data.dec(_f$next),
       effects: data.dec(_f$effects),
+      continueText: data.dec(_f$continueText),
     );
   }
 
@@ -473,10 +494,12 @@ abstract class TextNodeCopyWith<$R, $In extends TextNode, $Out>
   get effects;
   @override
   $R call({
+    String? id,
     String? speakerName,
     String? text,
     DialogNode? next,
     List<DialogEffect>? effects,
+    String? continueText,
   });
   TextNodeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -501,24 +524,30 @@ class _TextNodeCopyWithImpl<$R, $Out>
   );
   @override
   $R call({
+    String? id,
     String? speakerName,
     String? text,
     Object? next = $none,
     List<DialogEffect>? effects,
+    String? continueText,
   }) => $apply(
     FieldCopyWithData({
+      if (id != null) #id: id,
       if (speakerName != null) #speakerName: speakerName,
       if (text != null) #text: text,
       if (next != $none) #next: next,
       if (effects != null) #effects: effects,
+      if (continueText != null) #continueText: continueText,
     }),
   );
   @override
   TextNode $make(CopyWithData data) => TextNode(
+    id: data.get(#id, or: $value.id),
     speakerName: data.get(#speakerName, or: $value.speakerName),
     text: data.get(#text, or: $value.text),
     next: data.get(#next, or: $value.next),
     effects: data.get(#effects, or: $value.effects),
+    continueText: data.get(#continueText, or: $value.continueText),
   );
 
   @override
@@ -543,6 +572,8 @@ class EndNodeMapper extends SubClassMapperBase<EndNode> {
   @override
   final String id = 'EndNode';
 
+  static String _$id(EndNode v) => v.id;
+  static const Field<EndNode, String> _f$id = Field('id', _$id);
   static List<DialogEffect> _$effects(EndNode v) => v.effects;
   static const Field<EndNode, List<DialogEffect>> _f$effects = Field(
     'effects',
@@ -552,7 +583,10 @@ class EndNodeMapper extends SubClassMapperBase<EndNode> {
   );
 
   @override
-  final MappableFields<EndNode> fields = const {#effects: _f$effects};
+  final MappableFields<EndNode> fields = const {
+    #id: _f$id,
+    #effects: _f$effects,
+  };
 
   @override
   final String discriminatorKey = '__type';
@@ -562,7 +596,7 @@ class EndNodeMapper extends SubClassMapperBase<EndNode> {
   late final ClassMapperBase superMapper = DialogNodeMapper.ensureInitialized();
 
   static EndNode _instantiate(DecodingData data) {
-    return EndNode(effects: data.dec(_f$effects));
+    return EndNode(id: data.dec(_f$id), effects: data.dec(_f$effects));
   }
 
   @override
@@ -625,7 +659,7 @@ abstract class EndNodeCopyWith<$R, $In extends EndNode, $Out>
   ListCopyWith<$R, DialogEffect, ObjectCopyWith<$R, DialogEffect, DialogEffect>>
   get effects;
   @override
-  $R call({List<DialogEffect>? effects});
+  $R call({String? id, List<DialogEffect>? effects});
   EndNodeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -645,11 +679,17 @@ class _EndNodeCopyWithImpl<$R, $Out>
     (v) => call(effects: v),
   );
   @override
-  $R call({List<DialogEffect>? effects}) =>
-      $apply(FieldCopyWithData({if (effects != null) #effects: effects}));
+  $R call({String? id, List<DialogEffect>? effects}) => $apply(
+    FieldCopyWithData({
+      if (id != null) #id: id,
+      if (effects != null) #effects: effects,
+    }),
+  );
   @override
-  EndNode $make(CopyWithData data) =>
-      EndNode(effects: data.get(#effects, or: $value.effects));
+  EndNode $make(CopyWithData data) => EndNode(
+    id: data.get(#id, or: $value.id),
+    effects: data.get(#effects, or: $value.effects),
+  );
 
   @override
   EndNodeCopyWith<$R2, EndNode, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
@@ -673,6 +713,8 @@ class EffectNodeMapper extends SubClassMapperBase<EffectNode> {
   @override
   final String id = 'EffectNode';
 
+  static String _$id(EffectNode v) => v.id;
+  static const Field<EffectNode, String> _f$id = Field('id', _$id);
   static List<DialogEffect> _$effects(EffectNode v) => v.effects;
   static const Field<EffectNode, List<DialogEffect>> _f$effects = Field(
     'effects',
@@ -683,6 +725,7 @@ class EffectNodeMapper extends SubClassMapperBase<EffectNode> {
 
   @override
   final MappableFields<EffectNode> fields = const {
+    #id: _f$id,
     #effects: _f$effects,
     #next: _f$next,
   };
@@ -695,7 +738,11 @@ class EffectNodeMapper extends SubClassMapperBase<EffectNode> {
   late final ClassMapperBase superMapper = DialogNodeMapper.ensureInitialized();
 
   static EffectNode _instantiate(DecodingData data) {
-    return EffectNode(effects: data.dec(_f$effects), next: data.dec(_f$next));
+    return EffectNode(
+      id: data.dec(_f$id),
+      effects: data.dec(_f$effects),
+      next: data.dec(_f$next),
+    );
   }
 
   @override
@@ -762,7 +809,7 @@ abstract class EffectNodeCopyWith<$R, $In extends EffectNode, $Out>
   get effects;
   DialogNodeCopyWith<$R, DialogNode, DialogNode> get next;
   @override
-  $R call({List<DialogEffect>? effects, DialogNode? next});
+  $R call({String? id, List<DialogEffect>? effects, DialogNode? next});
   EffectNodeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -785,14 +832,17 @@ class _EffectNodeCopyWithImpl<$R, $Out>
   DialogNodeCopyWith<$R, DialogNode, DialogNode> get next =>
       $value.next.copyWith.$chain((v) => call(next: v));
   @override
-  $R call({List<DialogEffect>? effects, DialogNode? next}) => $apply(
-    FieldCopyWithData({
-      if (effects != null) #effects: effects,
-      if (next != null) #next: next,
-    }),
-  );
+  $R call({String? id, List<DialogEffect>? effects, DialogNode? next}) =>
+      $apply(
+        FieldCopyWithData({
+          if (id != null) #id: id,
+          if (effects != null) #effects: effects,
+          if (next != null) #next: next,
+        }),
+      );
   @override
   EffectNode $make(CopyWithData data) => EffectNode(
+    id: data.get(#id, or: $value.id),
     effects: data.get(#effects, or: $value.effects),
     next: data.get(#next, or: $value.next),
   );
@@ -820,6 +870,8 @@ class ConditionalNodeMapper extends SubClassMapperBase<ConditionalNode> {
   @override
   final String id = 'ConditionalNode';
 
+  static String _$id(ConditionalNode v) => v.id;
+  static const Field<ConditionalNode, String> _f$id = Field('id', _$id);
   static DialogCondition _$condition(ConditionalNode v) => v.condition;
   static const Field<ConditionalNode, DialogCondition> _f$condition = Field(
     'condition',
@@ -838,6 +890,7 @@ class ConditionalNodeMapper extends SubClassMapperBase<ConditionalNode> {
 
   @override
   final MappableFields<ConditionalNode> fields = const {
+    #id: _f$id,
     #condition: _f$condition,
     #onPass: _f$onPass,
     #onFail: _f$onFail,
@@ -852,6 +905,7 @@ class ConditionalNodeMapper extends SubClassMapperBase<ConditionalNode> {
 
   static ConditionalNode _instantiate(DecodingData data) {
     return ConditionalNode(
+      id: data.dec(_f$id),
       condition: data.dec(_f$condition),
       onPass: data.dec(_f$onPass),
       onFail: data.dec(_f$onFail),
@@ -923,7 +977,12 @@ abstract class ConditionalNodeCopyWith<$R, $In extends ConditionalNode, $Out>
   DialogNodeCopyWith<$R, DialogNode, DialogNode> get onPass;
   DialogNodeCopyWith<$R, DialogNode, DialogNode> get onFail;
   @override
-  $R call({DialogCondition? condition, DialogNode? onPass, DialogNode? onFail});
+  $R call({
+    String? id,
+    DialogCondition? condition,
+    DialogNode? onPass,
+    DialogNode? onFail,
+  });
   ConditionalNodeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   );
@@ -945,11 +1004,13 @@ class _ConditionalNodeCopyWithImpl<$R, $Out>
       $value.onFail.copyWith.$chain((v) => call(onFail: v));
   @override
   $R call({
+    String? id,
     DialogCondition? condition,
     DialogNode? onPass,
     DialogNode? onFail,
   }) => $apply(
     FieldCopyWithData({
+      if (id != null) #id: id,
       if (condition != null) #condition: condition,
       if (onPass != null) #onPass: onPass,
       if (onFail != null) #onFail: onFail,
@@ -957,6 +1018,7 @@ class _ConditionalNodeCopyWithImpl<$R, $Out>
   );
   @override
   ConditionalNode $make(CopyWithData data) => ConditionalNode(
+    id: data.get(#id, or: $value.id),
     condition: data.get(#condition, or: $value.condition),
     onPass: data.get(#onPass, or: $value.onPass),
     onFail: data.get(#onFail, or: $value.onFail),
@@ -966,5 +1028,134 @@ class _ConditionalNodeCopyWithImpl<$R, $Out>
   ConditionalNodeCopyWith<$R2, ConditionalNode, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _ConditionalNodeCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class GotoNodeMapper extends SubClassMapperBase<GotoNode> {
+  GotoNodeMapper._();
+
+  static GotoNodeMapper? _instance;
+  static GotoNodeMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = GotoNodeMapper._());
+      DialogNodeMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'GotoNode';
+
+  static String _$id(GotoNode v) => v.id;
+  static const Field<GotoNode, String> _f$id = Field('id', _$id);
+  static String _$targetId(GotoNode v) => v.targetId;
+  static const Field<GotoNode, String> _f$targetId = Field(
+    'targetId',
+    _$targetId,
+  );
+
+  @override
+  final MappableFields<GotoNode> fields = const {
+    #id: _f$id,
+    #targetId: _f$targetId,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'GotoNode';
+  @override
+  late final ClassMapperBase superMapper = DialogNodeMapper.ensureInitialized();
+
+  static GotoNode _instantiate(DecodingData data) {
+    return GotoNode(id: data.dec(_f$id), targetId: data.dec(_f$targetId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static GotoNode fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<GotoNode>(map);
+  }
+
+  static GotoNode fromJson(String json) {
+    return ensureInitialized().decodeJson<GotoNode>(json);
+  }
+}
+
+mixin GotoNodeMappable {
+  String toJson() {
+    return GotoNodeMapper.ensureInitialized().encodeJson<GotoNode>(
+      this as GotoNode,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return GotoNodeMapper.ensureInitialized().encodeMap<GotoNode>(
+      this as GotoNode,
+    );
+  }
+
+  GotoNodeCopyWith<GotoNode, GotoNode, GotoNode> get copyWith =>
+      _GotoNodeCopyWithImpl<GotoNode, GotoNode>(
+        this as GotoNode,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return GotoNodeMapper.ensureInitialized().stringifyValue(this as GotoNode);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return GotoNodeMapper.ensureInitialized().equalsValue(
+      this as GotoNode,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return GotoNodeMapper.ensureInitialized().hashValue(this as GotoNode);
+  }
+}
+
+extension GotoNodeValueCopy<$R, $Out> on ObjectCopyWith<$R, GotoNode, $Out> {
+  GotoNodeCopyWith<$R, GotoNode, $Out> get $asGotoNode =>
+      $base.as((v, t, t2) => _GotoNodeCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class GotoNodeCopyWith<$R, $In extends GotoNode, $Out>
+    implements DialogNodeCopyWith<$R, $In, $Out> {
+  @override
+  $R call({String? id, String? targetId});
+  GotoNodeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _GotoNodeCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, GotoNode, $Out>
+    implements GotoNodeCopyWith<$R, GotoNode, $Out> {
+  _GotoNodeCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<GotoNode> $mapper =
+      GotoNodeMapper.ensureInitialized();
+  @override
+  $R call({String? id, String? targetId}) => $apply(
+    FieldCopyWithData({
+      if (id != null) #id: id,
+      if (targetId != null) #targetId: targetId,
+    }),
+  );
+  @override
+  GotoNode $make(CopyWithData data) => GotoNode(
+    id: data.get(#id, or: $value.id),
+    targetId: data.get(#targetId, or: $value.targetId),
+  );
+
+  @override
+  GotoNodeCopyWith<$R2, GotoNode, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _GotoNodeCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

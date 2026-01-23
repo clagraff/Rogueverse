@@ -75,6 +75,11 @@ class DialogAwaitingChoiceMapper
   @override
   final String id = 'DialogAwaitingChoice';
 
+  static String _$sourceNodeId(DialogAwaitingChoice v) => v.sourceNodeId;
+  static const Field<DialogAwaitingChoice, String> _f$sourceNodeId = Field(
+    'sourceNodeId',
+    _$sourceNodeId,
+  );
   static String _$speakerName(DialogAwaitingChoice v) => v.speakerName;
   static const Field<DialogAwaitingChoice, String> _f$speakerName = Field(
     'speakerName',
@@ -91,6 +96,7 @@ class DialogAwaitingChoiceMapper
 
   @override
   final MappableFields<DialogAwaitingChoice> fields = const {
+    #sourceNodeId: _f$sourceNodeId,
     #speakerName: _f$speakerName,
     #text: _f$text,
     #choices: _f$choices,
@@ -106,6 +112,7 @@ class DialogAwaitingChoiceMapper
 
   static DialogAwaitingChoice _instantiate(DecodingData data) {
     return DialogAwaitingChoice(
+      sourceNodeId: data.dec(_f$sourceNodeId),
       speakerName: data.dec(_f$speakerName),
       text: data.dec(_f$text),
       choices: data.dec(_f$choices),
@@ -189,7 +196,12 @@ abstract class DialogAwaitingChoiceCopyWith<
   >
   get choices;
   @override
-  $R call({String? speakerName, String? text, List<DialogChoice>? choices});
+  $R call({
+    String? sourceNodeId,
+    String? speakerName,
+    String? text,
+    List<DialogChoice>? choices,
+  });
   DialogAwaitingChoiceCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   );
@@ -215,16 +227,22 @@ class _DialogAwaitingChoiceCopyWithImpl<$R, $Out>
     (v) => call(choices: v),
   );
   @override
-  $R call({String? speakerName, String? text, List<DialogChoice>? choices}) =>
-      $apply(
-        FieldCopyWithData({
-          if (speakerName != null) #speakerName: speakerName,
-          if (text != null) #text: text,
-          if (choices != null) #choices: choices,
-        }),
-      );
+  $R call({
+    String? sourceNodeId,
+    String? speakerName,
+    String? text,
+    List<DialogChoice>? choices,
+  }) => $apply(
+    FieldCopyWithData({
+      if (sourceNodeId != null) #sourceNodeId: sourceNodeId,
+      if (speakerName != null) #speakerName: speakerName,
+      if (text != null) #text: text,
+      if (choices != null) #choices: choices,
+    }),
+  );
   @override
   DialogAwaitingChoice $make(CopyWithData data) => DialogAwaitingChoice(
+    sourceNodeId: data.get(#sourceNodeId, or: $value.sourceNodeId),
     speakerName: data.get(#speakerName, or: $value.speakerName),
     text: data.get(#text, or: $value.text),
     choices: data.get(#choices, or: $value.choices),
@@ -521,8 +539,11 @@ class DialogNodeMapper extends ClassMapperBase<DialogNode> {
   @override
   final String id = 'DialogNode';
 
+  static String _$id(DialogNode v) => v.id;
+  static const Field<DialogNode, String> _f$id = Field('id', _$id);
+
   @override
-  final MappableFields<DialogNode> fields = const {};
+  final MappableFields<DialogNode> fields = const {#id: _f$id};
 
   static DialogNode _instantiate(DecodingData data) {
     throw MapperException.missingConstructor('DialogNode');
@@ -548,7 +569,7 @@ mixin DialogNodeMappable {
 
 abstract class DialogNodeCopyWith<$R, $In extends DialogNode, $Out>
     implements ClassCopyWith<$R, $In, $Out> {
-  $R call();
+  $R call({String? id});
   DialogNodeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 

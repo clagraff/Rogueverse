@@ -1,9 +1,39 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'package:rogueverse/ecs/dialog/dialog.dart';
 import 'package:rogueverse/app/screens/text_editor_screen.dart';
 import 'package:rogueverse/app/widgets/overlays/dialog_editor/condition_editor.dart';
 import 'package:rogueverse/app/widgets/overlays/dialog_editor/effect_editor.dart';
+
+/// Generates a short random ID for dialog nodes (8 hex characters).
+String generateNodeId() {
+  final random = Random();
+  return List.generate(8, (_) => random.nextInt(16).toRadixString(16)).join();
+}
+
+/// Provides access to the dialog tree context (node ID registry) from anywhere
+/// in the editor widget tree.
+class DialogTreeContext extends InheritedWidget {
+  /// Map of node IDs to nodes in the current dialog tree.
+  final NodeIdRegistry registry;
+
+  const DialogTreeContext({
+    super.key,
+    required this.registry,
+    required super.child,
+  });
+
+  static DialogTreeContext? of(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<DialogTreeContext>();
+  }
+
+  @override
+  bool updateShouldNotify(DialogTreeContext oldWidget) {
+    return registry != oldWidget.registry;
+  }
+}
 
 /// Right panel for editing the properties of a selected dialog node.
 class DialogNodeEditor extends StatelessWidget {
@@ -117,6 +147,11 @@ class DialogNodeEditor extends StatelessWidget {
         onUpdate: onUpdate,
         onNavigateToChild: onNavigateToChild,
       );
+    } else if (n is GotoNode) {
+      return _GotoNodeEditor(
+        node: n,
+        onUpdate: onUpdate,
+      );
     }
 
     return Text('Unknown node type: ${n.runtimeType}');
@@ -147,14 +182,29 @@ class _SpeakNodeEditor extends StatelessWidget {
         _NodeTypeSelector(node: node, onUpdate: onUpdate),
         const SizedBox(height: 16),
 
+        // Node ID field
+        _NodeIdField(
+          nodeId: node.id,
+          onUpdate: (id) {
+            onUpdate(SpeakNode(
+              id: id,
+              speakerName: node.speakerName,
+              text: node.text,
+              choices: node.choices,
+              effects: node.effects,
+            ));
+          },
+        ),
+        const SizedBox(height: 16),
+
         // Text (speaker name will use NPC's Name component automatically)
-        _buildTextField(
-          context: context,
+        _TextField(
           label: 'Dialog Text',
           value: node.text,
           multiline: true,
           onChanged: (value) {
             onUpdate(SpeakNode(
+              id: node.id,
               speakerName: node.speakerName,
               text: value,
               choices: node.choices,
@@ -169,6 +219,7 @@ class _SpeakNodeEditor extends StatelessWidget {
           effects: node.effects,
           onUpdate: (effects) {
             onUpdate(SpeakNode(
+              id: node.id,
               speakerName: node.speakerName,
               text: node.text,
               choices: node.choices,
@@ -216,12 +267,13 @@ class _SpeakNodeEditor extends StatelessWidget {
   void _addChoice() {
     final newChoices = [
       ...node.choices,
-      const Choice(
+      Choice(
         text: 'New choice',
-        child: EndNode(),
+        child: EndNode(id: generateNodeId()),
       ),
     ];
     onUpdate(SpeakNode(
+      id: node.id,
       speakerName: node.speakerName,
       text: node.text,
       choices: newChoices,
@@ -233,6 +285,7 @@ class _SpeakNodeEditor extends StatelessWidget {
     final newChoices = List<Choice>.from(node.choices);
     newChoices[index] = newChoice;
     onUpdate(SpeakNode(
+      id: node.id,
       speakerName: node.speakerName,
       text: node.text,
       choices: newChoices,
@@ -245,6 +298,7 @@ class _SpeakNodeEditor extends StatelessWidget {
     final newChoices = List<Choice>.from(node.choices);
     newChoices.removeAt(index);
     onUpdate(SpeakNode(
+      id: node.id,
       speakerName: node.speakerName,
       text: node.text,
       choices: newChoices,
@@ -274,18 +328,52 @@ class _TextNodeEditor extends StatelessWidget {
         _NodeTypeSelector(node: node, onUpdate: onUpdate),
         const SizedBox(height: 16),
 
+        // Node ID field
+        _NodeIdField(
+          nodeId: node.id,
+          onUpdate: (id) {
+            onUpdate(TextNode(
+              id: id,
+              speakerName: node.speakerName,
+              text: node.text,
+              next: node.next,
+              effects: node.effects,
+              continueText: node.continueText,
+            ));
+          },
+        ),
+        const SizedBox(height: 16),
+
         // Text (speaker name will use NPC's Name component automatically)
-        _buildTextField(
-          context: context,
+        _TextField(
           label: 'Dialog Text',
           value: node.text,
           multiline: true,
           onChanged: (value) {
             onUpdate(TextNode(
+              id: node.id,
               speakerName: node.speakerName,
               text: value,
               next: node.next,
               effects: node.effects,
+              continueText: node.continueText,
+            ));
+          },
+        ),
+        const SizedBox(height: 16),
+
+        // Continue text
+        _TextField(
+          label: 'Continue Button Text',
+          value: node.continueText,
+          onChanged: (value) {
+            onUpdate(TextNode(
+              id: node.id,
+              speakerName: node.speakerName,
+              text: node.text,
+              next: node.next,
+              effects: node.effects,
+              continueText: value.isEmpty ? '(continue)' : value,
             ));
           },
         ),
@@ -296,10 +384,12 @@ class _TextNodeEditor extends StatelessWidget {
           effects: node.effects,
           onUpdate: (effects) {
             onUpdate(TextNode(
+              id: node.id,
               speakerName: node.speakerName,
               text: node.text,
               next: node.next,
               effects: effects,
+              continueText: node.continueText,
             ));
           },
         ),
@@ -312,10 +402,12 @@ class _TextNodeEditor extends StatelessWidget {
           onNavigate: () => onNavigateToChild(0),
           onSetNext: (hasNext) {
             onUpdate(TextNode(
+              id: node.id,
               speakerName: node.speakerName,
               text: node.text,
-              next: hasNext ? const EndNode() : null,
+              next: hasNext ? EndNode(id: generateNodeId()) : null,
               effects: node.effects,
+              continueText: node.continueText,
             ));
           },
         ),
@@ -343,6 +435,15 @@ class _EndNodeEditor extends StatelessWidget {
         _NodeTypeSelector(node: node, onUpdate: onUpdate),
         const SizedBox(height: 16),
 
+        // Node ID field
+        _NodeIdField(
+          nodeId: node.id,
+          onUpdate: (id) {
+            onUpdate(EndNode(id: id, effects: node.effects));
+          },
+        ),
+        const SizedBox(height: 16),
+
         Text(
           'This node ends the dialog. Change the type above to continue the conversation.',
           style: TextStyle(
@@ -355,7 +456,7 @@ class _EndNodeEditor extends StatelessWidget {
         EffectsListEditor(
           effects: node.effects,
           onUpdate: (effects) {
-            onUpdate(EndNode(effects: effects));
+            onUpdate(EndNode(id: node.id, effects: effects));
           },
         ),
       ],
@@ -384,6 +485,19 @@ class _EffectNodeEditor extends StatelessWidget {
         _NodeTypeSelector(node: node, onUpdate: onUpdate),
         const SizedBox(height: 16),
 
+        // Node ID field
+        _NodeIdField(
+          nodeId: node.id,
+          onUpdate: (id) {
+            onUpdate(EffectNode(
+              id: id,
+              effects: node.effects,
+              next: node.next,
+            ));
+          },
+        ),
+        const SizedBox(height: 16),
+
         Text(
           'Executes effects then continues to next node.',
           style: TextStyle(
@@ -397,6 +511,7 @@ class _EffectNodeEditor extends StatelessWidget {
           effects: node.effects,
           onUpdate: (effects) {
             onUpdate(EffectNode(
+              id: node.id,
               effects: effects,
               next: node.next,
             ));
@@ -436,6 +551,20 @@ class _ConditionalNodeEditor extends StatelessWidget {
         _NodeTypeSelector(node: node, onUpdate: onUpdate),
         const SizedBox(height: 16),
 
+        // Node ID field
+        _NodeIdField(
+          nodeId: node.id,
+          onUpdate: (id) {
+            onUpdate(ConditionalNode(
+              id: id,
+              condition: node.condition,
+              onPass: node.onPass,
+              onFail: node.onFail,
+            ));
+          },
+        ),
+        const SizedBox(height: 16),
+
         Text(
           'Branches based on a condition.',
           style: TextStyle(
@@ -450,6 +579,7 @@ class _ConditionalNodeEditor extends StatelessWidget {
           onUpdate: (condition) {
             // ConditionalNode requires a non-null condition; default to AlwaysCondition
             onUpdate(ConditionalNode(
+              id: node.id,
               condition: condition ?? const AlwaysCondition(),
               onPass: node.onPass,
               onFail: node.onFail,
@@ -477,6 +607,108 @@ class _ConditionalNodeEditor extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Editor for GotoNode.
+class _GotoNodeEditor extends StatelessWidget {
+  final GotoNode node;
+  final void Function(DialogNode?) onUpdate;
+
+  const _GotoNodeEditor({
+    required this.node,
+    required this.onUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    // Check if target ID is valid
+    final treeContext = DialogTreeContext.of(context);
+    final targetExists = node.targetId.isEmpty ||
+        (treeContext?.registry.containsKey(node.targetId) ?? true);
+    final isSelfReference = node.targetId == node.id;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Node type selector
+        _NodeTypeSelector(node: node, onUpdate: onUpdate),
+        const SizedBox(height: 16),
+
+        // Node ID field
+        _NodeIdField(
+          nodeId: node.id,
+          onUpdate: (id) {
+            onUpdate(GotoNode(
+              id: id,
+              targetId: node.targetId,
+            ));
+          },
+        ),
+        const SizedBox(height: 16),
+
+        Text(
+          'Jumps to a labeled node elsewhere in the dialog tree.',
+          style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Target ID field with validation
+        _GotoTargetField(
+          targetId: node.targetId,
+          hasError: !targetExists || isSelfReference,
+          onChanged: (value) {
+            onUpdate(GotoNode(
+              id: node.id,
+              targetId: value,
+            ));
+          },
+        ),
+        const SizedBox(height: 8),
+
+        // Validation message
+        if (isSelfReference)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Icon(Icons.error, size: 16, color: colorScheme.error),
+                const SizedBox(width: 4),
+                Text(
+                  'Cannot reference itself',
+                  style: TextStyle(color: colorScheme.error, fontSize: 12),
+                ),
+              ],
+            ),
+          )
+        else if (!targetExists && node.targetId.isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Row(
+              children: [
+                Icon(Icons.warning, size: 16, color: colorScheme.error),
+                const SizedBox(width: 4),
+                Text(
+                  'Target node ID not found',
+                  style: TextStyle(color: colorScheme.error, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+
+        Text(
+          'Enter the ID of the node to jump to. If the ID is not found, the dialog will end.',
+          style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.5),
+            fontSize: 12,
+          ),
         ),
       ],
     );
@@ -534,8 +766,7 @@ class _ChoiceEditor extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Text
-            _buildTextField(
-              context: context,
+            _TextField(
               label: 'Choice Text',
               value: choice.text,
               onChanged: (value) {
@@ -566,8 +797,7 @@ class _ChoiceEditor extends StatelessWidget {
             const SizedBox(height: 8),
 
             // Condition label
-            _buildTextField(
-              context: context,
+            _TextField(
               label: 'Condition Label (e.g., "[Speech 5]")',
               value: choice.conditionLabel ?? '',
               onChanged: (value) {
@@ -639,6 +869,7 @@ const _nodeTypes = [
   _NodeType('end', 'EndNode', Icons.stop_circle),
   _NodeType('effect', 'EffectNode', Icons.flash_on),
   _NodeType('conditional', 'ConditionalNode', Icons.call_split),
+  _NodeType('goto', 'GotoNode', Icons.shortcut),
 ];
 
 /// Widget to select and change node type.
@@ -657,6 +888,7 @@ class _NodeTypeSelector extends StatelessWidget {
     if (node is EndNode) return 'end';
     if (node is EffectNode) return 'effect';
     if (node is ConditionalNode) return 'conditional';
+    if (node is GotoNode) return 'goto';
     return 'end';
   }
 
@@ -666,39 +898,50 @@ class _NodeTypeSelector extends StatelessWidget {
     // Try to preserve data when changing types
     final currentText = _extractText();
     final currentEffects = _extractEffects();
+    final currentId = node.id; // Preserve the existing ID
 
     DialogNode newNode;
     switch (typeId) {
       case 'speak':
         newNode = SpeakNode(
+          id: currentId,
           speakerName: '', // Will use NPC name
           text: currentText,
-          choices: const [Choice(text: 'Continue', child: EndNode())],
+          choices: [Choice(text: 'Continue', child: EndNode(id: generateNodeId()))],
           effects: currentEffects,
         );
         break;
       case 'text':
         newNode = TextNode(
+          id: currentId,
           speakerName: '', // Will use NPC name
           text: currentText,
-          next: const EndNode(),
+          next: EndNode(id: generateNodeId()),
           effects: currentEffects,
         );
         break;
       case 'end':
-        newNode = EndNode(effects: currentEffects);
+        newNode = EndNode(id: currentId, effects: currentEffects);
         break;
       case 'effect':
         newNode = EffectNode(
+          id: currentId,
           effects: currentEffects,
-          next: const EndNode(),
+          next: EndNode(id: generateNodeId()),
         );
         break;
       case 'conditional':
-        newNode = const ConditionalNode(
-          condition: AlwaysCondition(),
-          onPass: EndNode(),
-          onFail: EndNode(),
+        newNode = ConditionalNode(
+          id: currentId,
+          condition: const AlwaysCondition(),
+          onPass: EndNode(id: generateNodeId()),
+          onFail: EndNode(id: generateNodeId()),
+        );
+        break;
+      case 'goto':
+        newNode = GotoNode(
+          id: currentId,
+          targetId: '',
         );
         break;
       default:
@@ -765,66 +1008,187 @@ class _NodeTypeSelector extends StatelessWidget {
   }
 }
 
-Widget _buildTextField({
-  required BuildContext context,
-  required String label,
-  required String value,
-  required void Function(String) onChanged,
-  bool multiline = false,
-}) {
-  final colorScheme = Theme.of(context).colorScheme;
+/// Widget for editing text fields that properly handles external value changes.
+///
+/// Uses a StatefulWidget with TextEditingController to properly handle
+/// external value changes (e.g., when navigating between nodes).
+class _TextField extends StatefulWidget {
+  final String label;
+  final String value;
+  final void Function(String) onChanged;
+  final bool multiline;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: colorScheme.onSurface.withValues(alpha: 0.7),
-              fontSize: 12,
-            ),
-          ),
-          if (multiline) ...[
-            const Spacer(),
-            IconButton(
-              icon: Icon(
-                Icons.open_in_full,
-                size: 16,
-                color: colorScheme.primary,
+  const _TextField({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.multiline = false,
+  });
+
+  @override
+  State<_TextField> createState() => _TextFieldState();
+}
+
+class _TextFieldState extends State<_TextField> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+  }
+
+  @override
+  void didUpdateWidget(_TextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controller when the value changes externally (e.g., navigating to different node)
+    if (widget.value != oldWidget.value && widget.value != _controller.text) {
+      _controller.text = widget.value;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              widget.label,
+              style: TextStyle(
+                color: colorScheme.onSurface.withValues(alpha: 0.7),
+                fontSize: 12,
               ),
-              onPressed: () async {
-                final result = await TextEditorScreen.show(
-                  context,
-                  title: label,
-                  initialValue: value,
-                );
-                if (result != null) {
-                  onChanged(result);
-                }
-              },
-              tooltip: 'Edit in expanded view',
-              visualDensity: VisualDensity.compact,
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
             ),
+            if (widget.multiline) ...[
+              const Spacer(),
+              IconButton(
+                icon: Icon(
+                  Icons.open_in_full,
+                  size: 16,
+                  color: colorScheme.primary,
+                ),
+                onPressed: () async {
+                  final result = await TextEditorScreen.show(
+                    context,
+                    title: widget.label,
+                    initialValue: widget.value,
+                  );
+                  if (result != null) {
+                    widget.onChanged(result);
+                  }
+                },
+                tooltip: 'Edit in expanded view',
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+              ),
+            ],
           ],
-        ],
-      ),
-      const SizedBox(height: 4),
-      TextFormField(
-        initialValue: value,
-        maxLines: multiline ? 3 : 1,
-        onChanged: onChanged,
-        decoration: const InputDecoration(
-          isDense: true,
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         ),
-      ),
-    ],
-  );
+        const SizedBox(height: 4),
+        TextFormField(
+          controller: _controller,
+          maxLines: widget.multiline ? 3 : 1,
+          onChanged: widget.onChanged,
+          decoration: const InputDecoration(
+            isDense: true,
+            border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Widget for editing a node's ID.
+///
+/// Uses a StatefulWidget with TextEditingController to properly handle
+/// external value changes (e.g., when navigating between nodes).
+class _NodeIdField extends StatefulWidget {
+  final String nodeId;
+  final void Function(String) onUpdate;
+
+  const _NodeIdField({
+    required this.nodeId,
+    required this.onUpdate,
+  });
+
+  @override
+  State<_NodeIdField> createState() => _NodeIdFieldState();
+}
+
+class _NodeIdFieldState extends State<_NodeIdField> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.nodeId);
+  }
+
+  @override
+  void didUpdateWidget(_NodeIdField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Update controller when the ID changes externally (e.g., navigating to different node)
+    // Must also check _controller.text to avoid resetting during typing (like _TextField)
+    if (widget.nodeId != oldWidget.nodeId && widget.nodeId != _controller.text) {
+      _controller.text = widget.nodeId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Node ID',
+          style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextFormField(
+          controller: _controller,
+          onChanged: (value) {
+            if (value.isNotEmpty) {
+              widget.onUpdate(value);
+            }
+          },
+          decoration: InputDecoration(
+            isDense: true,
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            hintText: 'e.g., main_menu',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            prefixIcon: Icon(Icons.tag, size: 18, color: colorScheme.primary),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 Widget _buildNextNodeSelector({
@@ -870,4 +1234,91 @@ Widget _buildNextNodeSelector({
       ),
     ],
   );
+}
+
+/// Widget for editing a GotoNode's target ID with validation styling.
+class _GotoTargetField extends StatefulWidget {
+  final String targetId;
+  final bool hasError;
+  final void Function(String) onChanged;
+
+  const _GotoTargetField({
+    required this.targetId,
+    required this.hasError,
+    required this.onChanged,
+  });
+
+  @override
+  State<_GotoTargetField> createState() => _GotoTargetFieldState();
+}
+
+class _GotoTargetFieldState extends State<_GotoTargetField> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.targetId);
+  }
+
+  @override
+  void didUpdateWidget(_GotoTargetField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.targetId != oldWidget.targetId && widget.targetId != _controller.text) {
+      _controller.text = widget.targetId;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Target Node ID',
+          style: TextStyle(
+            color: colorScheme.onSurface.withValues(alpha: 0.7),
+            fontSize: 12,
+          ),
+        ),
+        const SizedBox(height: 4),
+        TextFormField(
+          controller: _controller,
+          onChanged: widget.onChanged,
+          decoration: InputDecoration(
+            isDense: true,
+            border: const OutlineInputBorder(),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            hintText: 'e.g., main_menu',
+            hintStyle: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.3),
+            ),
+            prefixIcon: Icon(
+              Icons.shortcut,
+              size: 18,
+              color: widget.hasError ? colorScheme.error : colorScheme.primary,
+            ),
+            enabledBorder: widget.hasError
+                ? OutlineInputBorder(
+                    borderSide: BorderSide(color: colorScheme.error),
+                  )
+                : null,
+            focusedBorder: widget.hasError
+                ? OutlineInputBorder(
+                    borderSide: BorderSide(color: colorScheme.error, width: 2),
+                  )
+                : null,
+          ),
+        ),
+      ],
+    );
+  }
 }

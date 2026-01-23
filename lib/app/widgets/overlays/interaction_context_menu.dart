@@ -236,6 +236,35 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
       return;
     }
 
+    // Number keys for quick selection (1-9)
+    final numberKeys = [
+      LogicalKeyboardKey.digit1,
+      LogicalKeyboardKey.digit2,
+      LogicalKeyboardKey.digit3,
+      LogicalKeyboardKey.digit4,
+      LogicalKeyboardKey.digit5,
+      LogicalKeyboardKey.digit6,
+      LogicalKeyboardKey.digit7,
+      LogicalKeyboardKey.digit8,
+      LogicalKeyboardKey.digit9,
+    ];
+    final keyIndex = numberKeys.indexOf(key);
+    if (keyIndex != -1) {
+      if (_expandedIndex != null) {
+        // In submenu - select by number
+        final menuItem = items[_expandedIndex!];
+        if (keyIndex < menuItem.targets.length) {
+          final (interactable, interaction) = menuItem.targets[keyIndex];
+          widget.onSelect(interactable.entity, interaction);
+        }
+      } else if (keyIndex < items.length) {
+        // In main menu - select by number
+        setState(() => _selectedIndex = keyIndex);
+        _selectCurrentItem();
+      }
+      return;
+    }
+
     // Navigation keys: arrows and WASD (but not if WASD is used for interact)
     final isUp = key == LogicalKeyboardKey.arrowUp ||
         (!isInteractKey && key == LogicalKeyboardKey.keyW);
@@ -425,7 +454,7 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                menuItem.actionName,
+                '${index + 1}. ${menuItem.actionName}',
                 style: TextStyle(
                   color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
                   fontSize: 14,
@@ -492,7 +521,7 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
                         : null,
                   ),
                   child: Text(
-                    interactable.displayName,
+                    '${index + 1}. ${interactable.displayName}',
                     style: TextStyle(
                       color: isSelected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
                       fontSize: 14,

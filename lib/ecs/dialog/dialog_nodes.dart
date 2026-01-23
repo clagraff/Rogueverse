@@ -15,11 +15,15 @@ sealed class DialogResult with DialogResultMappable {
 /// Dialog has reached a point that requires player input (choices).
 @MappableClass()
 class DialogAwaitingChoice extends DialogResult with DialogAwaitingChoiceMappable {
+  /// The ID of the node that generated these choices.
+  /// Used for tracking which choices have been visited.
+  final String sourceNodeId;
   final String speakerName;
   final String text;
   final List<DialogChoice> choices;
 
   const DialogAwaitingChoice({
+    required this.sourceNodeId,
     required this.speakerName,
     required this.text,
     required this.choices,
@@ -55,13 +59,21 @@ class DialogChoice with DialogChoiceMappable {
   });
 }
 
+/// Type alias for node ID registry used by GotoNode.
+typedef NodeIdRegistry = Map<String, DialogNode>;
+
 /// Base class for all dialog tree nodes.
 ///
 /// Dialog trees are similar to behavior trees but are player-driven rather
 /// than AI-driven. They pause at ChoiceNodes waiting for player selection.
 @MappableClass()
 abstract class DialogNode with DialogNodeMappable {
-  const DialogNode();
+  /// Unique identifier for this node within the dialog tree.
+  /// Used for GotoNode targeting and choice tracking.
+  /// Can be auto-generated (short hex string) or human-readable (e.g., "main_menu").
+  final String id;
+
+  const DialogNode({required this.id});
 
   /// Advances the dialog from this node.
   ///
@@ -70,7 +82,8 @@ abstract class DialogNode with DialogNodeMappable {
   /// - [DialogEnded]: Dialog has concluded
   ///
   /// The [player] and [npc] entities are provided for condition/effect evaluation.
-  DialogResult advance(Entity player, Entity npc);
+  /// The [nodeRegistry] maps node IDs to nodes for GotoNode lookups.
+  DialogResult advance(Entity player, Entity npc, NodeIdRegistry nodeRegistry);
 
   /// Selects a choice at a choice point and returns the next node to process.
   ///

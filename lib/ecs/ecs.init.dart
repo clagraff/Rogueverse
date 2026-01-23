@@ -125,6 +125,7 @@ void initializeMappers() {
   p8.EndNodeMapper.ensureInitialized();
   p8.EffectNodeMapper.ensureInitialized();
   p8.ConditionalNodeMapper.ensureInitialized();
+  p8.GotoNodeMapper.ensureInitialized();
   p9.DialogEffectMapper.ensureInitialized();
   p9.TriggerTickEffectMapper.ensureInitialized();
   p9.HealEffectMapper.ensureInitialized();

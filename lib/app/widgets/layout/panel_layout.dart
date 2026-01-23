@@ -100,12 +100,14 @@ class PanelLayout extends StatelessWidget {
             ),
           ),
 
-        // Center content area
+        // Center content area (clipped to prevent game rendering over panels)
         Expanded(
           child: Column(
             children: [
-              // Main content
-              Expanded(child: child),
+              // Main content (clipped to bounds)
+              Expanded(
+                child: ClipRect(child: child),
+              ),
 
               // Bottom bar
               if (bottomBar != null)

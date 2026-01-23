@@ -45,19 +45,24 @@ class DialogTreeView extends StatelessWidget {
           ),
         ),
 
-        // Tree content
+        // Tree content (scrollable in both directions)
         Expanded(
           child: root == null
               ? _buildEmptyState(context)
               : SingleChildScrollView(
-                  padding: const EdgeInsets.all(8),
-                  child: _DialogNodeItem(
-                    node: root!,
-                    path: const [],
-                    selectedPath: selectedPath,
-                    onSelect: onSelect,
-                    onUpdate: onUpdate,
-                    depth: 0,
+                  // Vertical scroll
+                  child: SingleChildScrollView(
+                    // Horizontal scroll
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.all(8),
+                    child: _DialogNodeItem(
+                      node: root!,
+                      path: const [],
+                      selectedPath: selectedPath,
+                      onSelect: onSelect,
+                      onUpdate: onUpdate,
+                      depth: 0,
+                    ),
                   ),
                 ),
         ),
@@ -173,6 +178,7 @@ class _DialogNodeItemState extends State<_DialogNodeItem> {
         child: node.onFail,
       ));
     }
+    // GotoNode has no children - it jumps to a labeled node
 
     return children;
   }
@@ -184,20 +190,28 @@ class _DialogNodeItemState extends State<_DialogNodeItem> {
 
   String _getNodeLabel() {
     final node = widget.node;
+    String label;
 
     if (node is SpeakNode) {
-      return 'SpeakNode: "${_truncate(node.speakerName, 15)}"';
+      label = 'SpeakNode: "${_truncate(node.speakerName, 15)}"';
     } else if (node is TextNode) {
-      return 'TextNode: "${_truncate(node.speakerName, 15)}"';
+      label = 'TextNode: "${_truncate(node.speakerName, 15)}"';
     } else if (node is EndNode) {
-      return 'EndNode';
+      label = 'EndNode';
     } else if (node is EffectNode) {
-      return 'EffectNode (${node.effects.length} effects)';
+      label = 'EffectNode (${node.effects.length} effects)';
     } else if (node is ConditionalNode) {
-      return 'ConditionalNode';
+      label = 'ConditionalNode';
+    } else if (node is GotoNode) {
+      label = 'GotoNode \u2192 ${node.targetId.isEmpty ? "(empty)" : node.targetId}';
+    } else {
+      label = node.runtimeType.toString();
     }
 
-    return node.runtimeType.toString();
+    // Prepend the node ID
+    label = '[${node.id}] $label';
+
+    return label;
   }
 
   IconData _getNodeIcon() {
@@ -208,6 +222,7 @@ class _DialogNodeItemState extends State<_DialogNodeItem> {
     if (node is EndNode) return Icons.stop_circle;
     if (node is EffectNode) return Icons.flash_on;
     if (node is ConditionalNode) return Icons.call_split;
+    if (node is GotoNode) return Icons.shortcut;
 
     return Icons.circle;
   }

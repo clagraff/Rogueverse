@@ -29,20 +29,30 @@ class DialogState {
   /// Selected choice index in the UI.
   int selectedIndex;
 
+  /// Node ID registry for GotoNode lookups.
+  final NodeIdRegistry nodeRegistry;
+
+  /// Set of choice IDs that have been selected during this dialog session.
+  /// Choice IDs are formatted as "${nodeHashCode}_${choiceIndex}".
+  final Set<String> selectedChoiceIds;
+
   DialogState({
     required this.player,
     required this.npc,
     required this.npcName,
     required this.currentNode,
     required this.result,
+    required this.nodeRegistry,
     this.selectedIndex = 0,
-  });
+    Set<String>? selectedChoiceIds,
+  }) : selectedChoiceIds = selectedChoiceIds ?? {};
 
   /// Creates a copy with updated fields.
   DialogState copyWith({
     DialogNode? currentNode,
     DialogResult? result,
     int? selectedIndex,
+    Set<String>? selectedChoiceIds,
   }) {
     return DialogState(
       player: player,
@@ -50,8 +60,26 @@ class DialogState {
       npcName: npcName,
       currentNode: currentNode ?? this.currentNode,
       result: result ?? this.result,
+      nodeRegistry: nodeRegistry,
       selectedIndex: selectedIndex ?? this.selectedIndex,
+      selectedChoiceIds: selectedChoiceIds ?? this.selectedChoiceIds,
     );
+  }
+
+  /// Generates a unique ID for a choice based on the source node's ID and choice index.
+  /// Uses sourceNodeId from DialogAwaitingChoice to correctly track choices even
+  /// when navigating through GotoNodes.
+  String generateChoiceId(int choiceIndex) {
+    final r = result;
+    if (r is DialogAwaitingChoice) {
+      return '${r.sourceNodeId}_$choiceIndex';
+    }
+    return '${currentNode.id}_$choiceIndex';
+  }
+
+  /// Checks if a choice has been previously selected at the current node.
+  bool isChoiceVisited(int choiceIndex) {
+    return selectedChoiceIds.contains(generateChoiceId(choiceIndex));
   }
 }
 
@@ -97,11 +125,14 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
     // Reset the dialog tree to start fresh
     dialogComponent.root.reset();
 
+    // Build the node ID registry for GotoNode lookups
+    final nodeRegistry = dialogComponent.buildNodeIdRegistry();
+
     // Get NPC name
     final npcName = npcEntity.get<Name>()?.name ?? 'Unknown';
 
     // Advance to get the first result
-    final result = dialogComponent.root.advance(playerEntity, npcEntity);
+    final result = dialogComponent.root.advance(playerEntity, npcEntity, nodeRegistry);
 
     // Check if dialog ended immediately
     if (result is DialogEnded) {
@@ -116,6 +147,7 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
       npcName: npcName,
       currentNode: dialogComponent.root,
       result: result,
+      nodeRegistry: nodeRegistry,
     );
 
     // Show the overlay
@@ -146,15 +178,23 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
       return;
     }
 
-    // Get the next node
-    final nextNode = state.currentNode.selectChoice(choice.choiceIndex);
+    // Track that this choice was selected (for UI indication)
+    final choiceId = state.generateChoiceId(choice.choiceIndex);
+    final updatedSelectedIds = Set<String>.from(state.selectedChoiceIds)..add(choiceId);
+
+    // Get the source node that generated the choices.
+    // This may differ from currentNode if we arrived here via a GotoNode.
+    final sourceNode = state.nodeRegistry[result.sourceNodeId] ?? state.currentNode;
+
+    // Get the next node from the source node (not currentNode)
+    final nextNode = sourceNode.selectChoice(choice.choiceIndex);
     if (nextNode == null) {
       endDialog();
       return;
     }
 
-    // Advance the dialog
-    final nextResult = nextNode.advance(state.player, state.npc);
+    // Advance the dialog with node registry
+    final nextResult = nextNode.advance(state.player, state.npc, state.nodeRegistry);
 
     // Check if dialog ended
     if (nextResult is DialogEnded) {
@@ -167,6 +207,7 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
       currentNode: nextNode,
       result: nextResult,
       selectedIndex: 0,
+      selectedChoiceIds: updatedSelectedIds,
     );
   }
 

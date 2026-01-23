@@ -198,6 +198,24 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
     else if (key == LogicalKeyboardKey.escape) {
       Navigator.pop(context);
     }
+    // Number keys for quick selection (1-9)
+    else {
+      final numberKeys = [
+        LogicalKeyboardKey.digit1,
+        LogicalKeyboardKey.digit2,
+        LogicalKeyboardKey.digit3,
+        LogicalKeyboardKey.digit4,
+        LogicalKeyboardKey.digit5,
+        LogicalKeyboardKey.digit6,
+        LogicalKeyboardKey.digit7,
+        LogicalKeyboardKey.digit8,
+        LogicalKeyboardKey.digit9,
+      ];
+      final keyIndex = numberKeys.indexOf(key);
+      if (keyIndex != -1 && keyIndex < items.length) {
+        items[keyIndex].onTap();
+      }
+    }
   }
 
   @override
@@ -217,29 +235,34 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Header
-                DrawerHeader(
+                Container(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   decoration: BoxDecoration(
                     color: colorScheme.primaryContainer,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Menu',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                              color: colorScheme.onPrimaryContainer,
-                              fontWeight: FontWeight.bold,
-                            ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'Arrow keys to navigate, Enter to select',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Menu',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                              ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          'Arrow keys to navigate, Enter to select',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 // Navigation items
@@ -272,7 +295,7 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
                                       : colorScheme.primary,
                                 ),
                                 title: Text(
-                                  item.label,
+                                  '${index + 1}. ${item.label}',
                                   style: TextStyle(
                                     color: isSelected ? colorScheme.onPrimaryContainer : null,
                                     fontWeight: isSelected ? FontWeight.w600 : null,

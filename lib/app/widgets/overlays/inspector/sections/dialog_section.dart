@@ -3,6 +3,7 @@ import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/ecs/dialog/dialog.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/screens/dialog_editor_screen.dart';
+import 'package:rogueverse/app/widgets/overlays/dialog_editor/dialog_node_editor.dart' show generateNodeId;
 
 /// Metadata for the Dialog component.
 ///
@@ -59,13 +60,14 @@ class DialogMetadata extends ComponentMetadata {
   Component createDefault() {
     // Create a default dialog with a simple speak node
     return Dialog(
-      const SpeakNode(
+      SpeakNode(
+        id: generateNodeId(),
         speakerName: 'Speaker',
         text: 'Hello!',
         choices: [
           Choice(
             text: 'Goodbye',
-            child: EndNode(),
+            child: EndNode(id: generateNodeId()),
           ),
         ],
       ),
