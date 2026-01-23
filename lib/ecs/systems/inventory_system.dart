@@ -42,10 +42,13 @@ class InventorySystem extends System with InventorySystemMappable {
           return; // Skip. TODO: Add some kind of error feedback or message?
         }
 
-        if (!source
-            .get<LocalPosition>()!
-            .sameLocation(target.get<LocalPosition>()!)) {
-          return; // Skip
+        // Check if adjacent or same tile (range 1)
+        final sourcePos = source.get<LocalPosition>()!;
+        final targetPos = target.get<LocalPosition>()!;
+        final dx = (sourcePos.x - targetPos.x).abs();
+        final dy = (sourcePos.y - targetPos.y).abs();
+        if (dx > 1 || dy > 1) {
+          return; // Skip - too far away
         }
 
         // At this point, no matter what happens, we can remove this intent.
@@ -71,8 +74,7 @@ class InventorySystem extends System with InventorySystemMappable {
         source.upsert<PickedUp>(PickedUp(
             pickupIntent.targetEntityId)); // Allow for notifying of new item
 
-        final targetPos = source.get<LocalPosition>();
-        _logger.finest("picked up item", {"entity": source, "item": target, "pos": targetPos});
+        _logger.finest("picked up item", {"entity": source, "item": target, "pos": sourcePos});
       });
     });
   }

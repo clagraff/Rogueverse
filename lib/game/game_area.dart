@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:collection/collection.dart';
 import 'package:flame/components.dart' hide World;
+import 'package:flame/text.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +11,7 @@ import 'package:logging/logging.dart' show Logger;
 
 import 'package:rogueverse/app/screens/game_screen.dart';
 import 'package:rogueverse/ecs/ecs.dart';
+import 'package:rogueverse/ecs/systems/death_system.dart';
 import 'package:rogueverse/game/components/camera_controller.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 import 'package:rogueverse/game/components/interaction_control_handler.dart';
@@ -157,6 +159,7 @@ class GameArea extends FlameGame
       VisionSystem(), // Calculate vision AFTER movement/portaling (sees new position/direction)
       InventorySystem(),
       CombatSystem(),
+      DeathSystem(), // Process deaths and spawn loot (after CombatSystem)
       OpenableSystem(),
       SaveSystem(), // Periodic saves (runs last, priority 200)
     ];
@@ -352,6 +355,22 @@ class GameArea extends FlameGame
   @override
   FutureOr<void> onLoad() {
     camera.viewfinder.anchor = Anchor.topLeft;
+
+    // Add FPS counter to the viewport (fixed position on screen)
+    camera.viewport.add(
+      FpsTextComponent(
+        position: Vector2(10, 10),
+        textRenderer: TextPaint(
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            shadows: [
+              Shadow(color: Colors.black, offset: Offset(1, 1), blurRadius: 2),
+            ],
+          ),
+        ),
+      ),
+    );
 
     // CameraControls could potentially conflict with other in-game controls. To
     // help alleviate this, we'll add CameraControls to the world, not the viewfinder, so it's in the same

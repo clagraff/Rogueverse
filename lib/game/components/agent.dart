@@ -10,6 +10,7 @@ import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/events.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/agent_health_bar.dart';
+import 'package:rogueverse/game/components/floating_damage_text.dart';
 import 'package:rogueverse/game/components/visual_component.dart';
 import 'package:rogueverse/game/components/svg_visual_component.dart';
 import 'package:rogueverse/game/components/png_visual_component.dart';
@@ -29,6 +30,8 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   StreamSubscription<Change>? _visionSubscription;
   StreamSubscription<Change>? _renderableSubscription;
   StreamSubscription<Change>? _editorRenderableSubscription;
+  StreamSubscription<Change>? _wasAttackedSubscription;
+  StreamSubscription<Change>? _pickedUpSubscription;
   VoidCallback? _observerChangeListener;
   VoidCallback? _gameModeChangeListener;
   VoidCallback? _keybindingListener;
@@ -68,7 +71,52 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     // Set up keybinding change listener for text template refresh
     _setupKeybindingTracking();
 
+    // Set up combat feedback (floating damage numbers)
+    _setupCombatFeedback();
+
     return super.onLoad();
+  }
+
+  /// Sets up tracking of WasAttacked to spawn floating damage numbers.
+  void _setupCombatFeedback() {
+    _wasAttackedSubscription = world.componentChanges
+        .onEntityOnComponent<WasAttacked>(entity.id)
+        .listen((change) {
+      if (change.kind == ChangeKind.removed) return;
+
+      final wasAttacked = entity.get<WasAttacked>();
+      if (wasAttacked == null) return;
+
+      // Only show damage if entity is visible
+      if (!_isCurrentlyVisible()) return;
+
+      // Spawn floating damage text at center of entity
+      final damageText = FloatingDamageText(
+        damage: wasAttacked.damage,
+        position: Vector2(size.x / 2, 0), // Top center of entity
+      );
+      add(damageText);
+
+      // Update health bar
+      healthBar?.updateBar();
+    });
+
+    _pickedUpSubscription = world.componentChanges
+        .onEntityOnComponent<PickedUp>(entity.id)
+        .listen((change) {
+      if (change.kind == ChangeKind.removed) return;
+
+      final pickedUp = entity.get<PickedUp>();
+      if (pickedUp == null) return;
+
+      // Get the name of the picked up item
+      final pickedEntity = world.getEntity(pickedUp.targetEntityId);
+      final itemName = pickedEntity.get<Name>()?.name ?? 'item';
+
+      // Show toast message
+      final game = parent?.findGame() as GameArea?;
+      game?.showToast('Picked up $itemName');
+    });
   }
 
   /// Sets up tracking of keybinding changes to refresh text templates.
@@ -405,8 +453,8 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
       removeFromParent();
     }
 
+    // Dead entities are removed by DeathSystem; Agent just cleans up rendering
     if (entity.has<Dead>()) {
-      world.remove(entity.id);
       removeFromParent();
     }
   }
@@ -439,6 +487,8 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     _visionSubscription?.cancel();
     _renderableSubscription?.cancel();
     _editorRenderableSubscription?.cancel();
+    _wasAttackedSubscription?.cancel();
+    _pickedUpSubscription?.cancel();
     final game = parent?.findGame() as GameArea?;
     if (game != null) {
       if (_observerChangeListener != null) {

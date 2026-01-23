@@ -59,6 +59,11 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
     ComponentRegistry.register(PickedUpMetadata());
     ComponentRegistry.register(InventoryFullFailureMetadata());
 
+    // Item components
+    ComponentRegistry.register(ItemMetadata());
+    ComponentRegistry.register(DescriptionMetadata());
+    ComponentRegistry.register(LootTableMetadata());
+
     // Marker components (tags with no data)
     ComponentRegistry.register(AiControlledMetadata());
     ComponentRegistry.register(BlocksMovementMetadata());

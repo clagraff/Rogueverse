@@ -200,6 +200,9 @@ class ComponentMapper extends ClassMapperBase<Component> {
       DialogMapper.ensureInitialized();
       IsTemplateMapper.ensureInitialized();
       FromTemplateMapper.ensureInitialized();
+      ItemMapper.ensureInitialized();
+      DescriptionMapper.ensureInitialized();
+      LootTableMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -8388,5 +8391,498 @@ class _FromTemplateCopyWithImpl<$R, $Out>
   FromTemplateCopyWith<$R2, FromTemplate, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _FromTemplateCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class ItemMapper extends SubClassMapperBase<Item> {
+  ItemMapper._();
+
+  static ItemMapper? _instance;
+  static ItemMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ItemMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Item';
+
+  @override
+  final MappableFields<Item> fields = const {};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Item';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Item _instantiate(DecodingData data) {
+    return Item();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Item fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Item>(map);
+  }
+
+  static Item fromJson(String json) {
+    return ensureInitialized().decodeJson<Item>(json);
+  }
+}
+
+mixin ItemMappable {
+  String toJson() {
+    return ItemMapper.ensureInitialized().encodeJson<Item>(this as Item);
+  }
+
+  Map<String, dynamic> toMap() {
+    return ItemMapper.ensureInitialized().encodeMap<Item>(this as Item);
+  }
+
+  ItemCopyWith<Item, Item, Item> get copyWith =>
+      _ItemCopyWithImpl<Item, Item>(this as Item, $identity, $identity);
+  @override
+  String toString() {
+    return ItemMapper.ensureInitialized().stringifyValue(this as Item);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ItemMapper.ensureInitialized().equalsValue(this as Item, other);
+  }
+
+  @override
+  int get hashCode {
+    return ItemMapper.ensureInitialized().hashValue(this as Item);
+  }
+}
+
+extension ItemValueCopy<$R, $Out> on ObjectCopyWith<$R, Item, $Out> {
+  ItemCopyWith<$R, Item, $Out> get $asItem =>
+      $base.as((v, t, t2) => _ItemCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class ItemCopyWith<$R, $In extends Item, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  ItemCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _ItemCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Item, $Out>
+    implements ItemCopyWith<$R, Item, $Out> {
+  _ItemCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Item> $mapper = ItemMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  Item $make(CopyWithData data) => Item();
+
+  @override
+  ItemCopyWith<$R2, Item, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _ItemCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DescriptionMapper extends SubClassMapperBase<Description> {
+  DescriptionMapper._();
+
+  static DescriptionMapper? _instance;
+  static DescriptionMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DescriptionMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Description';
+
+  static String _$text(Description v) => v.text;
+  static const Field<Description, String> _f$text = Field('text', _$text);
+
+  @override
+  final MappableFields<Description> fields = const {#text: _f$text};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Description';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Description _instantiate(DecodingData data) {
+    return Description(data.dec(_f$text));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Description fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Description>(map);
+  }
+
+  static Description fromJson(String json) {
+    return ensureInitialized().decodeJson<Description>(json);
+  }
+}
+
+mixin DescriptionMappable {
+  String toJson() {
+    return DescriptionMapper.ensureInitialized().encodeJson<Description>(
+      this as Description,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DescriptionMapper.ensureInitialized().encodeMap<Description>(
+      this as Description,
+    );
+  }
+
+  DescriptionCopyWith<Description, Description, Description> get copyWith =>
+      _DescriptionCopyWithImpl<Description, Description>(
+        this as Description,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DescriptionMapper.ensureInitialized().stringifyValue(
+      this as Description,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DescriptionMapper.ensureInitialized().equalsValue(
+      this as Description,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DescriptionMapper.ensureInitialized().hashValue(this as Description);
+  }
+}
+
+extension DescriptionValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, Description, $Out> {
+  DescriptionCopyWith<$R, Description, $Out> get $asDescription =>
+      $base.as((v, t, t2) => _DescriptionCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DescriptionCopyWith<$R, $In extends Description, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({String? text});
+  DescriptionCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DescriptionCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Description, $Out>
+    implements DescriptionCopyWith<$R, Description, $Out> {
+  _DescriptionCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Description> $mapper =
+      DescriptionMapper.ensureInitialized();
+  @override
+  $R call({String? text}) =>
+      $apply(FieldCopyWithData({if (text != null) #text: text}));
+  @override
+  Description $make(CopyWithData data) =>
+      Description(data.get(#text, or: $value.text));
+
+  @override
+  DescriptionCopyWith<$R2, Description, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DescriptionCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class LootEntryMapper extends ClassMapperBase<LootEntry> {
+  LootEntryMapper._();
+
+  static LootEntryMapper? _instance;
+  static LootEntryMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = LootEntryMapper._());
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'LootEntry';
+
+  static int _$templateId(LootEntry v) => v.templateId;
+  static const Field<LootEntry, int> _f$templateId = Field(
+    'templateId',
+    _$templateId,
+  );
+  static int _$weight(LootEntry v) => v.weight;
+  static const Field<LootEntry, int> _f$weight = Field(
+    'weight',
+    _$weight,
+    opt: true,
+    def: 1,
+  );
+
+  @override
+  final MappableFields<LootEntry> fields = const {
+    #templateId: _f$templateId,
+    #weight: _f$weight,
+  };
+
+  static LootEntry _instantiate(DecodingData data) {
+    return LootEntry(
+      templateId: data.dec(_f$templateId),
+      weight: data.dec(_f$weight),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static LootEntry fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<LootEntry>(map);
+  }
+
+  static LootEntry fromJson(String json) {
+    return ensureInitialized().decodeJson<LootEntry>(json);
+  }
+}
+
+mixin LootEntryMappable {
+  String toJson() {
+    return LootEntryMapper.ensureInitialized().encodeJson<LootEntry>(
+      this as LootEntry,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return LootEntryMapper.ensureInitialized().encodeMap<LootEntry>(
+      this as LootEntry,
+    );
+  }
+
+  LootEntryCopyWith<LootEntry, LootEntry, LootEntry> get copyWith =>
+      _LootEntryCopyWithImpl<LootEntry, LootEntry>(
+        this as LootEntry,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return LootEntryMapper.ensureInitialized().stringifyValue(
+      this as LootEntry,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return LootEntryMapper.ensureInitialized().equalsValue(
+      this as LootEntry,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return LootEntryMapper.ensureInitialized().hashValue(this as LootEntry);
+  }
+}
+
+extension LootEntryValueCopy<$R, $Out> on ObjectCopyWith<$R, LootEntry, $Out> {
+  LootEntryCopyWith<$R, LootEntry, $Out> get $asLootEntry =>
+      $base.as((v, t, t2) => _LootEntryCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class LootEntryCopyWith<$R, $In extends LootEntry, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  $R call({int? templateId, int? weight});
+  LootEntryCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _LootEntryCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, LootEntry, $Out>
+    implements LootEntryCopyWith<$R, LootEntry, $Out> {
+  _LootEntryCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<LootEntry> $mapper =
+      LootEntryMapper.ensureInitialized();
+  @override
+  $R call({int? templateId, int? weight}) => $apply(
+    FieldCopyWithData({
+      if (templateId != null) #templateId: templateId,
+      if (weight != null) #weight: weight,
+    }),
+  );
+  @override
+  LootEntry $make(CopyWithData data) => LootEntry(
+    templateId: data.get(#templateId, or: $value.templateId),
+    weight: data.get(#weight, or: $value.weight),
+  );
+
+  @override
+  LootEntryCopyWith<$R2, LootEntry, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _LootEntryCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class LootTableMapper extends SubClassMapperBase<LootTable> {
+  LootTableMapper._();
+
+  static LootTableMapper? _instance;
+  static LootTableMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = LootTableMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      LootEntryMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'LootTable';
+
+  static List<LootEntry> _$entries(LootTable v) => v.entries;
+  static const Field<LootTable, List<LootEntry>> _f$entries = Field(
+    'entries',
+    _$entries,
+  );
+  static int _$dropCount(LootTable v) => v.dropCount;
+  static const Field<LootTable, int> _f$dropCount = Field(
+    'dropCount',
+    _$dropCount,
+    opt: true,
+    def: 1,
+  );
+
+  @override
+  final MappableFields<LootTable> fields = const {
+    #entries: _f$entries,
+    #dropCount: _f$dropCount,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'LootTable';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static LootTable _instantiate(DecodingData data) {
+    return LootTable(
+      entries: data.dec(_f$entries),
+      dropCount: data.dec(_f$dropCount),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static LootTable fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<LootTable>(map);
+  }
+
+  static LootTable fromJson(String json) {
+    return ensureInitialized().decodeJson<LootTable>(json);
+  }
+}
+
+mixin LootTableMappable {
+  String toJson() {
+    return LootTableMapper.ensureInitialized().encodeJson<LootTable>(
+      this as LootTable,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return LootTableMapper.ensureInitialized().encodeMap<LootTable>(
+      this as LootTable,
+    );
+  }
+
+  LootTableCopyWith<LootTable, LootTable, LootTable> get copyWith =>
+      _LootTableCopyWithImpl<LootTable, LootTable>(
+        this as LootTable,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return LootTableMapper.ensureInitialized().stringifyValue(
+      this as LootTable,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return LootTableMapper.ensureInitialized().equalsValue(
+      this as LootTable,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return LootTableMapper.ensureInitialized().hashValue(this as LootTable);
+  }
+}
+
+extension LootTableValueCopy<$R, $Out> on ObjectCopyWith<$R, LootTable, $Out> {
+  LootTableCopyWith<$R, LootTable, $Out> get $asLootTable =>
+      $base.as((v, t, t2) => _LootTableCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class LootTableCopyWith<$R, $In extends LootTable, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  ListCopyWith<$R, LootEntry, LootEntryCopyWith<$R, LootEntry, LootEntry>>
+  get entries;
+  @override
+  $R call({List<LootEntry>? entries, int? dropCount});
+  LootTableCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _LootTableCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, LootTable, $Out>
+    implements LootTableCopyWith<$R, LootTable, $Out> {
+  _LootTableCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<LootTable> $mapper =
+      LootTableMapper.ensureInitialized();
+  @override
+  ListCopyWith<$R, LootEntry, LootEntryCopyWith<$R, LootEntry, LootEntry>>
+  get entries => ListCopyWith(
+    $value.entries,
+    (v, t) => v.copyWith.$chain(t),
+    (v) => call(entries: v),
+  );
+  @override
+  $R call({List<LootEntry>? entries, int? dropCount}) => $apply(
+    FieldCopyWithData({
+      if (entries != null) #entries: entries,
+      if (dropCount != null) #dropCount: dropCount,
+    }),
+  );
+  @override
+  LootTable $make(CopyWithData data) => LootTable(
+    entries: data.get(#entries, or: $value.entries),
+    dropCount: data.get(#dropCount, or: $value.dropCount),
+  );
+
+  @override
+  LootTableCopyWith<$R2, LootTable, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _LootTableCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

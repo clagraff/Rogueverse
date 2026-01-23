@@ -36,15 +36,17 @@ class InteractionRegistry {
       createIntent: (e) => TalkIntent(targetEntityId: e.id),
     ),
 
+    // Pickup interaction
+    InteractionDefinition(
+      actionName: 'Pick up',
+      actionVerb: 'Picking up',
+      genericLabel: 'Item',
+      range: 1, // Adjacent or same tile
+      isAvailable: (e) => e.has<Pickupable>(),
+      createIntent: (e) => PickupIntent(e.id),
+    ),
+
     // Future interactions (commented out for initial implementation):
-    // InteractionDefinition(
-    //   actionName: 'Pick up',
-    //   actionVerb: 'Picking up',
-    //   genericLabel: 'Item',
-    //   range: 0, // Must be on same tile
-    //   isAvailable: (e) => e.has<Pickupable>(),
-    //   createIntent: (e) => PickupIntent(e.id),
-    // ),
     // InteractionDefinition(
     //   actionName: 'Take control',
     //   actionVerb: 'Taking control',

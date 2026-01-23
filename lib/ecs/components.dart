@@ -993,3 +993,72 @@ class FromTemplate with FromTemplateMappable implements Component {
   @override
   String get componentType => "FromTemplate";
 }
+
+// ============================================================================
+// Item System Components
+// ============================================================================
+
+/// Marker component identifying an entity as an item.
+///
+/// Items are template entities with this marker that can be:
+/// - Filtered in the editor for item template selection
+/// - Spawned from LootTables when entities die
+/// - Picked up by entities with inventory
+///
+/// Item templates typically also have: Name, Description, Renderable, Pickupable
+@MappableClass()
+class Item with ItemMappable implements Component {
+  @override
+  String get componentType => "Item";
+}
+
+/// Component that stores descriptive text for an entity.
+///
+/// Used for flavor text, item descriptions, tooltip content, etc.
+@MappableClass()
+class Description with DescriptionMappable implements Component {
+  final String text;
+
+  Description(this.text);
+
+  @override
+  String get componentType => "Description";
+}
+
+// ============================================================================
+// Loot System Components
+// ============================================================================
+
+/// A single entry in a loot table.
+///
+/// Each entry references an item template by ID and has a weight
+/// for weighted random selection.
+@MappableClass()
+class LootEntry with LootEntryMappable {
+  /// ID of the item template entity to spawn.
+  final int templateId;
+
+  /// Relative weight for random selection. Higher = more likely.
+  final int weight;
+
+  LootEntry({required this.templateId, this.weight = 1});
+}
+
+/// Component that defines what loot an entity drops when it dies.
+///
+/// When an entity with a LootTable and Dead component is processed
+/// by the DeathSystem, items are spawned at the entity's position
+/// based on weighted random selection from the entries.
+@MappableClass()
+class LootTable with LootTableMappable implements Component {
+  /// List of possible loot entries with their weights.
+  final List<LootEntry> entries;
+
+  /// Number of items to drop from the table.
+  final int dropCount;
+
+  LootTable({required this.entries, this.dropCount = 1});
+
+  @override
+  String get componentType => "LootTable";
+}
