@@ -193,6 +193,44 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
         _markObserversInRange(world, pos, parentId);
       }
     }
+
+    // 5. LocalPosition removed (item picked up, entity destroyed) - remove
+    // from all observers' VisibleEntities and VisionMemory
+    if (change.componentType == 'LocalPosition' &&
+        change.kind == ChangeKind.removed &&
+        change.oldValue != null) {
+      // Defer to avoid re-entrancy: can't emit events while processing an event
+      scheduleMicrotask(() => _removeEntityFromAllObservers(world, change.entityId));
+    }
+  }
+
+  /// Immediately removes an entity from all observers' VisibleEntities and VisionMemory.
+  /// Called when an entity loses its LocalPosition (picked up, destroyed, etc.)
+  void _removeEntityFromAllObservers(World world, int entityId) {
+    final observers = world.get<VisionRadius>();
+    final entityIdStr = entityId.toString();
+
+    for (final observerId in observers.keys) {
+      final observer = world.getEntity(observerId);
+
+      // Remove from VisibleEntities
+      final visibleEntities = observer.get<VisibleEntities>();
+      if (visibleEntities != null && visibleEntities.entityIds.contains(entityId)) {
+        final updatedIds = Set<int>.from(visibleEntities.entityIds)..remove(entityId);
+        observer.upsert(VisibleEntities(
+          entityIds: updatedIds,
+          visibleTiles: visibleEntities.visibleTiles,
+        ));
+      }
+
+      // Remove from VisionMemory
+      final memory = observer.get<VisionMemory>();
+      if (memory != null && memory.lastSeenPositions.containsKey(entityIdStr)) {
+        final updatedMemory = Map<String, LocalPosition>.from(memory.lastSeenPositions)
+          ..remove(entityIdStr);
+        observer.upsert(VisionMemory(lastSeenPositions: updatedMemory));
+      }
+    }
   }
 
   /// Mark a single observer as needing vision recalculation
@@ -443,6 +481,23 @@ class VisionSystem extends BudgetedSystem with VisionSystemMappable, Disposer {
   void _updateMemory(Entity observer, Set<int> visibleEntityIds, World world) {
     var memory = observer.get<VisionMemory>() ?? VisionMemory();
     final updated = Map<String, LocalPosition>.from(memory.lastSeenPositions);
+
+    // Clean up memory entries for entities that no longer have a position
+    // (e.g., picked up items, destroyed entities)
+    final toRemove = <String>[];
+    for (final entityIdStr in updated.keys) {
+      final entityId = int.tryParse(entityIdStr);
+      if (entityId == null) continue;
+
+      final entity = world.getEntity(entityId);
+      // Remove if entity has no position (picked up, destroyed, etc.)
+      if (!entity.has<LocalPosition>()) {
+        toRemove.add(entityIdStr);
+      }
+    }
+    for (final key in toRemove) {
+      updated.remove(key);
+    }
 
     // Add/update visible entities
     for (final entityId in visibleEntityIds) {

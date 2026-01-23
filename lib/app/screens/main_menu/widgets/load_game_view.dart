@@ -245,9 +245,12 @@ class _LoadGameViewState extends State<LoadGameView> {
       );
     }
 
-    return ListView.builder(
-      itemCount: _saves!.length,
-      itemBuilder: (context, index) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: ListView.builder(
+          itemCount: _saves!.length,
+          itemBuilder: (context, index) {
         final save = _saves![index];
         final isSelected = index == _selectedIndex;
 
@@ -306,7 +309,9 @@ class _LoadGameViewState extends State<LoadGameView> {
             ),
           ),
         );
-      },
+        },
+        ),
+      ),
     );
   }
 }

@@ -4,8 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
+import 'package:rogueverse/app/widgets/overlays/character_screen_overlay.dart';
 import 'package:rogueverse/app/widgets/overlays/overlay_helper.dart';
-import 'package:rogueverse/app/widgets/overlays/player_inventory_widget.dart';
 import 'package:rogueverse/ecs/components.dart' hide Component;
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
@@ -61,7 +61,7 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
     }
   }
 
-  /// Shows the inventory overlay for the given entity.
+  /// Shows the character screen overlay for the given entity.
   void _showInventoryOverlay(Entity entity, FlameGame game) {
     final sourceContext = game.buildContext!;
     final itemIds = entity.get<Inventory>()?.items ?? [];
@@ -70,13 +70,12 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
     _toggleInventoryOverlay = addOverlay(
         game: game,
         sourceContext: sourceContext,
-        child: PlayerInventoryWidget(
-          game: game,
+        child: CharacterScreenOverlay(
           inventory: items,
           onClose: () {
-            // Don't need to manually call _toggleInventoryOverlay() as it will
-            // already be closed when this onClose callback executes. Just clear
-            // out the callback.
+            // Call the toggle function to actually close the overlay,
+            // then clear the reference.
+            _toggleInventoryOverlay?.call();
             _toggleInventoryOverlay = null;
           },
         ));

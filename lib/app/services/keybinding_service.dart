@@ -375,8 +375,12 @@ class KeyBindingService {
     // Entity actions
     'entity.interact': KeyCombo.fromKeys([LogicalKeyboardKey.keyE]),
 
-    // Inventory
+    // Inventory / Character Screen
     'inventory.toggle': KeyCombo.fromKeys([LogicalKeyboardKey.tab]),
+
+    // UI Navigation
+    'ui.tab_prev': KeyCombo.fromKeys([LogicalKeyboardKey.keyQ]),
+    'ui.tab_next': KeyCombo.fromKeys([LogicalKeyboardKey.keyE]),
 
     // Game controls
     'game.advanceTick': KeyCombo.fromKeys([LogicalKeyboardKey.space]),

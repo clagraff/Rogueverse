@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/template_panel/template_card.dart';
 
+/// Filter tabs for the templates panel.
+enum TemplateFilter {
+  all,
+  items,
+}
+
 /// Panel for browsing, searching, and selecting entity templates.
 ///
 /// Displays a searchable grid of template entities (entities with IsTemplate)
@@ -27,6 +33,7 @@ class TemplatesPanel extends StatefulWidget {
 class _TemplatesPanelState extends State<TemplatesPanel> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  TemplateFilter _filter = TemplateFilter.all;
 
   @override
   void initState() {
@@ -55,6 +62,11 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
     final query = Query().require<IsTemplate>();
     var templates = query.find(widget.world).toList();
 
+    // Filter by tab selection
+    if (_filter == TemplateFilter.items) {
+      templates = templates.where((entity) => entity.has<Item>()).toList();
+    }
+
     // Filter by search query
     if (_searchQuery.isNotEmpty) {
       final lowerQuery = _searchQuery.toLowerCase();
@@ -80,6 +92,8 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
       children: [
         // Top action buttons
         _buildTopActions(context),
+        // Filter tabs
+        _buildFilterTabs(context),
         // Search bar
         _buildSearchBar(context),
         // Template grid
@@ -92,6 +106,71 @@ class _TemplatesPanelState extends State<TemplatesPanel> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFilterTabs(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Row(
+        children: [
+          _buildFilterTab(
+            context,
+            filter: TemplateFilter.all,
+            icon: Icons.apps,
+            tooltip: 'All templates',
+          ),
+          const SizedBox(width: 4),
+          _buildFilterTab(
+            context,
+            filter: TemplateFilter.items,
+            icon: Icons.inventory_2_outlined,
+            tooltip: 'Items only',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFilterTab(
+    BuildContext context, {
+    required TemplateFilter filter,
+    required IconData icon,
+    required String tooltip,
+  }) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isSelected = _filter == filter;
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            _filter = filter;
+          });
+        },
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: isSelected ? colorScheme.primaryContainer : null,
+            borderRadius: BorderRadius.circular(4),
+            border: Border.all(
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.outlineVariant,
+              width: 1,
+            ),
+          ),
+          child: Icon(
+            icon,
+            size: 16,
+            color: isSelected
+                ? colorScheme.onPrimaryContainer
+                : colorScheme.onSurface.withValues(alpha: 0.7),
+          ),
+        ),
+      ),
     );
   }
 

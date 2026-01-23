@@ -28,6 +28,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
 
   // Vision-based rendering state
   StreamSubscription<Change>? _visionSubscription;
+  StreamSubscription<Change>? _visionMemorySubscription;
   StreamSubscription<Change>? _renderableSubscription;
   StreamSubscription<Change>? _editorRenderableSubscription;
   StreamSubscription<Change>? _wasAttackedSubscription;
@@ -331,9 +332,11 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
 
   /// Attaches to a new observer entity's VisibleEntities component.
   void _attachToObserver(int? observerId) {
-    // Cancel previous subscription
+    // Cancel previous subscriptions
     _visionSubscription?.cancel();
     _visionSubscription = null;
+    _visionMemorySubscription?.cancel();
+    _visionMemorySubscription = null;
 
     if (observerId == null) {
       // Default to visible if no observer
@@ -354,6 +357,11 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
     // Subscribe to the observer's VisibleEntities changes
     _visionSubscription = world.componentChanges
         .onEntityOnComponent<VisibleEntities>(observerId)
+        .listen((_) => _updateVisibility(observerId));
+
+    // Also subscribe to VisionMemory changes (for when remembered entities are removed)
+    _visionMemorySubscription = world.componentChanges
+        .onEntityOnComponent<VisionMemory>(observerId)
         .listen((_) => _updateVisibility(observerId));
 
     // Initial visibility update
@@ -485,6 +493,7 @@ class Agent extends PositionComponent with HasVisibility, Disposer {
   void onRemove() {
     // Clean up subscriptions
     _visionSubscription?.cancel();
+    _visionMemorySubscription?.cancel();
     _renderableSubscription?.cancel();
     _editorRenderableSubscription?.cancel();
     _wasAttackedSubscription?.cancel();

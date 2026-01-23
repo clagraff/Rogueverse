@@ -62,10 +62,10 @@ class InventorySystem extends System with InventorySystemMappable {
           return;
         }
 
-        target
-            .remove<Pickupable>(); // Cannot be picked up again once in inventory.
-        target.remove<Renderable>();
+        // Remove spatial components since item is no longer in the world.
+        // Keep Pickupable (for dropping later) and Renderable (for inventory display).
         target.remove<LocalPosition>();
+        target.remove<HasParent>();
 
         source.upsert<Inventory>(Inventory([
           ...source.get<Inventory>()!.items,
