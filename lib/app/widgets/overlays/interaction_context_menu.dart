@@ -24,7 +24,8 @@ class InteractionContextMenu extends StatefulWidget {
   final Offset position;
 
   /// Called when a target interaction is selected.
-  final void Function(Entity? target, InteractionDefinition interaction) onSelect;
+  /// [interactable] is provided for target interactions (contains source info for memory entities).
+  final void Function(Entity? target, InteractionDefinition interaction, {InteractableEntity? interactable}) onSelect;
 
   /// Called when the menu should be dismissed.
   final VoidCallback onDismiss;
@@ -257,7 +258,7 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
         final menuItem = items[_expandedIndex!];
         if (keyIndex < menuItem.targets.length) {
           final (interactable, interaction) = menuItem.targets[keyIndex];
-          widget.onSelect(interactable.entity, interaction);
+          widget.onSelect(interactable.entity, interaction, interactable: interactable);
         }
       } else if (keyIndex < items.length) {
         // In main menu - select by number
@@ -343,7 +344,7 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
       final targets = menuItem.targets;
       if (_submenuSelectedIndex < targets.length) {
         final (interactable, interaction) = targets[_submenuSelectedIndex];
-        widget.onSelect(interactable.entity, interaction);
+        widget.onSelect(interactable.entity, interaction, interactable: interactable);
       }
       return;
     }
@@ -355,7 +356,7 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
     } else if (menuItem.targets.length == 1) {
       // Single target - execute directly
       final (interactable, interaction) = menuItem.targets.first;
-      widget.onSelect(interactable.entity, interaction);
+      widget.onSelect(interactable.entity, interaction, interactable: interactable);
     } else {
       // Multiple targets - expand submenu
       setState(() {
@@ -367,7 +368,7 @@ class _InteractionContextMenuState extends State<InteractionContextMenu> {
   }
 
   void _selectEntity(InteractableEntity interactable, InteractionDefinition interaction) {
-    widget.onSelect(interactable.entity, interaction);
+    widget.onSelect(interactable.entity, interaction, interactable: interactable);
   }
 
   @override

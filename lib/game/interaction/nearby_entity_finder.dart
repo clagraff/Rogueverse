@@ -5,14 +5,32 @@ import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/interaction/interaction_definition.dart';
 import 'package:rogueverse/game/interaction/interaction_registry.dart';
 
+/// Indicates how the player knows about an entity.
+enum EntitySource {
+  /// Entity is currently visible in the player's field of view.
+  visible,
+
+  /// Entity is remembered from vision memory but not currently visible.
+  memory,
+}
+
 /// Result of finding interactable entities nearby.
 class InteractableEntity {
   final Entity entity;
   final List<InteractionDefinition> availableInteractions;
 
+  /// How the player knows about this entity (visible or memory).
+  final EntitySource source;
+
+  /// The remembered position of the entity (only set when source is memory).
+  /// Null if the entity is currently visible.
+  final LocalPosition? rememberedPosition;
+
   InteractableEntity({
     required this.entity,
     required this.availableInteractions,
+    this.source = EntitySource.visible,
+    this.rememberedPosition,
   });
 
   /// Gets the display name for this entity.
@@ -78,13 +96,14 @@ class NearbyEntityFinder {
   ///
   /// Each interaction has its own range - an entity is included if ANY of its
   /// interactions are within range of the [origin] position.
-  /// Only includes entities that are currently visible to the player.
+  /// Includes entities that are currently visible OR remembered from vision memory.
+  /// Memory entities are filtered by diagonal facing capability.
   /// Results are sorted by alignment with the player's facing direction.
   ///
   /// [world] - The ECS world to query.
   /// [origin] - The player's current position.
   /// [parentId] - The parent entity ID for scoping (null = root level).
-  /// [playerEntity] - The player entity (for visibility checks).
+  /// [playerEntity] - The player entity (for visibility and memory checks).
   static List<InteractableEntity> findInteractableEntities({
     required World world,
     required LocalPosition origin,
@@ -93,8 +112,11 @@ class NearbyEntityFinder {
   }) {
     final results = <int, InteractableEntity>{};
 
-    // Get visible entities from the player's vision
+    // Get visible entities and vision memory from the player
     final visibleEntities = playerEntity.get<VisibleEntities>();
+    final visionMemory = playerEntity.get<VisionMemory>();
+    final visibleIds = visibleEntities?.entityIds ?? <int>{};
+    final playerDirection = playerEntity.get<Direction>();
 
     // For each registered target interaction type, find entities within range
     for (final interaction in InteractionRegistry.interactions) {
@@ -103,14 +125,16 @@ class NearbyEntityFinder {
         origin: origin,
         parentId: parentId,
         interaction: interaction,
+        visibleIds: visibleIds,
+        visionMemory: visionMemory,
+        playerDirection: playerDirection,
       );
 
       // Add to results, merging interactions for same entity
-      for (final entity in entitiesForInteraction) {
-        // Skip entities that aren't currently visible
-        if (visibleEntities != null && !visibleEntities.entityIds.contains(entity.id)) {
-          continue;
-        }
+      for (final record in entitiesForInteraction) {
+        final entity = record.entity;
+        final source = record.source;
+        final rememberedPos = record.rememberedPosition;
 
         if (results.containsKey(entity.id)) {
           results[entity.id]!.availableInteractions.add(interaction);
@@ -118,19 +142,29 @@ class NearbyEntityFinder {
           results[entity.id] = InteractableEntity(
             entity: entity,
             availableInteractions: [interaction],
+            source: source,
+            rememberedPosition: rememberedPos,
           );
         }
       }
     }
 
     // Sort by direction alignment (entities in front first)
-    final facing = playerEntity.get<Direction>()?.facing;
+    final facing = playerDirection?.facing;
     final resultList = results.values.toList();
 
     if (facing != null) {
       resultList.sort((a, b) {
-        final scoreA = _directionAlignmentScore(origin, a.entity, facing);
-        final scoreB = _directionAlignmentScore(origin, b.entity, facing);
+        final scoreA = _directionAlignmentScoreWithPosition(
+          origin,
+          a.rememberedPosition ?? a.entity.get<LocalPosition>(),
+          facing,
+        );
+        final scoreB = _directionAlignmentScoreWithPosition(
+          origin,
+          b.rememberedPosition ?? b.entity.get<LocalPosition>(),
+          facing,
+        );
         return scoreA.compareTo(scoreB);
       });
     }
@@ -146,13 +180,17 @@ class NearbyEntityFinder {
   }
 
   /// Find entities within range that have a specific interaction available.
-  static List<Entity> _findEntitiesForInteraction({
+  /// Returns records containing entity, source (visible/memory), and remembered position.
+  static List<_EntityWithSource> _findEntitiesForInteraction({
     required World world,
     required LocalPosition origin,
     required int? parentId,
     required InteractionDefinition interaction,
+    required Set<int> visibleIds,
+    required VisionMemory? visionMemory,
+    required Direction? playerDirection,
   }) {
-    final results = <Entity>[];
+    final results = <_EntityWithSource>[];
 
     // Query all entities with LocalPosition in the same parent context
     var query = Query().require<LocalPosition>();
@@ -162,16 +200,58 @@ class NearbyEntityFinder {
       // Check if interaction is available for this entity
       if (!interaction.isAvailable(entity)) continue;
 
-      // Check if entity is within range
-      final entityPos = entity.get<LocalPosition>()!;
-      final distance = _manhattanDistance(origin, entityPos);
+      // Determine entity source and position for range check
+      final EntitySource source;
+      final LocalPosition? rememberedPos;
+      final LocalPosition positionForRangeCheck;
+
+      if (visibleIds.contains(entity.id)) {
+        // Currently visible - use current position
+        source = EntitySource.visible;
+        rememberedPos = null;
+        positionForRangeCheck = entity.get<LocalPosition>()!;
+      } else if (visionMemory?.hasSeenEntity(entity.id) ?? false) {
+        // In memory but not visible
+        source = EntitySource.memory;
+        rememberedPos = visionMemory!.getLastSeenPosition(entity.id)!;
+        positionForRangeCheck = rememberedPos;
+
+        // Check if player can face this direction (diagonal filtering)
+        if (playerDirection != null && !playerDirection.allowDiagonal) {
+          final dirToTarget = _vectorToCompassDirection(
+            rememberedPos.x - origin.x,
+            rememberedPos.y - origin.y,
+          );
+          if (dirToTarget != null && _isDiagonal(dirToTarget)) {
+            continue; // Can't interact - would require diagonal facing
+          }
+        }
+      } else {
+        // Not visible and not in memory - skip
+        continue;
+      }
+
+      // Check if entity is within range (using appropriate position)
+      final distance = _manhattanDistance(origin, positionForRangeCheck);
 
       if (distance <= interaction.range) {
-        results.add(entity);
+        results.add(_EntityWithSource(
+          entity: entity,
+          source: source,
+          rememberedPosition: rememberedPos,
+        ));
       }
     }
 
     return results;
+  }
+
+  /// Returns true if the compass direction is diagonal (NE, NW, SE, SW).
+  static bool _isDiagonal(CompassDirection dir) {
+    return dir == CompassDirection.northeast ||
+        dir == CompassDirection.northwest ||
+        dir == CompassDirection.southeast ||
+        dir == CompassDirection.southwest;
   }
 
   /// Calculate Manhattan distance between two positions.
@@ -194,36 +274,6 @@ class NearbyEntityFinder {
     InteractionDefinition interaction,
   ) {
     return entity.get<Name>()?.name ?? interaction.genericLabel;
-  }
-
-  /// Calculates how well an entity's position aligns with the player's facing direction.
-  /// Lower score = better alignment (entity is more in front).
-  /// 0 = directly in facing direction
-  /// 1 = adjacent direction (45° off)
-  /// 2 = perpendicular (90° off)
-  /// 3 = adjacent to opposite (135° off)
-  /// 4 = opposite direction (180° off)
-  static int _directionAlignmentScore(
-    LocalPosition origin,
-    Entity target,
-    CompassDirection facing,
-  ) {
-    final targetPos = target.get<LocalPosition>();
-    if (targetPos == null) return 4; // No position = lowest priority
-
-    // Calculate direction from origin to target
-    final dx = targetPos.x - origin.x;
-    final dy = targetPos.y - origin.y;
-
-    // Same position = highest priority
-    if (dx == 0 && dy == 0) return 0;
-
-    // Determine the compass direction to the target
-    final toTarget = _vectorToCompassDirection(dx, dy);
-    if (toTarget == null) return 4;
-
-    // Calculate angular difference
-    return _compassDirectionDistance(facing, toTarget);
   }
 
   /// Converts a direction vector to a CompassDirection.
@@ -271,4 +321,37 @@ class NearbyEntityFinder {
 
     return diff;
   }
+
+  /// Calculates direction alignment score using a position directly.
+  /// Used for sorting when we may have a remembered position instead of current.
+  static int _directionAlignmentScoreWithPosition(
+    LocalPosition origin,
+    LocalPosition? targetPos,
+    CompassDirection facing,
+  ) {
+    if (targetPos == null) return 4; // No position = lowest priority
+
+    final dx = targetPos.x - origin.x;
+    final dy = targetPos.y - origin.y;
+
+    if (dx == 0 && dy == 0) return 0;
+
+    final toTarget = _vectorToCompassDirection(dx, dy);
+    if (toTarget == null) return 4;
+
+    return _compassDirectionDistance(facing, toTarget);
+  }
+}
+
+/// Internal helper for tracking entity source during interaction finding.
+class _EntityWithSource {
+  final Entity entity;
+  final EntitySource source;
+  final LocalPosition? rememberedPosition;
+
+  _EntityWithSource({
+    required this.entity,
+    required this.source,
+    this.rememberedPosition,
+  });
 }

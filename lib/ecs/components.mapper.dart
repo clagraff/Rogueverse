@@ -266,9 +266,19 @@ class DirectionMapper extends SubClassMapperBase<Direction> {
     'facing',
     _$facing,
   );
+  static bool _$allowDiagonal(Direction v) => v.allowDiagonal;
+  static const Field<Direction, bool> _f$allowDiagonal = Field(
+    'allowDiagonal',
+    _$allowDiagonal,
+    opt: true,
+    def: false,
+  );
 
   @override
-  final MappableFields<Direction> fields = const {#facing: _f$facing};
+  final MappableFields<Direction> fields = const {
+    #facing: _f$facing,
+    #allowDiagonal: _f$allowDiagonal,
+  };
 
   @override
   final String discriminatorKey = '__type';
@@ -278,7 +288,10 @@ class DirectionMapper extends SubClassMapperBase<Direction> {
   late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
 
   static Direction _instantiate(DecodingData data) {
-    return Direction(data.dec(_f$facing));
+    return Direction(
+      data.dec(_f$facing),
+      allowDiagonal: data.dec(_f$allowDiagonal),
+    );
   }
 
   @override
@@ -341,7 +354,7 @@ extension DirectionValueCopy<$R, $Out> on ObjectCopyWith<$R, Direction, $Out> {
 abstract class DirectionCopyWith<$R, $In extends Direction, $Out>
     implements ComponentCopyWith<$R, $In, $Out> {
   @override
-  $R call({CompassDirection? facing});
+  $R call({CompassDirection? facing, bool? allowDiagonal});
   DirectionCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -354,11 +367,17 @@ class _DirectionCopyWithImpl<$R, $Out>
   late final ClassMapperBase<Direction> $mapper =
       DirectionMapper.ensureInitialized();
   @override
-  $R call({CompassDirection? facing}) =>
-      $apply(FieldCopyWithData({if (facing != null) #facing: facing}));
+  $R call({CompassDirection? facing, bool? allowDiagonal}) => $apply(
+    FieldCopyWithData({
+      if (facing != null) #facing: facing,
+      if (allowDiagonal != null) #allowDiagonal: allowDiagonal,
+    }),
+  );
   @override
-  Direction $make(CopyWithData data) =>
-      Direction(data.get(#facing, or: $value.facing));
+  Direction $make(CopyWithData data) => Direction(
+    data.get(#facing, or: $value.facing),
+    allowDiagonal: data.get(#allowDiagonal, or: $value.allowDiagonal),
+  );
 
   @override
   DirectionCopyWith<$R2, Direction, $Out2> $chain<$R2, $Out2>(

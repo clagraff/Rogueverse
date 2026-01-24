@@ -8,6 +8,7 @@ import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/overlays/interaction_context_menu.dart';
 import 'package:rogueverse/ecs/components.dart' hide Component;
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/systems/vision_system.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/game_area.dart';
 import 'package:rogueverse/game/interaction/interaction_definition.dart';
@@ -207,7 +208,13 @@ class InteractionControlHandler extends PositionComponent
   ///
   /// For target interactions, [target] is the entity being interacted with.
   /// For self-actions, [target] should be the player entity itself (or null).
-  void executeInteraction(Entity? target, InteractionDefinition interaction) {
+  /// [interactable] - Optional InteractableEntity with source info. If the entity
+  /// is from memory (not currently visible), a macro is executed: turn → interact → turn back.
+  void executeInteraction(
+    Entity? target,
+    InteractionDefinition interaction, {
+    InteractableEntity? interactable,
+  }) {
     final entity = selectedEntityNotifier.value;
     if (entity == null) {
       _logger.warning('no entity to execute interaction');
@@ -218,6 +225,7 @@ class InteractionControlHandler extends PositionComponent
       'action': interaction.actionName,
       'isSelfAction': interaction.isSelfAction,
       'target': target?.id,
+      'source': interactable?.source.name,
     });
 
     // Special handling for Talk interaction - open dialog directly without setting intent
@@ -231,6 +239,13 @@ class InteractionControlHandler extends PositionComponent
       return;
     }
 
+    // Check if this is a memory-based interaction requiring a macro
+    if (target != null && interactable?.source == EntitySource.memory) {
+      dismissMenu();
+      _executeWithDirectionChange(target, interaction, interactable!);
+      return;
+    }
+
     // Create and set the intent
     // For self-actions, pass the player entity as the target
     final intent = interaction.createIntent(target ?? entity);
@@ -238,6 +253,89 @@ class InteractionControlHandler extends PositionComponent
 
     // Close the menu
     dismissMenu();
+  }
+
+  /// Executes an interaction with automatic direction changes for memory-based targets.
+  /// Performs: turn to face → interact → turn back (up to 3 ticks total).
+  void _executeWithDirectionChange(
+    Entity target,
+    InteractionDefinition interaction,
+    InteractableEntity interactable,
+  ) {
+    final entity = selectedEntityNotifier.value;
+    if (entity == null) return;
+
+    final playerPos = entity.get<LocalPosition>();
+    final targetPos = interactable.rememberedPosition;
+    final originalDirection = entity.get<Direction>()?.facing;
+
+    if (playerPos == null || targetPos == null) {
+      _logger.warning('missing position for direction-change macro');
+      return;
+    }
+
+    // Calculate direction to target
+    final directionToTarget = _positionToDirection(playerPos, targetPos);
+
+    _logger.fine('executing memory interaction macro', {
+      'originalDirection': originalDirection?.name,
+      'directionToTarget': directionToTarget.name,
+    });
+
+    // Step 1: Turn to face target (if not already facing)
+    if (originalDirection != null && originalDirection != directionToTarget) {
+      entity.setIntent(DirectionIntent(directionToTarget));
+      entity.parentCell.tick();
+    }
+
+    // Step 2: Perform the interaction
+    final intent = interaction.createIntent(target);
+    entity.setIntent(intent);
+    entity.parentCell.tick();
+
+    // Force vision recalculation immediately after interaction
+    // (VisionSystem is budgeted and would normally defer to next frame)
+    // This ensures newly visible entities (e.g., behind opened door) are added to memory
+    _forceVisionUpdate(entity);
+
+    // Step 3: Turn back to original direction (if different and we had one)
+    if (originalDirection != null && originalDirection != directionToTarget) {
+      entity.setIntent(DirectionIntent(originalDirection));
+      entity.parentCell.tick();
+
+      // Force vision update again after turning back
+      // This moves entities from VisibleEntities to VisionMemory
+      _forceVisionUpdate(entity);
+    }
+  }
+
+  /// Forces immediate vision recalculation for an entity.
+  /// Needed because VisionSystem is budgeted and defers processing to next frame.
+  void _forceVisionUpdate(Entity entity) {
+    for (final system in entity.parentCell.systems) {
+      if (system is VisionSystem) {
+        system.updateVisionForObserver(entity.parentCell, entity.id);
+        break;
+      }
+    }
+  }
+
+  /// Calculates the compass direction from one position to another.
+  CompassDirection _positionToDirection(LocalPosition from, LocalPosition to) {
+    final dx = (to.x - from.x).sign;
+    final dy = (to.y - from.y).sign;
+
+    return switch ((dx, dy)) {
+      (0, -1) => CompassDirection.north,
+      (0, 1) => CompassDirection.south,
+      (1, 0) => CompassDirection.east,
+      (-1, 0) => CompassDirection.west,
+      (1, -1) => CompassDirection.northeast,
+      (-1, -1) => CompassDirection.northwest,
+      (1, 1) => CompassDirection.southeast,
+      (-1, 1) => CompassDirection.southwest,
+      _ => CompassDirection.north, // fallback for same position
+    };
   }
 
   /// Executes a self-action (like Wait) on the player entity.

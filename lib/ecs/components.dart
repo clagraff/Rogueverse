@@ -62,7 +62,12 @@ enum CompassDirection {
 class Direction with DirectionMappable implements Component {
   final CompassDirection facing;
 
-  Direction(this.facing);
+  /// Whether this entity can face diagonal directions.
+  /// When false (default), the entity can only face cardinal directions (N/S/E/W).
+  /// Used to filter memory-based interactions for entities that can't turn diagonally.
+  final bool allowDiagonal;
+
+  Direction(this.facing, {this.allowDiagonal = false});
 
   @override
   String get componentType => "Direction";
