@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/game/game_area.dart';
+
+import 'package:rogueverse/app/widgets/keyboard/template_deletion_dialog.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_section.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/sections/sections.dart';
@@ -709,40 +712,124 @@ class _TemplatesSection extends StatelessWidget {
     }
   }
 
+  /// Recursively gather all transitive dependents of a template.
+  Set<int> _getAllTransitiveDependents(int templateId) {
+    final result = <int>{};
+    final directDependents = world.getTemplateDependents(templateId);
+
+    for (final dependentId in directDependents) {
+      result.add(dependentId);
+      // Recursively get dependents of this dependent (if it's also a template)
+      result.addAll(_getAllTransitiveDependents(dependentId));
+    }
+
+    return result;
+  }
+
   Future<void> _deleteTemplate(BuildContext context, Entity templateEntity) async {
     final isTemplate = templateEntity.get<IsTemplate>();
     if (isTemplate == null) return;
 
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Template'),
-        content: Text('Are you sure you want to delete "${isTemplate.displayName}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+    // Check for dependent entities (direct only for copy/orphan, transitive for delete)
+    final directDependentIds = world.getTemplateDependents(templateEntity.id);
+
+    if (directDependentIds.isEmpty) {
+      // No dependents - use simple confirmation
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Template'),
+          content: Text('Are you sure you want to delete "${isTemplate.displayName}"?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
             ),
-            child: const Text('Delete'),
-          ),
-        ],
-      ),
-    );
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: TextButton.styleFrom(
+                foregroundColor: Theme.of(context).colorScheme.error,
+              ),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
+      );
 
-    if (confirmed == true) {
-      templateEntity.destroy();
+      if (confirmed != true) return;
+    } else {
+      // Get all transitive dependents for accurate count
+      final allTransitiveDependents = _getAllTransitiveDependents(templateEntity.id);
 
-      // Save the world state
-      await Persistence.writeInitialState(world);
+      // Has dependents - show options dialog with total transitive count
+      final option = await TemplateDeletionDialog.show(
+        context: context,
+        templateName: isTemplate.displayName,
+        dependentCount: allTransitiveDependents.length,
+      );
 
-      if (selectedTemplateIdNotifier.value == templateEntity.id) {
-        selectedTemplateIdNotifier.value = null;
+      if (option == null) return;
+
+      // Execute the chosen option
+      switch (option) {
+        case TemplateDeletionOption.copyComponents:
+          // Only copy to direct children - they still inherit from their templates
+          _copyTemplateComponentsToDependents(templateEntity, directDependentIds);
+        case TemplateDeletionOption.deleteChildren:
+          // Delete ALL transitive dependents
+          _deleteAllDependents(allTransitiveDependents);
+        case TemplateDeletionOption.acceptOrphans:
+          // Only unlink direct children
+          _unlinkDependents(directDependentIds);
       }
+    }
+
+    // Delete the template itself
+    templateEntity.destroy();
+
+    // Save the world state
+    await Persistence.writeInitialState(world);
+
+    if (selectedTemplateIdNotifier.value == templateEntity.id) {
+      selectedTemplateIdNotifier.value = null;
+    }
+  }
+
+  /// Copy template's own components to each dependent entity, then unlink.
+  void _copyTemplateComponentsToDependents(
+    Entity templateEntity,
+    Set<int> dependentIds,
+  ) {
+    final templateComponents = templateEntity.getAllDirect();
+
+    for (final dependentId in dependentIds) {
+      final dependent = world.getEntity(dependentId);
+
+      for (final entry in templateComponents.entries) {
+        // Skip non-inheritable types (IsTemplate, FromTemplate)
+        if (TemplateResolver.nonInheritableTypes.contains(entry.key)) continue;
+
+        // Skip if dependent already has a direct override
+        if (dependent.hasDirectByName(entry.key)) continue;
+
+        dependent.upsertByName(entry.value);
+      }
+
+      dependent.remove<FromTemplate>();
+    }
+  }
+
+  /// Cascade delete all dependent entities.
+  void _deleteAllDependents(Set<int> dependentIds) {
+    for (final dependentId in dependentIds) {
+      world.getEntity(dependentId).destroy();
+    }
+  }
+
+  /// Just remove FromTemplate from children, leaving them as orphans.
+  void _unlinkDependents(Set<int> dependentIds) {
+    for (final dependentId in dependentIds) {
+      world.getEntity(dependentId).remove<FromTemplate>();
     }
   }
 }
