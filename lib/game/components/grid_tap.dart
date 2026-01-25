@@ -67,7 +67,7 @@ class GridTapVisualizerComponent extends SvgVisualComponent with HasVisibility {
     opacity = 1;
 
     var xy = notifier.value;
-    position = GridCoordinates.gridToScreen(LocalPosition(x: xy.x, y: xy.y));
+    position = GridCoordinates.gridToScreen(LocalPosition(x: xy.x, y: xy.y)) + Vector2.all(GridCoordinates.tileSize / 2);
 
     // Remove any previous opacity effects so they don't stack
     children.whereType<OpacityEffect>().forEach((e) => e.removeFromParent());

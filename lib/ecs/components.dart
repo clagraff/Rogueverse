@@ -55,6 +55,71 @@ enum CompassDirection {
   southwest // (-1, 1)
 }
 
+/// Extension providing rotation degrees for direction-based rendering.
+extension CompassDirectionRotation on CompassDirection {
+  /// Returns rotation in degrees for visual rendering.
+  ///
+  /// Cardinal directions map directly:
+  /// - North: 0° (default/upward)
+  /// - East: 90° (rotated clockwise)
+  /// - South: 180° (upside down)
+  /// - West: 270° (rotated counter-clockwise)
+  ///
+  /// Diagonal directions are treated as their primary cardinal:
+  /// - NE/NW: 0° (treat as North)
+  /// - SE/SW: 180° (treat as South)
+  double get rotationDegrees => getRotationDegrees(allowDiagonal: false);
+
+  /// Returns rotation in degrees with configurable diagonal handling.
+  ///
+  /// When [allowDiagonal] is false (default):
+  /// - Diagonals snap to nearest vertical (NE/NW=0°, SE/SW=180°)
+  ///
+  /// When [allowDiagonal] is true:
+  /// - Full 45° increments (NE=45°, SE=135°, SW=225°, NW=315°)
+  double getRotationDegrees({required bool allowDiagonal}) {
+    if (allowDiagonal) {
+      return switch (this) {
+        CompassDirection.north => 0,
+        CompassDirection.northeast => 45,
+        CompassDirection.east => 90,
+        CompassDirection.southeast => 135,
+        CompassDirection.south => 180,
+        CompassDirection.southwest => 225,
+        CompassDirection.west => 270,
+        CompassDirection.northwest => 315,
+      };
+    } else {
+      return switch (this) {
+        CompassDirection.north => 0,
+        CompassDirection.east => 90,
+        CompassDirection.south => 180,
+        CompassDirection.west => 270,
+        CompassDirection.northeast => 0,
+        CompassDirection.northwest => 0,
+        CompassDirection.southeast => 180,
+        CompassDirection.southwest => 180,
+      };
+    }
+  }
+
+  /// Returns the next cardinal direction in clockwise order.
+  /// Used for cycling through directions in the editor.
+  CompassDirection get nextCardinal {
+    return switch (this) {
+      CompassDirection.north => CompassDirection.east,
+      CompassDirection.east => CompassDirection.south,
+      CompassDirection.south => CompassDirection.west,
+      CompassDirection.west => CompassDirection.north,
+      // Diagonals cycle to next cardinal
+      CompassDirection.northeast => CompassDirection.east,
+      CompassDirection.southeast => CompassDirection.south,
+      CompassDirection.southwest => CompassDirection.west,
+      CompassDirection.northwest => CompassDirection.north,
+    };
+  }
+}
+
 /// Component that tracks which direction an entity is facing.
 ///
 /// Updated whenever an entity attempts to move (even if blocked).
@@ -359,6 +424,40 @@ class EditorRenderable with EditorRenderableMappable implements Component {
 
   @override
   String get componentType => "EditorRenderable";
+}
+
+/// Component enabling direction-based sprite rotation.
+///
+/// When present, the entity's sprite rotation is automatically derived from
+/// its [Direction] component. This allows a single asset (e.g., `door.svg`)
+/// to serve both vertical and horizontal orientations.
+///
+/// Rotation mapping (from [CompassDirectionRotation]):
+/// - North: 0° (default)
+/// - East: 90°
+/// - South: 180°
+/// - West: 270°
+///
+/// For diagonal directions, behavior depends on [allowDiagonalRotation]:
+/// - When false (default): Diagonals snap to nearest vertical (NE/NW=0°, SE/SW=180°)
+/// - When true: Full 45° increments (NE=45°, SE=135°, SW=225°, NW=315°)
+///
+/// Use cases:
+/// - Doors (vertical vs horizontal) - use allowDiagonalRotation=false
+/// - Tables, beds, benches (rectangular furniture) - use allowDiagonalRotation=false
+/// - Arrows, signs (directional indicators) - use allowDiagonalRotation=true
+@MappableClass()
+class DirectionBasedRendering
+    with DirectionBasedRenderingMappable
+    implements Component {
+  /// Whether to support 45° rotation increments for diagonal directions.
+  /// When false (default), diagonal directions snap to their nearest cardinal.
+  final bool allowDiagonalRotation;
+
+  DirectionBasedRendering({this.allowDiagonalRotation = false});
+
+  @override
+  String get componentType => "DirectionBasedRendering";
 }
 
 @MappableClass()

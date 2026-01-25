@@ -21,6 +21,8 @@ abstract class VisualComponent extends PositionComponent with HasPaint {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+    // Set anchor to center so rotation happens around the center point
+    anchor = Anchor.center;
     // Apply flip transformations using Flame's scale
     if (flipHorizontal) flipHorizontallyAroundCenter();
     if (flipVertical) flipVerticallyAroundCenter();

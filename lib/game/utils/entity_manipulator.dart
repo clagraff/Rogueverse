@@ -1,4 +1,4 @@
-import 'package:rogueverse/ecs/components.dart' show LocalPosition, BlocksMovement, HasParent, FromTemplate, Component;
+import 'package:rogueverse/ecs/components.dart' show LocalPosition, BlocksMovement, HasParent, FromTemplate, Component, Direction, CompassDirection;
 import 'package:rogueverse/ecs/entity.dart' show Entity;
 import 'package:rogueverse/ecs/query.dart' show Query;
 import 'package:rogueverse/ecs/world.dart' show World;
@@ -18,7 +18,14 @@ class EntityManipulator {
   /// - [templateEntityId]: The ID of the template entity to link to
   /// - [pos]: The grid position to place the entity
   /// - [parentId]: The parent entity ID (for room containment)
-  static void placeEntity(World world, int templateEntityId, LocalPosition pos, int? parentId) {
+  /// - [direction]: Optional facing direction for the entity (for direction-based rendering)
+  static void placeEntity(
+    World world,
+    int templateEntityId,
+    LocalPosition pos,
+    int? parentId, {
+    CompassDirection? direction,
+  }) {
     // Remove existing BlocksMovement entities
     final existing = queryBlockingAt(world, pos, parentId);
     for (var entity in existing) {
@@ -32,6 +39,9 @@ class EntityManipulator {
     ];
     if (parentId != null) {
       components.add(HasParent(parentId));
+    }
+    if (direction != null) {
+      components.add(Direction(direction));
     }
     world.add(components);
   }

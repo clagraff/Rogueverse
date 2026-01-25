@@ -9,7 +9,7 @@ class VisionRadiusMetadata extends ComponentMetadata {
   static const _theme = PropertyPanelThemeData(labelColumnWidth: 140);
 
   @override
-  String get componentName => 'Vision Radius';
+  String get componentName => 'VisionRadius';
 
   @override
   bool hasComponent(Entity entity) => entity.has<VisionRadius>();
@@ -66,7 +66,7 @@ class VisionRadiusMetadata extends ComponentMetadata {
 /// Inspector section for VisibleEntities component (read-only).
 class VisibleEntitiesMetadata extends ComponentMetadata {
   @override
-  String get componentName => 'Visible Entities';
+  String get componentName => 'VisibleEntities';
 
   @override
   bool hasComponent(Entity entity) => entity.has<VisibleEntities>();
@@ -105,7 +105,7 @@ class VisibleEntitiesMetadata extends ComponentMetadata {
 /// Inspector section for VisionMemory component (read-only).
 class VisionMemoryMetadata extends ComponentMetadata {
   @override
-  String get componentName => 'Vision Memory';
+  String get componentName => 'VisionMemory';
 
   @override
   bool hasComponent(Entity entity) => entity.has<VisionMemory>();
@@ -147,7 +147,7 @@ class VisionMemoryMetadata extends ComponentMetadata {
 /// Inspector section for BlocksSight component (marker).
 class BlocksSightMetadata extends ComponentMetadata {
   @override
-  String get componentName => 'Blocks Sight';
+  String get componentName => 'BlocksSight';
 
   @override
   bool hasComponent(Entity entity) => entity.has<BlocksSight>();

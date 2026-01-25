@@ -41,6 +41,7 @@ class EntitySprite extends PositionComponent with HasVisibility, Disposer {
   StreamSubscription<Change>? _editorRenderableSubscription;
   StreamSubscription<Change>? _wasAttackedSubscription;
   StreamSubscription<Change>? _pickedUpSubscription;
+  StreamSubscription<Change>? _directionSubscription;
   VoidCallback? _observerChangeListener;
   VoidCallback? _gameModeChangeListener;
   VoidCallback? _keybindingListener;
@@ -156,31 +157,47 @@ class EntitySprite extends PositionComponent with HasVisibility, Disposer {
   /// Creates an image-based visual component (SVG or PNG).
   VisualComponent _createImageVisual(ImageAsset img, Vector2? size) {
     final assetPath = img.svgAssetPath;
+    final tileCenter = (size ?? this.size) / 2; // Center of the tile
+
+    // Compute effective rotation - direction-based rotation takes precedence
+    double effectiveRotation = img.rotationDegrees;
+    final directionRendering = entity.get<DirectionBasedRendering>();
+    if (directionRendering != null) {
+      final direction = entity.get<Direction>();
+      if (direction != null) {
+        effectiveRotation = direction.facing.getRotationDegrees(
+          allowDiagonal: directionRendering.allowDiagonalRotation,
+        );
+      }
+    }
 
     if (assetPath.endsWith('.svg')) {
       return SvgVisualComponent(
         svgAssetPath: assetPath,
         size: size,
+        position: tileCenter, // Position at center for proper rotation
         flipHorizontal: img.flipHorizontal,
         flipVertical: img.flipVertical,
-        rotationDegrees: img.rotationDegrees,
+        rotationDegrees: effectiveRotation,
       );
     } else if (assetPath.endsWith('.png')) {
       return PngVisualComponent(
         pngAssetPath: assetPath,
         size: size,
+        position: tileCenter, // Position at center for proper rotation
         flipHorizontal: img.flipHorizontal,
         flipVertical: img.flipVertical,
-        rotationDegrees: img.rotationDegrees,
+        rotationDegrees: effectiveRotation,
       );
     } else {
       // Default to SVG for backwards compatibility
       return SvgVisualComponent(
         svgAssetPath: assetPath,
         size: size,
+        position: tileCenter, // Position at center for proper rotation
         flipHorizontal: img.flipHorizontal,
         flipVertical: img.flipVertical,
-        rotationDegrees: img.rotationDegrees,
+        rotationDegrees: effectiveRotation,
       );
     }
   }
@@ -213,6 +230,20 @@ class EntitySprite extends PositionComponent with HasVisibility, Disposer {
       final game = parent?.findGame() as GameArea?;
       if (game != null && game.gameMode.value == GameMode.editing) {
         _syncVisualToCurrentMode();
+      }
+    });
+
+    // Track Direction changes to update rotation for direction-based rendering
+    _directionSubscription = world.componentChanges
+        .onEntityOnComponent<Direction>(entity.id)
+        .listen((change) {
+      // Only re-render if entity uses direction-based rendering
+      if (!entity.has<DirectionBasedRendering>()) return;
+      if (change.kind == ChangeKind.removed) return;
+
+      // Re-render visual with new rotation if visible
+      if (_isCurrentlyVisible()) {
+        _swapVisual(_currentAsset);
       }
     });
   }
@@ -519,6 +550,7 @@ class EntitySprite extends PositionComponent with HasVisibility, Disposer {
     _editorRenderableSubscription?.cancel();
     _wasAttackedSubscription?.cancel();
     _pickedUpSubscription?.cancel();
+    _directionSubscription?.cancel();
     final game = parent?.findGame() as GameArea?;
     if (game != null) {
       if (_observerChangeListener != null) {

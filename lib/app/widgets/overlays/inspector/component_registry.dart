@@ -55,7 +55,26 @@ class ComponentRegistry {
   ///
   /// This should be called during app initialization for each component type
   /// that should be visible in the inspector.
+  ///
+  /// Throws [StateError] if [ComponentMetadata.componentName] does not match
+  /// the [Component.componentType] of the default component instance.
+  /// Components that throw [UnimplementedError] from [createDefault] are
+  /// skipped (they can't be validated but also can't be added via inspector).
   static void register(ComponentMetadata metadata) {
+    // Validate componentName matches componentType from the actual component
+    try {
+      final defaultComponent = metadata.createDefault();
+      if (metadata.componentName != defaultComponent.componentType) {
+        throw StateError(
+          'ComponentMetadata name mismatch: '
+          '${metadata.runtimeType}.componentName is "${metadata.componentName}" '
+          'but component.componentType is "${defaultComponent.componentType}"',
+        );
+      }
+    } on UnimplementedError {
+      // Skip validation for components that can't create defaults
+      // (e.g., Behavior which requires a behavior tree node)
+    }
     _metadata[metadata.componentName] = metadata;
   }
 

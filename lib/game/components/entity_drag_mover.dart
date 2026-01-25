@@ -115,7 +115,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
             final imageAsset = renderable.asset as ImageAsset;
             final preview = SvgVisualComponent(
               svgAssetPath: imageAsset.svgAssetPath,
-              position: GridCoordinates.gridToScreen(lp),
+              position: GridCoordinates.gridToScreen(lp) + Vector2.all(GridCoordinates.tileSize / 2),
               size: Vector2.all(GridCoordinates.tileSize),
             );
             preview.paint.color = Colors.blue.withValues(alpha: 0.6);
@@ -167,7 +167,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
       final imageAsset = renderable.asset as ImageAsset;
       final preview = SvgVisualComponent(
         svgAssetPath: imageAsset.svgAssetPath,
-        position: GridCoordinates.gridToScreen(originalPos),
+        position: GridCoordinates.gridToScreen(originalPos) + Vector2.all(GridCoordinates.tileSize / 2),
         size: Vector2.all(GridCoordinates.tileSize),
       );
       preview.paint.color = Colors.blue.withValues(alpha: 0.6);
@@ -204,7 +204,7 @@ class EntityDragMover extends PositionComponent with DragCallbacks {
           x: originalPos.x + offsetX,
           y: originalPos.y + offsetY,
         );
-        preview.position = GridCoordinates.gridToScreen(newPos);
+        preview.position = GridCoordinates.gridToScreen(newPos) + Vector2.all(GridCoordinates.tileSize / 2);
       }
     }
 

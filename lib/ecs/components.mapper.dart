@@ -171,6 +171,7 @@ class ComponentMapper extends ClassMapperBase<Component> {
       BehaviorMapper.ensureInitialized();
       RenderableMapper.ensureInitialized();
       EditorRenderableMapper.ensureInitialized();
+      DirectionBasedRenderingMapper.ensureInitialized();
       HealthMapper.ensureInitialized();
       DidAttackMapper.ensureInitialized();
       WasAttackedMapper.ensureInitialized();
@@ -3088,6 +3089,159 @@ class _EditorRenderableCopyWithImpl<$R, $Out>
   EditorRenderableCopyWith<$R2, EditorRenderable, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _EditorRenderableCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DirectionBasedRenderingMapper
+    extends SubClassMapperBase<DirectionBasedRendering> {
+  DirectionBasedRenderingMapper._();
+
+  static DirectionBasedRenderingMapper? _instance;
+  static DirectionBasedRenderingMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(
+        _instance = DirectionBasedRenderingMapper._(),
+      );
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DirectionBasedRendering';
+
+  static bool _$allowDiagonalRotation(DirectionBasedRendering v) =>
+      v.allowDiagonalRotation;
+  static const Field<DirectionBasedRendering, bool> _f$allowDiagonalRotation =
+      Field(
+        'allowDiagonalRotation',
+        _$allowDiagonalRotation,
+        opt: true,
+        def: false,
+      );
+
+  @override
+  final MappableFields<DirectionBasedRendering> fields = const {
+    #allowDiagonalRotation: _f$allowDiagonalRotation,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DirectionBasedRendering';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static DirectionBasedRendering _instantiate(DecodingData data) {
+    return DirectionBasedRendering(
+      allowDiagonalRotation: data.dec(_f$allowDiagonalRotation),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DirectionBasedRendering fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DirectionBasedRendering>(map);
+  }
+
+  static DirectionBasedRendering fromJson(String json) {
+    return ensureInitialized().decodeJson<DirectionBasedRendering>(json);
+  }
+}
+
+mixin DirectionBasedRenderingMappable {
+  String toJson() {
+    return DirectionBasedRenderingMapper.ensureInitialized()
+        .encodeJson<DirectionBasedRendering>(this as DirectionBasedRendering);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DirectionBasedRenderingMapper.ensureInitialized()
+        .encodeMap<DirectionBasedRendering>(this as DirectionBasedRendering);
+  }
+
+  DirectionBasedRenderingCopyWith<
+    DirectionBasedRendering,
+    DirectionBasedRendering,
+    DirectionBasedRendering
+  >
+  get copyWith =>
+      _DirectionBasedRenderingCopyWithImpl<
+        DirectionBasedRendering,
+        DirectionBasedRendering
+      >(this as DirectionBasedRendering, $identity, $identity);
+  @override
+  String toString() {
+    return DirectionBasedRenderingMapper.ensureInitialized().stringifyValue(
+      this as DirectionBasedRendering,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DirectionBasedRenderingMapper.ensureInitialized().equalsValue(
+      this as DirectionBasedRendering,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DirectionBasedRenderingMapper.ensureInitialized().hashValue(
+      this as DirectionBasedRendering,
+    );
+  }
+}
+
+extension DirectionBasedRenderingValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DirectionBasedRendering, $Out> {
+  DirectionBasedRenderingCopyWith<$R, DirectionBasedRendering, $Out>
+  get $asDirectionBasedRendering => $base.as(
+    (v, t, t2) => _DirectionBasedRenderingCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class DirectionBasedRenderingCopyWith<
+  $R,
+  $In extends DirectionBasedRendering,
+  $Out
+>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({bool? allowDiagonalRotation});
+  DirectionBasedRenderingCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _DirectionBasedRenderingCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DirectionBasedRendering, $Out>
+    implements
+        DirectionBasedRenderingCopyWith<$R, DirectionBasedRendering, $Out> {
+  _DirectionBasedRenderingCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DirectionBasedRendering> $mapper =
+      DirectionBasedRenderingMapper.ensureInitialized();
+  @override
+  $R call({bool? allowDiagonalRotation}) => $apply(
+    FieldCopyWithData({
+      if (allowDiagonalRotation != null)
+        #allowDiagonalRotation: allowDiagonalRotation,
+    }),
+  );
+  @override
+  DirectionBasedRendering $make(CopyWithData data) => DirectionBasedRendering(
+    allowDiagonalRotation: data.get(
+      #allowDiagonalRotation,
+      or: $value.allowDiagonalRotation,
+    ),
+  );
+
+  @override
+  DirectionBasedRenderingCopyWith<$R2, DirectionBasedRendering, $Out2>
+  $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _DirectionBasedRenderingCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class HealthMapper extends SubClassMapperBase<Health> {

@@ -124,7 +124,7 @@ class EntityTapVisualizerComponent extends PositionComponent {
       final lp = entity.get<LocalPosition>();
 
       if (lp != null) {
-        border.position = GridCoordinates.gridToScreen(lp);
+        border.position = GridCoordinates.gridToScreen(lp) + Vector2.all(GridCoordinates.tileSize / 2);
       } else {
         // Move offscreen if no position
         border.position = Vector2(-1000, -1000);

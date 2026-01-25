@@ -21,10 +21,27 @@ class PlacementPreview extends PositionComponent {
   /// List of currently displayed preview components.
   final List<VisualComponent> _previewComponents = [];
 
+  /// Current rotation in degrees for direction-based placement.
+  double _rotationDegrees = 0;
+
   PlacementPreview({this.asset});
 
   /// Legacy constructor for SVG path (used by removal mode).
   PlacementPreview.fromPath(String svgAssetPath) : asset = ImageAsset(svgAssetPath);
+
+  /// Sets the rotation for all preview components.
+  ///
+  /// Used for direction-based placement where entities can be rotated
+  /// before placing (e.g., doors facing different directions).
+  void setRotation(double degrees) {
+    _rotationDegrees = degrees;
+    // Re-render any existing previews with new rotation
+    if (_previewComponents.isNotEmpty) {
+      // Store current positions and re-create previews
+      // Note: This is a simple approach - we just clear and let next hover/drag recreate them
+      clearPreview();
+    }
+  }
 
   /// Updates the preview to show entities at the specified positions.
   ///
@@ -68,10 +85,17 @@ class PlacementPreview extends PositionComponent {
 
   /// Creates an SVG-based preview component.
   SvgVisualComponent _createImagePreview(ImageAsset img, Vector2 position, Color color) {
+    // Use direction-based rotation if set, otherwise fall back to asset's rotation
+    final effectiveRotation = _rotationDegrees != 0 ? _rotationDegrees : img.rotationDegrees;
+
+    // Position at center of tile for proper rotation (VisualComponent uses Anchor.center)
+    final centeredPosition = position + Vector2.all(GridCoordinates.tileSize / 2);
+
     final preview = SvgVisualComponent(
       svgAssetPath: img.svgAssetPath,
-      position: position,
+      position: centeredPosition,
       size: Vector2.all(GridCoordinates.tileSize),
+      rotationDegrees: effectiveRotation,
     );
     preview.paint.color = color;
     return preview;

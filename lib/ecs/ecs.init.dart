@@ -71,6 +71,7 @@ void initializeMappers() {
   p7.TextAssetMapper.ensureInitialized();
   p7.RenderableMapper.ensureInitialized();
   p7.EditorRenderableMapper.ensureInitialized();
+  p7.DirectionBasedRenderingMapper.ensureInitialized();
   p7.HealthMapper.ensureInitialized();
   p7.AttackIntentMapper.ensureInitialized();
   p7.DidAttackMapper.ensureInitialized();

@@ -14,6 +14,7 @@ void registerAllComponents() {
   ComponentRegistry.register(HealthMetadata());
   ComponentRegistry.register(RenderableMetadata());
   ComponentRegistry.register(EditorRenderableMetadata());
+  ComponentRegistry.register(DirectionBasedRenderingMetadata());
 
   // Hierarchy components
   ComponentRegistry.register(HasParentMetadata());

@@ -8,6 +8,7 @@ export 'behavior_section.dart';
 export 'cell_section.dart';
 export 'combat_sections.dart';
 export 'control_sections.dart';
+export 'direction_based_rendering_section.dart';
 export 'direction_section.dart';
 export 'direction_intent_section.dart';
 export 'event_sections.dart';

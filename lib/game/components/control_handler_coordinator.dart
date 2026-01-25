@@ -102,6 +102,7 @@ class ControlHandlerCoordinator extends Component {
 
     // Listen to game mode changes and update handler enabled states
     gameModeNotifier.addListener(_onGameModeChanged);
+    _onGameModeChanged(); // Initialize handler states based on current mode
   }
 
   void _onGameModeChanged() {

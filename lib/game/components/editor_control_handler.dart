@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
+import 'package:rogueverse/app/services/keybinding_service.dart' show KeyBindingService;
+import 'package:rogueverse/ecs/components.dart' show Direction, CompassDirection;
 import 'package:rogueverse/ecs/entity.dart';
 
 /// Handles keyboard controls specific to editing mode (DEL to delete, Enter to navigate, etc.).
@@ -50,6 +52,31 @@ class EditorControlHandler extends Component with KeyboardHandler {
         _logger.info("entering entity ${selected.id}");
         viewedParentIdNotifier.value = selected.id;
         return false;
+      }
+    }
+
+    // SHIFT+WASD to change direction of selected entities
+    final keybindings = KeyBindingService.instance;
+    CompassDirection? newDirection;
+    if (keybindings.matches('direction.up', keysPressed)) {
+      newDirection = CompassDirection.north;
+    } else if (keybindings.matches('direction.down', keysPressed)) {
+      newDirection = CompassDirection.south;
+    } else if (keybindings.matches('direction.left', keysPressed)) {
+      newDirection = CompassDirection.west;
+    } else if (keybindings.matches('direction.right', keysPressed)) {
+      newDirection = CompassDirection.east;
+    }
+
+    if (newDirection != null) {
+      final selected = selectedEntitiesNotifier.value;
+      if (selected.isNotEmpty) {
+        for (final entity in selected) {
+          final current = entity.get<Direction>();
+          entity.upsert(Direction(newDirection, allowDiagonal: current?.allowDiagonal ?? false));
+        }
+        _logger.info('set direction to $newDirection for ${selected.length} entities');
+        return false; // Consumed
       }
     }
 

@@ -255,8 +255,6 @@ class TemplateEntitySpawner extends PositionComponent
       return true;
     }
 
-    _logger.info('onKeyEvent triggered: event_type=${event.runtimeType} key=${event.logicalKey} _isActive=$_isActive');
-
     if (event is KeyDownEvent && event.logicalKey == LogicalKeyboardKey.escape) {
       _logger.info('esc key detected: _isActive=$_isActive _preview=${_preview != null} _templateId=${_templateId != null}');
 
@@ -274,6 +272,7 @@ class TemplateEntitySpawner extends PositionComponent
         _logger.info('Escape key not active');
       }
     }
+
     return true; // Let others handle
   }
 
@@ -304,7 +303,12 @@ class TemplateEntitySpawner extends PositionComponent
     for (final pos in positions) {
       if (templateId != null) {
         // Template placement mode - place entity with FromTemplate reference
-        EntityManipulator.placeEntity(world, templateId, pos, viewedParentNotifier.value);
+        EntityManipulator.placeEntity(
+          world,
+          templateId,
+          pos,
+          viewedParentNotifier.value,
+        );
       } else if (_blankEntityMode) {
         // Blank entity mode - place a default entity
         _placeBlankEntity(pos);
