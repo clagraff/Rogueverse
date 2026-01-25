@@ -8,13 +8,32 @@ import 'package:path_provider/path_provider.dart';
 
 part 'game_settings_service.mapper.dart';
 
+/// How to handle interactions with entities remembered from vision memory.
+@MappableEnum()
+enum InteractionMacroMode {
+  /// No macro - only visible entities can be interacted with.
+  disabled,
+
+  /// Turn → interact → turn back to original direction.
+  lookBack,
+
+  /// Turn → interact (don't turn back).
+  remainFacing,
+}
+
 /// General game settings that can be persisted.
 @MappableClass()
 class GameSettings with GameSettingsMappable {
   /// Whether to show health bars for all entities, even at full health.
   final bool alwaysShowHealthBars;
 
-  GameSettings({this.alwaysShowHealthBars = false});
+  /// How to handle interactions with entities remembered from vision memory.
+  final InteractionMacroMode interactionMacroMode;
+
+  GameSettings({
+    this.alwaysShowHealthBars = false,
+    this.interactionMacroMode = InteractionMacroMode.lookBack,
+  });
 }
 
 /// Central service for managing general game settings.
@@ -52,9 +71,25 @@ class GameSettingsService {
   /// Whether to show health bars for all entities, even at full health.
   bool get alwaysShowHealthBars => _settings.alwaysShowHealthBars;
 
+  /// How to handle interactions with entities remembered from vision memory.
+  InteractionMacroMode get interactionMacroMode => _settings.interactionMacroMode;
+
   /// Sets whether to always show health bars.
   Future<void> setAlwaysShowHealthBars(bool value) async {
-    _settings = GameSettings(alwaysShowHealthBars: value);
+    _settings = GameSettings(
+      alwaysShowHealthBars: value,
+      interactionMacroMode: _settings.interactionMacroMode,
+    );
+    _notifyChange();
+    await _persist();
+  }
+
+  /// Sets how to handle interactions with memory entities.
+  Future<void> setInteractionMacroMode(InteractionMacroMode value) async {
+    _settings = GameSettings(
+      alwaysShowHealthBars: _settings.alwaysShowHealthBars,
+      interactionMacroMode: value,
+    );
     _notifyChange();
     await _persist();
   }

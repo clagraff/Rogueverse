@@ -182,11 +182,14 @@ class _SettingsTabContentState extends State<SettingsTabContent> {
                   ? colorScheme.surfaceContainerHighest
                   : colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(4),
-          border: showHighlight
-              ? Border.all(color: colorScheme.primary, width: 2)
-              : isSelected
-                  ? Border.all(color: colorScheme.outlineVariant)
-                  : null,
+          border: Border.all(
+            color: showHighlight
+                ? colorScheme.primary
+                : isSelected
+                    ? colorScheme.outlineVariant
+                    : Colors.transparent,
+            width: 2,
+          ),
         ),
         child: Text(
           label,

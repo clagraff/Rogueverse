@@ -1,3 +1,4 @@
+import 'package:rogueverse/app/services/game_settings_service.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/query.dart';
@@ -211,6 +212,12 @@ class NearbyEntityFinder {
         rememberedPos = null;
         positionForRangeCheck = entity.get<LocalPosition>()!;
       } else if (visionMemory?.hasSeenEntity(entity.id) ?? false) {
+        // Skip memory entities if macro is disabled
+        if (GameSettingsService.instance.interactionMacroMode ==
+            InteractionMacroMode.disabled) {
+          continue;
+        }
+
         // In memory but not visible
         source = EntitySource.memory;
         rememberedPos = visionMemory!.getLastSeenPosition(entity.id)!;

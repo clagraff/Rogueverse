@@ -34,6 +34,7 @@ import 'world.dart' as p26;
 
 void initializeMappers() {
   p0.GameSettingsMapper.ensureInitialized();
+  p0.InteractionMacroModeMapper.ensureInitialized();
   p1.KeyComboMapper.ensureInitialized();
   p1.KeyBindingMapper.ensureInitialized();
   p2.MoveRandomlyNodeMapper.ensureInitialized();

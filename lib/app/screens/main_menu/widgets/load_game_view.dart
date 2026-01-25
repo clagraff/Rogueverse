@@ -344,12 +344,13 @@ class _LoadGameViewState extends State<LoadGameView> {
                   children: [
                     // Delete button with focus indicator
                     Container(
-                      decoration: isDeleteFocused
-                          ? BoxDecoration(
-                              border: Border.all(color: colorScheme.error, width: 2),
-                              borderRadius: BorderRadius.circular(20),
-                            )
-                          : null,
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isDeleteFocused ? colorScheme.error : Colors.transparent,
+                          width: 2,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
                       child: IconButton(
                         icon: Icon(Icons.delete_outline, color: colorScheme.error),
                         onPressed: () => _deleteSave(save),

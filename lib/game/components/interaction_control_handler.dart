@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
+import 'package:rogueverse/app/services/game_settings_service.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/overlays/interaction_context_menu.dart';
 import 'package:rogueverse/ecs/components.dart' hide Component;
@@ -298,8 +299,11 @@ class InteractionControlHandler extends PositionComponent
     // This ensures newly visible entities (e.g., behind opened door) are added to memory
     _forceVisionUpdate(entity);
 
-    // Step 3: Turn back to original direction (if different and we had one)
-    if (originalDirection != null && originalDirection != directionToTarget) {
+    // Step 3: Turn back to original direction (only in lookBack mode)
+    if (GameSettingsService.instance.interactionMacroMode ==
+            InteractionMacroMode.lookBack &&
+        originalDirection != null &&
+        originalDirection != directionToTarget) {
       entity.setIntent(DirectionIntent(originalDirection));
       entity.parentCell.tick();
 

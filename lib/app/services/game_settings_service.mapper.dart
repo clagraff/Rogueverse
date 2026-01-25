@@ -7,6 +7,57 @@
 
 part of 'game_settings_service.dart';
 
+class InteractionMacroModeMapper extends EnumMapper<InteractionMacroMode> {
+  InteractionMacroModeMapper._();
+
+  static InteractionMacroModeMapper? _instance;
+  static InteractionMacroModeMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = InteractionMacroModeMapper._());
+    }
+    return _instance!;
+  }
+
+  static InteractionMacroMode fromValue(dynamic value) {
+    ensureInitialized();
+    return MapperContainer.globals.fromValue(value);
+  }
+
+  @override
+  InteractionMacroMode decode(dynamic value) {
+    switch (value) {
+      case r'disabled':
+        return InteractionMacroMode.disabled;
+      case r'lookBack':
+        return InteractionMacroMode.lookBack;
+      case r'remainFacing':
+        return InteractionMacroMode.remainFacing;
+      default:
+        throw MapperException.unknownEnumValue(value);
+    }
+  }
+
+  @override
+  dynamic encode(InteractionMacroMode self) {
+    switch (self) {
+      case InteractionMacroMode.disabled:
+        return r'disabled';
+      case InteractionMacroMode.lookBack:
+        return r'lookBack';
+      case InteractionMacroMode.remainFacing:
+        return r'remainFacing';
+    }
+  }
+}
+
+extension InteractionMacroModeMapperExtension on InteractionMacroMode {
+  String toValue() {
+    InteractionMacroModeMapper.ensureInitialized();
+    return MapperContainer.globals.toValue<InteractionMacroMode>(this)
+        as String;
+  }
+}
+
 class GameSettingsMapper extends ClassMapperBase<GameSettings> {
   GameSettingsMapper._();
 
@@ -14,6 +65,7 @@ class GameSettingsMapper extends ClassMapperBase<GameSettings> {
   static GameSettingsMapper ensureInitialized() {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = GameSettingsMapper._());
+      InteractionMacroModeMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -28,15 +80,26 @@ class GameSettingsMapper extends ClassMapperBase<GameSettings> {
     opt: true,
     def: false,
   );
+  static InteractionMacroMode _$interactionMacroMode(GameSettings v) =>
+      v.interactionMacroMode;
+  static const Field<GameSettings, InteractionMacroMode>
+  _f$interactionMacroMode = Field(
+    'interactionMacroMode',
+    _$interactionMacroMode,
+    opt: true,
+    def: InteractionMacroMode.lookBack,
+  );
 
   @override
   final MappableFields<GameSettings> fields = const {
     #alwaysShowHealthBars: _f$alwaysShowHealthBars,
+    #interactionMacroMode: _f$interactionMacroMode,
   };
 
   static GameSettings _instantiate(DecodingData data) {
     return GameSettings(
       alwaysShowHealthBars: data.dec(_f$alwaysShowHealthBars),
+      interactionMacroMode: data.dec(_f$interactionMacroMode),
     );
   }
 
@@ -102,7 +165,10 @@ extension GameSettingsValueCopy<$R, $Out>
 
 abstract class GameSettingsCopyWith<$R, $In extends GameSettings, $Out>
     implements ClassCopyWith<$R, $In, $Out> {
-  $R call({bool? alwaysShowHealthBars});
+  $R call({
+    bool? alwaysShowHealthBars,
+    InteractionMacroMode? interactionMacroMode,
+  });
   GameSettingsCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
@@ -115,10 +181,15 @@ class _GameSettingsCopyWithImpl<$R, $Out>
   late final ClassMapperBase<GameSettings> $mapper =
       GameSettingsMapper.ensureInitialized();
   @override
-  $R call({bool? alwaysShowHealthBars}) => $apply(
+  $R call({
+    bool? alwaysShowHealthBars,
+    InteractionMacroMode? interactionMacroMode,
+  }) => $apply(
     FieldCopyWithData({
       if (alwaysShowHealthBars != null)
         #alwaysShowHealthBars: alwaysShowHealthBars,
+      if (interactionMacroMode != null)
+        #interactionMacroMode: interactionMacroMode,
     }),
   );
   @override
@@ -126,6 +197,10 @@ class _GameSettingsCopyWithImpl<$R, $Out>
     alwaysShowHealthBars: data.get(
       #alwaysShowHealthBars,
       or: $value.alwaysShowHealthBars,
+    ),
+    interactionMacroMode: data.get(
+      #interactionMacroMode,
+      or: $value.interactionMacroMode,
     ),
   );
 
