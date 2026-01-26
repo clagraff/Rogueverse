@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/events.dart';
+import 'package:rogueverse/app/screens/dialog_editor_screen.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/entity_navigator.dart';
 import 'package:rogueverse/app/ui_constants.dart';
@@ -53,6 +54,18 @@ class DialogRefMetadata extends ComponentMetadata {
                   // Navigate to the new node
                   EntityNavigator.navigateTo(context, newNode);
                 },
+              ),
+              const SizedBox(height: kSpacingM),
+              FilledButton.icon(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => DialogEditorScreen(entity: entity),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('Edit Dialog'),
               ),
             ],
           ),

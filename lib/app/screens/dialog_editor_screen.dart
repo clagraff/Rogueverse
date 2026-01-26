@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:rogueverse/app/screens/game/template_variables_screen.dart';
+import 'package:rogueverse/app/ui_constants.dart';
+import 'package:rogueverse/app/widgets/dialogs/node_picker_dialog.dart';
 import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
-import 'package:rogueverse/app/ui_constants.dart';
 
 /// Full-screen editor for dialog graphs attached to NPC entities.
 ///
@@ -27,6 +29,9 @@ class DialogEditorScreen extends StatefulWidget {
 class _DialogEditorScreenState extends State<DialogEditorScreen> {
   /// Currently selected dialog node entity ID.
   int? _selectedNodeId;
+
+  /// Stack of previously visited node IDs for back navigation.
+  final List<int> _navigationHistory = [];
 
   /// Set of node IDs discovered in the graph.
   Set<int> _discoveredNodes = {};
@@ -67,24 +72,17 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
     }
   }
 
-  void _handleClose() {
-    Navigator.of(context).pop();
+  /// Returns a label for a node, preferring truncated dialog text.
+  String _getNodeLabel(Entity nodeEntity, DialogNode dialogNode) {
+    if (dialogNode.text.isNotEmpty) {
+      final text = dialogNode.text;
+      return text.length > 30 ? '${text.substring(0, 30)}...' : text;
+    }
+    return 'Node #${nodeEntity.id}';
   }
 
-  void _createNewNode() async {
-    // Create a new dialog node entity
-    final newEntity = _world.add([
-      DialogNode(
-        text: 'New dialog text',
-        choices: [DialogChoice(text: 'Continue')],
-      ),
-      Name(name: 'Dialog Node'),
-    ]);
-
-    setState(() {
-      _discoveredNodes.add(newEntity.id);
-      _selectedNodeId = newEntity.id;
-    });
+  void _handleClose() {
+    Navigator.of(context).pop();
   }
 
   void _setAsRootNode(int nodeId) {
@@ -134,27 +132,26 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
             Text('Dialog Editor - $npcName'),
           ],
         ),
-        actions: [
-          TextButton.icon(
-            onPressed: _createNewNode,
-            icon: const Icon(Icons.add),
-            label: const Text('New Node'),
-          ),
-          const SizedBox(width: 16),
+        actions: const [
+          SizedBox(width: 16),
         ],
       ),
-      body: Focus(
-        autofocus: true,
-        onKeyEvent: (node, event) {
-          if (event is KeyDownEvent) {
-            if (event.logicalKey == LogicalKeyboardKey.escape) {
-              _handleClose();
-              return KeyEventResult.handled;
-            }
-          }
-          return KeyEventResult.ignored;
+      body: Shortcuts(
+        shortcuts: const {
+          SingleActivator(LogicalKeyboardKey.escape): DismissIntent(),
         },
-        child: dialogRef == null
+        child: Actions(
+          actions: {
+            DismissIntent: CallbackAction<DismissIntent>(
+              onInvoke: (_) {
+                _handleClose();
+                return null;
+              },
+            ),
+          },
+          child: Focus(
+            autofocus: true,
+            child: dialogRef == null
             ? _buildNoDialogRef(colorScheme)
             : Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -180,6 +177,8 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
                   ),
                 ],
               ),
+          ),
+        ),
       ),
     );
   }
@@ -237,82 +236,193 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
   }
 
   Widget _buildNodeList(ColorScheme colorScheme, int rootNodeId) {
-    final sortedNodes = _discoveredNodes.toList()
-      ..sort((a, b) => a == rootNodeId ? -1 : (b == rootNodeId ? 1 : a.compareTo(b)));
-
-    return ListView.builder(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(kSpacingM),
-      itemCount: sortedNodes.length,
-      itemBuilder: (context, index) {
-        final nodeId = sortedNodes[index];
-        final nodeEntity = _world.getEntity(nodeId);
-        final dialogNode = nodeEntity.get<DialogNode>();
-        final nodeName = nodeEntity.get<Name>()?.name ?? 'Node #$nodeId';
-        final isRoot = nodeId == rootNodeId;
-        final isSelected = nodeId == _selectedNodeId;
+      child: _buildTreeNode(
+        colorScheme: colorScheme,
+        nodeId: rootNodeId,
+        rootNodeId: rootNodeId,
+        visitedNodes: {},
+        depth: 0,
+      ),
+    );
+  }
 
-        return Card(
-          color: isSelected ? colorScheme.primaryContainer : null,
-          child: InkWell(
-            onTap: () => setState(() => _selectedNodeId = nodeId),
-            child: Padding(
-              padding: const EdgeInsets.all(kSpacingM),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      if (isRoot) ...[
-                        Icon(
-                          Icons.star,
-                          size: 16,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: kSpacingXS),
-                      ],
-                      Expanded(
-                        child: Text(
-                          nodeName,
-                          style: TextStyle(
-                            fontWeight: isRoot ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        '#$nodeId',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: colorScheme.onSurface.withValues(alpha: 0.5),
-                        ),
-                      ),
-                    ],
+  /// Builds a tree node and its children recursively.
+  Widget _buildTreeNode({
+    required ColorScheme colorScheme,
+    required int nodeId,
+    required int rootNodeId,
+    required Set<int> visitedNodes,
+    required int depth,
+  }) {
+    final nodeEntity = _world.getEntity(nodeId);
+    final dialogNode = nodeEntity.get<DialogNode>();
+    final isRoot = nodeId == rootNodeId;
+    final isSelected = nodeId == _selectedNodeId;
+
+    if (dialogNode == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Mark this node as visited to detect loops
+    final newVisited = {...visitedNodes, nodeId};
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Node header
+        InkWell(
+          onTap: () => setState(() {
+            _navigationHistory.clear();
+            _selectedNodeId = nodeId;
+          }),
+          borderRadius: BorderRadius.circular(4),
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: kSpacingS,
+              vertical: kSpacingXS,
+            ),
+            decoration: BoxDecoration(
+              color: isSelected ? colorScheme.primaryContainer : null,
+              borderRadius: BorderRadius.circular(4),
+              border: isSelected
+                  ? Border.all(color: colorScheme.primary, width: 2)
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isRoot ? Icons.star : Icons.chat_bubble_outline,
+                  size: 14,
+                  color: isRoot ? colorScheme.primary : colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+                const SizedBox(width: kSpacingXS),
+                Flexible(
+                  child: Text(
+                    _getNodeLabel(nodeEntity, dialogNode),
+                    style: TextStyle(
+                      fontWeight: isRoot ? FontWeight.bold : FontWeight.normal,
+                      fontSize: 13,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  if (dialogNode != null) ...[
-                    const SizedBox(height: kSpacingXS),
-                    Text(
-                      dialogNode.text.length > 50
-                          ? '${dialogNode.text.substring(0, 50)}...'
-                          : dialogNode.text,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colorScheme.onSurface.withValues(alpha: 0.7),
-                      ),
-                    ),
-                    const SizedBox(height: kSpacingXS),
-                    Text(
-                      '${dialogNode.choices.length} choice(s)',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+
+        // Choices as children
+        Padding(
+          padding: const EdgeInsets.only(left: kSpacingL),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: dialogNode.choices.asMap().entries.map((entry) {
+              final choice = entry.value;
+              final targetId = choice.targetNodeId;
+              final choiceText = choice.text.length > 25
+                  ? '${choice.text.substring(0, 25)}...'
+                  : choice.text;
+
+              if (targetId == null) {
+                // End dialog choice
+                return _buildChoiceRow(
+                  colorScheme: colorScheme,
+                  icon: Icons.stop_circle_outlined,
+                  iconColor: colorScheme.error.withValues(alpha: 0.7),
+                  text: '"$choiceText" (end)',
+                  onTap: null,
+                );
+              }
+
+              // Check if this is a loop reference
+              if (visitedNodes.contains(targetId)) {
+                final targetEntity = _world.getEntity(targetId);
+                final targetNode = targetEntity.get<DialogNode>();
+                final targetLabel = targetNode != null
+                    ? _getNodeLabel(targetEntity, targetNode)
+                    : 'Node #$targetId';
+                return _buildChoiceRow(
+                  colorScheme: colorScheme,
+                  icon: Icons.redo,
+                  iconColor: colorScheme.tertiary,
+                  text: '"$choiceText" \u21a9 $targetLabel',
+                  onTap: () => setState(() {
+                    _navigationHistory.clear();
+                    _selectedNodeId = targetId;
+                  }),
+                );
+              }
+
+              // Regular child node - recurse
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildChoiceRow(
+                    colorScheme: colorScheme,
+                    icon: Icons.subdirectory_arrow_right,
+                    iconColor: colorScheme.onSurface.withValues(alpha: 0.5),
+                    text: '"$choiceText"',
+                    onTap: () => setState(() {
+                      _navigationHistory.clear();
+                      _selectedNodeId = targetId;
+                    }),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(left: kSpacingM),
+                    child: _buildTreeNode(
+                      colorScheme: colorScheme,
+                      nodeId: targetId,
+                      rootNodeId: rootNodeId,
+                      visitedNodes: newVisited,
+                      depth: depth + 1,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Builds a single choice row in the tree.
+  Widget _buildChoiceRow({
+    required ColorScheme colorScheme,
+    required IconData icon,
+    required Color iconColor,
+    required String text,
+    required VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: kSpacingXS,
+          vertical: 2,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: iconColor),
+            const SizedBox(width: kSpacingXS),
+            Flexible(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 12,
+                  color: colorScheme.onSurface.withValues(alpha: 0.8),
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -367,39 +477,37 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
           ),
           const SizedBox(height: kSpacingL),
 
-          // Name field
-          TextFormField(
-            key: ValueKey('name_$nodeId'),
-            initialValue: nodeEntity.get<Name>()?.name ?? '',
-            decoration: const InputDecoration(
-              labelText: 'Node Name (for editor)',
-              border: OutlineInputBorder(),
-            ),
-            onFieldSubmitted: (value) {
-              if (value.isNotEmpty) {
-                nodeEntity.upsert(Name(name: value));
-              } else {
-                nodeEntity.remove<Name>();
-              }
-            },
-          ),
-          const SizedBox(height: kSpacingL),
-
           // Dialog text field
           TextFormField(
             key: ValueKey('text_$nodeId'),
             initialValue: dialogNode.text,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Dialog Text',
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               hintText: 'What the NPC says...',
+              suffixIcon: IconButton(
+                icon: Icon(
+                  Icons.data_object,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const TemplateVariablesScreen(),
+                    ),
+                  );
+                },
+                tooltip: 'Template Variables',
+              ),
             ),
             maxLines: 4,
-            onFieldSubmitted: (value) {
+            onChanged: (value) {
               nodeEntity.upsert(DialogNode(
                 text: value,
                 choices: dialogNode.choices,
               ));
+              setState(() {}); // Refresh tree labels
             },
           ),
           const SizedBox(height: kSpacingL),
@@ -435,6 +543,173 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
     );
   }
 
+  /// Creates a new dialog node and links it to the given choice.
+  void _createLinkedNode(Entity nodeEntity, DialogNode dialogNode, int choiceIndex) {
+    // Create a new dialog node entity
+    final newEntity = _world.add([
+      DialogNode(
+        text: 'New dialog text',
+        choices: [DialogChoice(text: 'Continue')],
+      ),
+      Name(name: 'Dialog Node'),
+    ]);
+
+    // Update the choice to point to the new node
+    final newChoices = [...dialogNode.choices];
+    newChoices[choiceIndex] = DialogChoice(
+      text: newChoices[choiceIndex].text,
+      targetNodeId: newEntity.id,
+    );
+    nodeEntity.upsert(DialogNode(
+      text: dialogNode.text,
+      choices: newChoices,
+    ));
+
+    setState(() {
+      _discoveredNodes.add(newEntity.id);
+      if (_selectedNodeId != null) {
+        _navigationHistory.add(_selectedNodeId!);
+      }
+      _selectedNodeId = newEntity.id;
+    });
+  }
+
+  /// Updates the target node ID for a choice.
+  void _updateChoiceTarget(
+    Entity nodeEntity,
+    DialogNode dialogNode,
+    int choiceIndex,
+    int? newTargetId,
+  ) {
+    final newChoices = [...dialogNode.choices];
+    newChoices[choiceIndex] = DialogChoice(
+      text: newChoices[choiceIndex].text,
+      targetNodeId: newTargetId,
+    );
+    nodeEntity.upsert(DialogNode(
+      text: dialogNode.text,
+      choices: newChoices,
+    ));
+    setState(() {
+      _discoverGraph();
+    });
+  }
+
+  /// Builds a read-only display for the current target.
+  Widget _buildTargetDisplay(DialogChoice choice, ColorScheme colorScheme) {
+    final targetId = choice.targetNodeId;
+    String label;
+    IconData icon;
+    Color iconColor;
+
+    if (targetId == null) {
+      label = '(End dialog)';
+      icon = Icons.stop_circle_outlined;
+      iconColor = colorScheme.error.withValues(alpha: 0.7);
+    } else {
+      final targetEntity = _world.getEntity(targetId);
+      final targetNode = targetEntity.get<DialogNode>();
+      if (targetNode != null) {
+        label = _getNodeLabel(targetEntity, targetNode);
+      } else {
+        label = 'Node #$targetId';
+      }
+      icon = Icons.arrow_forward;
+      iconColor = colorScheme.primary;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: kSpacingM,
+        vertical: kSpacingS,
+      ),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(kRadiusS),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: iconColor),
+          const SizedBox(width: kSpacingS),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontStyle: targetId == null ? FontStyle.italic : FontStyle.normal,
+                color: targetId == null
+                    ? colorScheme.onSurface.withValues(alpha: 0.6)
+                    : null,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Builds action buttons for the target selector.
+  List<Widget> _buildTargetActions(
+    Entity nodeEntity,
+    DialogNode dialogNode,
+    int index,
+    DialogChoice choice,
+    ColorScheme colorScheme,
+  ) {
+    return [
+      // Link existing node (opens modal)
+      IconButton(
+        icon: const Icon(Icons.link, size: 18),
+        onPressed: () async {
+          final selectedId = await NodePickerDialog.show(
+            context: context,
+            world: _world,
+            currentTreeNodes: _discoveredNodes,
+            excludeNodeId: nodeEntity.id,
+            currentTargetId: choice.targetNodeId,
+          );
+          if (selectedId != null) {
+            _updateChoiceTarget(nodeEntity, dialogNode, index, selectedId);
+          }
+        },
+        tooltip: 'Link to existing node',
+        visualDensity: VisualDensity.compact,
+      ),
+      // Create new linked node
+      IconButton(
+        icon: Icon(Icons.add_circle_outline, size: 18, color: colorScheme.primary),
+        onPressed: () => _createLinkedNode(nodeEntity, dialogNode, index),
+        tooltip: 'Create new linked node',
+        visualDensity: VisualDensity.compact,
+      ),
+      // End dialog (clear target)
+      if (choice.targetNodeId != null)
+        IconButton(
+          icon: Icon(Icons.stop_circle_outlined, size: 18, color: colorScheme.error.withValues(alpha: 0.7)),
+          onPressed: () => _updateChoiceTarget(nodeEntity, dialogNode, index, null),
+          tooltip: 'End dialog (clear target)',
+          visualDensity: VisualDensity.compact,
+        ),
+      // Navigate to target node
+      if (choice.targetNodeId != null)
+        IconButton(
+          icon: const Icon(Icons.open_in_new, size: 18),
+          onPressed: () {
+            setState(() {
+              if (_selectedNodeId != null) {
+                _navigationHistory.add(_selectedNodeId!);
+              }
+              _selectedNodeId = choice.targetNodeId;
+            });
+          },
+          tooltip: 'Go to target node',
+          visualDensity: VisualDensity.compact,
+        ),
+    ];
+  }
+
   Widget _buildChoiceEditor(
     Entity nodeEntity,
     DialogNode dialogNode,
@@ -449,6 +724,7 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Header with title and delete button
             Row(
               children: [
                 Text(
@@ -474,69 +750,56 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
             ),
             const SizedBox(height: kSpacingS),
 
-            // Choice text
-            TextFormField(
-              key: ValueKey('choice_${nodeEntity.id}_$index'),
-              initialValue: choice.text,
-              decoration: const InputDecoration(
-                labelText: 'Choice Text',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-              onFieldSubmitted: (value) {
-                final newChoices = [...dialogNode.choices];
-                newChoices[index] = DialogChoice(
-                  text: value,
-                  targetNodeId: choice.targetNodeId,
-                );
-                nodeEntity.upsert(DialogNode(
-                  text: dialogNode.text,
-                  choices: newChoices,
-                ));
-              },
-            ),
-            const SizedBox(height: kSpacingS),
-
-            // Target node
+            // Horizontal row with Choice Text and Target Node
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Choice text (flex: 2)
                 Expanded(
+                  flex: 2,
                   child: TextFormField(
-                    key: ValueKey('target_${nodeEntity.id}_$index'),
-                    initialValue: choice.targetNodeId?.toString() ?? '',
-                    decoration: InputDecoration(
-                      labelText: 'Target Node ID',
-                      border: const OutlineInputBorder(),
+                    key: ValueKey('choice_${nodeEntity.id}_$index'),
+                    initialValue: choice.text,
+                    decoration: const InputDecoration(
+                      labelText: 'Choice Text',
+                      border: OutlineInputBorder(),
                       isDense: true,
-                      helperText: choice.targetNodeId == null ? 'Empty = end dialog' : null,
                     ),
-                    keyboardType: TextInputType.number,
-                    onFieldSubmitted: (value) {
+                    onChanged: (value) {
                       final newChoices = [...dialogNode.choices];
                       newChoices[index] = DialogChoice(
-                        text: choice.text,
-                        targetNodeId: value.isEmpty ? null : int.tryParse(value),
+                        text: value,
+                        targetNodeId: choice.targetNodeId,
                       );
                       nodeEntity.upsert(DialogNode(
                         text: dialogNode.text,
                         choices: newChoices,
                       ));
-                      setState(() {
-                        _discoverGraph();
-                      });
                     },
                   ),
                 ),
-                const SizedBox(width: kSpacingS),
-                if (choice.targetNodeId != null)
-                  TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _selectedNodeId = choice.targetNodeId;
-                      });
-                    },
-                    child: const Text('Go to'),
+                const SizedBox(width: kSpacingM),
+
+                // Target node (flex: 1) with display + action buttons
+                Expanded(
+                  flex: 1,
+                  child: Row(
+                    children: [
+                      // Target display chip
+                      Expanded(
+                        child: _buildTargetDisplay(choice, colorScheme),
+                      ),
+                      // Action buttons
+                      ..._buildTargetActions(
+                        nodeEntity,
+                        dialogNode,
+                        index,
+                        choice,
+                        colorScheme,
+                      ),
+                    ],
                   ),
+                ),
               ],
             ),
           ],
