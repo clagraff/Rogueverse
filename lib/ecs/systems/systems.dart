@@ -15,4 +15,5 @@ export 'vision_system.dart';
 export 'control_system.dart';
 export 'openable_system.dart';
 export 'portal_system.dart';
+export 'dialog_system.dart';
 export 'save_system.dart';

@@ -198,7 +198,9 @@ class ComponentMapper extends ClassMapperBase<Component> {
       OpenableMapper.ensureInitialized();
       DidOpenMapper.ensureInitialized();
       DidCloseMapper.ensureInitialized();
-      DialogMapper.ensureInitialized();
+      DialogRefMapper.ensureInitialized();
+      DialogNodeMapper.ensureInitialized();
+      ActiveDialogMapper.ensureInitialized();
       IsTemplateMapper.ensureInitialized();
       FromTemplateMapper.ensureInitialized();
       ItemMapper.ensureInitialized();
@@ -782,6 +784,8 @@ class IntentComponentMapper extends SubClassMapperBase<IntentComponent> {
       OpenIntentMapper.ensureInitialized();
       CloseIntentMapper.ensureInitialized();
       TalkIntentMapper.ensureInitialized();
+      DialogAdvanceIntentMapper.ensureInitialized();
+      DialogExitIntentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -8064,105 +8068,404 @@ class _DidCloseCopyWithImpl<$R, $Out>
   ) => _DidCloseCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
-class DialogMapper extends SubClassMapperBase<Dialog> {
-  DialogMapper._();
+class DialogRefMapper extends SubClassMapperBase<DialogRef> {
+  DialogRefMapper._();
 
-  static DialogMapper? _instance;
-  static DialogMapper ensureInitialized() {
+  static DialogRefMapper? _instance;
+  static DialogRefMapper ensureInitialized() {
     if (_instance == null) {
-      MapperContainer.globals.use(_instance = DialogMapper._());
+      MapperContainer.globals.use(_instance = DialogRefMapper._());
       ComponentMapper.ensureInitialized().addSubMapper(_instance!);
-      DialogNodeMapper.ensureInitialized();
     }
     return _instance!;
   }
 
   @override
-  final String id = 'Dialog';
+  final String id = 'DialogRef';
 
-  static DialogNode _$root(Dialog v) => v.root;
-  static const Field<Dialog, DialogNode> _f$root = Field('root', _$root);
+  static int _$rootNodeId(DialogRef v) => v.rootNodeId;
+  static const Field<DialogRef, int> _f$rootNodeId = Field(
+    'rootNodeId',
+    _$rootNodeId,
+  );
 
   @override
-  final MappableFields<Dialog> fields = const {#root: _f$root};
+  final MappableFields<DialogRef> fields = const {#rootNodeId: _f$rootNodeId};
 
   @override
   final String discriminatorKey = '__type';
   @override
-  final dynamic discriminatorValue = 'Dialog';
+  final dynamic discriminatorValue = 'DialogRef';
   @override
   late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
 
-  static Dialog _instantiate(DecodingData data) {
-    return Dialog(data.dec(_f$root));
+  static DialogRef _instantiate(DecodingData data) {
+    return DialogRef(rootNodeId: data.dec(_f$rootNodeId));
   }
 
   @override
   final Function instantiate = _instantiate;
 
-  static Dialog fromMap(Map<String, dynamic> map) {
-    return ensureInitialized().decodeMap<Dialog>(map);
+  static DialogRef fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DialogRef>(map);
   }
 
-  static Dialog fromJson(String json) {
-    return ensureInitialized().decodeJson<Dialog>(json);
+  static DialogRef fromJson(String json) {
+    return ensureInitialized().decodeJson<DialogRef>(json);
   }
 }
 
-mixin DialogMappable {
+mixin DialogRefMappable {
   String toJson() {
-    return DialogMapper.ensureInitialized().encodeJson<Dialog>(this as Dialog);
+    return DialogRefMapper.ensureInitialized().encodeJson<DialogRef>(
+      this as DialogRef,
+    );
   }
 
   Map<String, dynamic> toMap() {
-    return DialogMapper.ensureInitialized().encodeMap<Dialog>(this as Dialog);
+    return DialogRefMapper.ensureInitialized().encodeMap<DialogRef>(
+      this as DialogRef,
+    );
   }
 
-  DialogCopyWith<Dialog, Dialog, Dialog> get copyWith =>
-      _DialogCopyWithImpl<Dialog, Dialog>(this as Dialog, $identity, $identity);
+  DialogRefCopyWith<DialogRef, DialogRef, DialogRef> get copyWith =>
+      _DialogRefCopyWithImpl<DialogRef, DialogRef>(
+        this as DialogRef,
+        $identity,
+        $identity,
+      );
   @override
   String toString() {
-    return DialogMapper.ensureInitialized().stringifyValue(this as Dialog);
+    return DialogRefMapper.ensureInitialized().stringifyValue(
+      this as DialogRef,
+    );
   }
 
   @override
   bool operator ==(Object other) {
-    return DialogMapper.ensureInitialized().equalsValue(this as Dialog, other);
+    return DialogRefMapper.ensureInitialized().equalsValue(
+      this as DialogRef,
+      other,
+    );
   }
 
   @override
   int get hashCode {
-    return DialogMapper.ensureInitialized().hashValue(this as Dialog);
+    return DialogRefMapper.ensureInitialized().hashValue(this as DialogRef);
   }
 }
 
-extension DialogValueCopy<$R, $Out> on ObjectCopyWith<$R, Dialog, $Out> {
-  DialogCopyWith<$R, Dialog, $Out> get $asDialog =>
-      $base.as((v, t, t2) => _DialogCopyWithImpl<$R, $Out>(v, t, t2));
+extension DialogRefValueCopy<$R, $Out> on ObjectCopyWith<$R, DialogRef, $Out> {
+  DialogRefCopyWith<$R, DialogRef, $Out> get $asDialogRef =>
+      $base.as((v, t, t2) => _DialogRefCopyWithImpl<$R, $Out>(v, t, t2));
 }
 
-abstract class DialogCopyWith<$R, $In extends Dialog, $Out>
+abstract class DialogRefCopyWith<$R, $In extends DialogRef, $Out>
     implements ComponentCopyWith<$R, $In, $Out> {
   @override
-  $R call({DialogNode? root});
-  DialogCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+  $R call({int? rootNodeId});
+  DialogRefCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
 
-class _DialogCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Dialog, $Out>
-    implements DialogCopyWith<$R, Dialog, $Out> {
-  _DialogCopyWithImpl(super.value, super.then, super.then2);
+class _DialogRefCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DialogRef, $Out>
+    implements DialogRefCopyWith<$R, DialogRef, $Out> {
+  _DialogRefCopyWithImpl(super.value, super.then, super.then2);
 
   @override
-  late final ClassMapperBase<Dialog> $mapper = DialogMapper.ensureInitialized();
+  late final ClassMapperBase<DialogRef> $mapper =
+      DialogRefMapper.ensureInitialized();
   @override
-  $R call({DialogNode? root}) =>
-      $apply(FieldCopyWithData({if (root != null) #root: root}));
+  $R call({int? rootNodeId}) => $apply(
+    FieldCopyWithData({if (rootNodeId != null) #rootNodeId: rootNodeId}),
+  );
   @override
-  Dialog $make(CopyWithData data) => Dialog(data.get(#root, or: $value.root));
+  DialogRef $make(CopyWithData data) =>
+      DialogRef(rootNodeId: data.get(#rootNodeId, or: $value.rootNodeId));
 
   @override
-  DialogCopyWith<$R2, Dialog, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
-      _DialogCopyWithImpl<$R2, $Out2>($value, $cast, t);
+  DialogRefCopyWith<$R2, DialogRef, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DialogRefCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DialogNodeMapper extends SubClassMapperBase<DialogNode> {
+  DialogNodeMapper._();
+
+  static DialogNodeMapper? _instance;
+  static DialogNodeMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DialogNodeMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      DialogChoiceMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DialogNode';
+
+  static String _$text(DialogNode v) => v.text;
+  static const Field<DialogNode, String> _f$text = Field('text', _$text);
+  static List<DialogChoice> _$choices(DialogNode v) => v.choices;
+  static const Field<DialogNode, List<DialogChoice>> _f$choices = Field(
+    'choices',
+    _$choices,
+  );
+
+  @override
+  final MappableFields<DialogNode> fields = const {
+    #text: _f$text,
+    #choices: _f$choices,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DialogNode';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static DialogNode _instantiate(DecodingData data) {
+    return DialogNode(text: data.dec(_f$text), choices: data.dec(_f$choices));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DialogNode fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DialogNode>(map);
+  }
+
+  static DialogNode fromJson(String json) {
+    return ensureInitialized().decodeJson<DialogNode>(json);
+  }
+}
+
+mixin DialogNodeMappable {
+  String toJson() {
+    return DialogNodeMapper.ensureInitialized().encodeJson<DialogNode>(
+      this as DialogNode,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DialogNodeMapper.ensureInitialized().encodeMap<DialogNode>(
+      this as DialogNode,
+    );
+  }
+
+  DialogNodeCopyWith<DialogNode, DialogNode, DialogNode> get copyWith =>
+      _DialogNodeCopyWithImpl<DialogNode, DialogNode>(
+        this as DialogNode,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DialogNodeMapper.ensureInitialized().stringifyValue(
+      this as DialogNode,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DialogNodeMapper.ensureInitialized().equalsValue(
+      this as DialogNode,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DialogNodeMapper.ensureInitialized().hashValue(this as DialogNode);
+  }
+}
+
+extension DialogNodeValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DialogNode, $Out> {
+  DialogNodeCopyWith<$R, DialogNode, $Out> get $asDialogNode =>
+      $base.as((v, t, t2) => _DialogNodeCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DialogNodeCopyWith<$R, $In extends DialogNode, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  ListCopyWith<
+    $R,
+    DialogChoice,
+    DialogChoiceCopyWith<$R, DialogChoice, DialogChoice>
+  >
+  get choices;
+  @override
+  $R call({String? text, List<DialogChoice>? choices});
+  DialogNodeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DialogNodeCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DialogNode, $Out>
+    implements DialogNodeCopyWith<$R, DialogNode, $Out> {
+  _DialogNodeCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DialogNode> $mapper =
+      DialogNodeMapper.ensureInitialized();
+  @override
+  ListCopyWith<
+    $R,
+    DialogChoice,
+    DialogChoiceCopyWith<$R, DialogChoice, DialogChoice>
+  >
+  get choices => ListCopyWith(
+    $value.choices,
+    (v, t) => v.copyWith.$chain(t),
+    (v) => call(choices: v),
+  );
+  @override
+  $R call({String? text, List<DialogChoice>? choices}) => $apply(
+    FieldCopyWithData({
+      if (text != null) #text: text,
+      if (choices != null) #choices: choices,
+    }),
+  );
+  @override
+  DialogNode $make(CopyWithData data) => DialogNode(
+    text: data.get(#text, or: $value.text),
+    choices: data.get(#choices, or: $value.choices),
+  );
+
+  @override
+  DialogNodeCopyWith<$R2, DialogNode, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DialogNodeCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DialogChoiceMapper extends ClassMapperBase<DialogChoice> {
+  DialogChoiceMapper._();
+
+  static DialogChoiceMapper? _instance;
+  static DialogChoiceMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DialogChoiceMapper._());
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DialogChoice';
+
+  static String _$text(DialogChoice v) => v.text;
+  static const Field<DialogChoice, String> _f$text = Field('text', _$text);
+  static int? _$targetNodeId(DialogChoice v) => v.targetNodeId;
+  static const Field<DialogChoice, int> _f$targetNodeId = Field(
+    'targetNodeId',
+    _$targetNodeId,
+    opt: true,
+  );
+
+  @override
+  final MappableFields<DialogChoice> fields = const {
+    #text: _f$text,
+    #targetNodeId: _f$targetNodeId,
+  };
+
+  static DialogChoice _instantiate(DecodingData data) {
+    return DialogChoice(
+      text: data.dec(_f$text),
+      targetNodeId: data.dec(_f$targetNodeId),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DialogChoice fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DialogChoice>(map);
+  }
+
+  static DialogChoice fromJson(String json) {
+    return ensureInitialized().decodeJson<DialogChoice>(json);
+  }
+}
+
+mixin DialogChoiceMappable {
+  String toJson() {
+    return DialogChoiceMapper.ensureInitialized().encodeJson<DialogChoice>(
+      this as DialogChoice,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return DialogChoiceMapper.ensureInitialized().encodeMap<DialogChoice>(
+      this as DialogChoice,
+    );
+  }
+
+  DialogChoiceCopyWith<DialogChoice, DialogChoice, DialogChoice> get copyWith =>
+      _DialogChoiceCopyWithImpl<DialogChoice, DialogChoice>(
+        this as DialogChoice,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DialogChoiceMapper.ensureInitialized().stringifyValue(
+      this as DialogChoice,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DialogChoiceMapper.ensureInitialized().equalsValue(
+      this as DialogChoice,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DialogChoiceMapper.ensureInitialized().hashValue(
+      this as DialogChoice,
+    );
+  }
+}
+
+extension DialogChoiceValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DialogChoice, $Out> {
+  DialogChoiceCopyWith<$R, DialogChoice, $Out> get $asDialogChoice =>
+      $base.as((v, t, t2) => _DialogChoiceCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DialogChoiceCopyWith<$R, $In extends DialogChoice, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  $R call({String? text, int? targetNodeId});
+  DialogChoiceCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _DialogChoiceCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DialogChoice, $Out>
+    implements DialogChoiceCopyWith<$R, DialogChoice, $Out> {
+  _DialogChoiceCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DialogChoice> $mapper =
+      DialogChoiceMapper.ensureInitialized();
+  @override
+  $R call({String? text, Object? targetNodeId = $none}) => $apply(
+    FieldCopyWithData({
+      if (text != null) #text: text,
+      if (targetNodeId != $none) #targetNodeId: targetNodeId,
+    }),
+  );
+  @override
+  DialogChoice $make(CopyWithData data) => DialogChoice(
+    text: data.get(#text, or: $value.text),
+    targetNodeId: data.get(#targetNodeId, or: $value.targetNodeId),
+  );
+
+  @override
+  DialogChoiceCopyWith<$R2, DialogChoice, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DialogChoiceCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class TalkIntentMapper extends SubClassMapperBase<TalkIntent> {
@@ -8298,6 +8601,419 @@ class _TalkIntentCopyWithImpl<$R, $Out>
   TalkIntentCopyWith<$R2, TalkIntent, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _TalkIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DialogAdvanceIntentMapper
+    extends SubClassMapperBase<DialogAdvanceIntent> {
+  DialogAdvanceIntentMapper._();
+
+  static DialogAdvanceIntentMapper? _instance;
+  static DialogAdvanceIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DialogAdvanceIntentMapper._());
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DialogAdvanceIntent';
+
+  static int _$choiceIndex(DialogAdvanceIntent v) => v.choiceIndex;
+  static const Field<DialogAdvanceIntent, int> _f$choiceIndex = Field(
+    'choiceIndex',
+    _$choiceIndex,
+  );
+  static int _$lifetime(DialogAdvanceIntent v) => v.lifetime;
+  static const Field<DialogAdvanceIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DialogAdvanceIntent> fields = const {
+    #choiceIndex: _f$choiceIndex,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DialogAdvanceIntent';
+  @override
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
+
+  static DialogAdvanceIntent _instantiate(DecodingData data) {
+    return DialogAdvanceIntent(choiceIndex: data.dec(_f$choiceIndex));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DialogAdvanceIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DialogAdvanceIntent>(map);
+  }
+
+  static DialogAdvanceIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<DialogAdvanceIntent>(json);
+  }
+}
+
+mixin DialogAdvanceIntentMappable {
+  String toJson() {
+    return DialogAdvanceIntentMapper.ensureInitialized()
+        .encodeJson<DialogAdvanceIntent>(this as DialogAdvanceIntent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DialogAdvanceIntentMapper.ensureInitialized()
+        .encodeMap<DialogAdvanceIntent>(this as DialogAdvanceIntent);
+  }
+
+  DialogAdvanceIntentCopyWith<
+    DialogAdvanceIntent,
+    DialogAdvanceIntent,
+    DialogAdvanceIntent
+  >
+  get copyWith =>
+      _DialogAdvanceIntentCopyWithImpl<
+        DialogAdvanceIntent,
+        DialogAdvanceIntent
+      >(this as DialogAdvanceIntent, $identity, $identity);
+  @override
+  String toString() {
+    return DialogAdvanceIntentMapper.ensureInitialized().stringifyValue(
+      this as DialogAdvanceIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DialogAdvanceIntentMapper.ensureInitialized().equalsValue(
+      this as DialogAdvanceIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DialogAdvanceIntentMapper.ensureInitialized().hashValue(
+      this as DialogAdvanceIntent,
+    );
+  }
+}
+
+extension DialogAdvanceIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DialogAdvanceIntent, $Out> {
+  DialogAdvanceIntentCopyWith<$R, DialogAdvanceIntent, $Out>
+  get $asDialogAdvanceIntent => $base.as(
+    (v, t, t2) => _DialogAdvanceIntentCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class DialogAdvanceIntentCopyWith<
+  $R,
+  $In extends DialogAdvanceIntent,
+  $Out
+>
+    implements IntentComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? choiceIndex});
+  DialogAdvanceIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _DialogAdvanceIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DialogAdvanceIntent, $Out>
+    implements DialogAdvanceIntentCopyWith<$R, DialogAdvanceIntent, $Out> {
+  _DialogAdvanceIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DialogAdvanceIntent> $mapper =
+      DialogAdvanceIntentMapper.ensureInitialized();
+  @override
+  $R call({int? choiceIndex}) => $apply(
+    FieldCopyWithData({if (choiceIndex != null) #choiceIndex: choiceIndex}),
+  );
+  @override
+  DialogAdvanceIntent $make(CopyWithData data) => DialogAdvanceIntent(
+    choiceIndex: data.get(#choiceIndex, or: $value.choiceIndex),
+  );
+
+  @override
+  DialogAdvanceIntentCopyWith<$R2, DialogAdvanceIntent, $Out2>
+  $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _DialogAdvanceIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DialogExitIntentMapper extends SubClassMapperBase<DialogExitIntent> {
+  DialogExitIntentMapper._();
+
+  static DialogExitIntentMapper? _instance;
+  static DialogExitIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DialogExitIntentMapper._());
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DialogExitIntent';
+
+  static int _$lifetime(DialogExitIntent v) => v.lifetime;
+  static const Field<DialogExitIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DialogExitIntent> fields = const {
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DialogExitIntent';
+  @override
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
+
+  static DialogExitIntent _instantiate(DecodingData data) {
+    return DialogExitIntent();
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DialogExitIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DialogExitIntent>(map);
+  }
+
+  static DialogExitIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<DialogExitIntent>(json);
+  }
+}
+
+mixin DialogExitIntentMappable {
+  String toJson() {
+    return DialogExitIntentMapper.ensureInitialized()
+        .encodeJson<DialogExitIntent>(this as DialogExitIntent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DialogExitIntentMapper.ensureInitialized()
+        .encodeMap<DialogExitIntent>(this as DialogExitIntent);
+  }
+
+  DialogExitIntentCopyWith<DialogExitIntent, DialogExitIntent, DialogExitIntent>
+  get copyWith =>
+      _DialogExitIntentCopyWithImpl<DialogExitIntent, DialogExitIntent>(
+        this as DialogExitIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DialogExitIntentMapper.ensureInitialized().stringifyValue(
+      this as DialogExitIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DialogExitIntentMapper.ensureInitialized().equalsValue(
+      this as DialogExitIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DialogExitIntentMapper.ensureInitialized().hashValue(
+      this as DialogExitIntent,
+    );
+  }
+}
+
+extension DialogExitIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DialogExitIntent, $Out> {
+  DialogExitIntentCopyWith<$R, DialogExitIntent, $Out>
+  get $asDialogExitIntent =>
+      $base.as((v, t, t2) => _DialogExitIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DialogExitIntentCopyWith<$R, $In extends DialogExitIntent, $Out>
+    implements IntentComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call();
+  DialogExitIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _DialogExitIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DialogExitIntent, $Out>
+    implements DialogExitIntentCopyWith<$R, DialogExitIntent, $Out> {
+  _DialogExitIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DialogExitIntent> $mapper =
+      DialogExitIntentMapper.ensureInitialized();
+  @override
+  $R call() => $apply(FieldCopyWithData({}));
+  @override
+  DialogExitIntent $make(CopyWithData data) => DialogExitIntent();
+
+  @override
+  DialogExitIntentCopyWith<$R2, DialogExitIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DialogExitIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class ActiveDialogMapper extends SubClassMapperBase<ActiveDialog> {
+  ActiveDialogMapper._();
+
+  static ActiveDialogMapper? _instance;
+  static ActiveDialogMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ActiveDialogMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'ActiveDialog';
+
+  static int _$npcEntityId(ActiveDialog v) => v.npcEntityId;
+  static const Field<ActiveDialog, int> _f$npcEntityId = Field(
+    'npcEntityId',
+    _$npcEntityId,
+  );
+  static int _$currentNodeId(ActiveDialog v) => v.currentNodeId;
+  static const Field<ActiveDialog, int> _f$currentNodeId = Field(
+    'currentNodeId',
+    _$currentNodeId,
+  );
+
+  @override
+  final MappableFields<ActiveDialog> fields = const {
+    #npcEntityId: _f$npcEntityId,
+    #currentNodeId: _f$currentNodeId,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'ActiveDialog';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static ActiveDialog _instantiate(DecodingData data) {
+    return ActiveDialog(
+      npcEntityId: data.dec(_f$npcEntityId),
+      currentNodeId: data.dec(_f$currentNodeId),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static ActiveDialog fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<ActiveDialog>(map);
+  }
+
+  static ActiveDialog fromJson(String json) {
+    return ensureInitialized().decodeJson<ActiveDialog>(json);
+  }
+}
+
+mixin ActiveDialogMappable {
+  String toJson() {
+    return ActiveDialogMapper.ensureInitialized().encodeJson<ActiveDialog>(
+      this as ActiveDialog,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return ActiveDialogMapper.ensureInitialized().encodeMap<ActiveDialog>(
+      this as ActiveDialog,
+    );
+  }
+
+  ActiveDialogCopyWith<ActiveDialog, ActiveDialog, ActiveDialog> get copyWith =>
+      _ActiveDialogCopyWithImpl<ActiveDialog, ActiveDialog>(
+        this as ActiveDialog,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return ActiveDialogMapper.ensureInitialized().stringifyValue(
+      this as ActiveDialog,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ActiveDialogMapper.ensureInitialized().equalsValue(
+      this as ActiveDialog,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return ActiveDialogMapper.ensureInitialized().hashValue(
+      this as ActiveDialog,
+    );
+  }
+}
+
+extension ActiveDialogValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, ActiveDialog, $Out> {
+  ActiveDialogCopyWith<$R, ActiveDialog, $Out> get $asActiveDialog =>
+      $base.as((v, t, t2) => _ActiveDialogCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class ActiveDialogCopyWith<$R, $In extends ActiveDialog, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? npcEntityId, int? currentNodeId});
+  ActiveDialogCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _ActiveDialogCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, ActiveDialog, $Out>
+    implements ActiveDialogCopyWith<$R, ActiveDialog, $Out> {
+  _ActiveDialogCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<ActiveDialog> $mapper =
+      ActiveDialogMapper.ensureInitialized();
+  @override
+  $R call({int? npcEntityId, int? currentNodeId}) => $apply(
+    FieldCopyWithData({
+      if (npcEntityId != null) #npcEntityId: npcEntityId,
+      if (currentNodeId != null) #currentNodeId: currentNodeId,
+    }),
+  );
+  @override
+  ActiveDialog $make(CopyWithData data) => ActiveDialog(
+    npcEntityId: data.get(#npcEntityId, or: $value.npcEntityId),
+    currentNodeId: data.get(#currentNodeId, or: $value.currentNodeId),
+  );
+
+  @override
+  ActiveDialogCopyWith<$R2, ActiveDialog, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _ActiveDialogCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 
 class IsTemplateMapper extends SubClassMapperBase<IsTemplate> {

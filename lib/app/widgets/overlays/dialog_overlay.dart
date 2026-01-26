@@ -5,14 +5,21 @@ import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
 import 'package:rogueverse/app/services/text_template_service.dart';
 import 'package:rogueverse/app/ui_constants.dart';
-import 'package:rogueverse/ecs/dialog/dialog.dart';
+import 'package:rogueverse/ecs/components.dart';
+import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/events.dart';
+import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 
 /// Overlay for displaying NPC dialog conversations.
 ///
 /// Shows the NPC's text at the top and player choices below.
-/// Supports keyboard navigation and displays condition requirements
-/// on unavailable choices.
+/// Supports keyboard navigation.
+///
+/// Reads dialog state from:
+/// - Player's ActiveDialog component (NPC ID, current node ID)
+/// - DialogNode entities (text, choices)
+/// - NPC's Name component (speaker name)
 class DialogOverlay extends StatefulWidget {
   /// The overlay name used to register and toggle this overlay.
   static const String overlayName = 'dialogOverlay';
@@ -20,9 +27,17 @@ class DialogOverlay extends StatefulWidget {
   /// The dialog control handler managing state.
   final DialogControlHandler handler;
 
+  /// The ECS world for entity lookup.
+  final World world;
+
+  /// The player entity for reading ActiveDialog.
+  final Entity? player;
+
   const DialogOverlay({
     super.key,
     required this.handler,
+    required this.world,
+    required this.player,
   });
 
   @override
@@ -102,31 +117,58 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
   @override
   Widget build(BuildContext context) {
-    // Wrap in keybinding listener to refresh templates when bindings change
+    final player = widget.player;
+    if (player == null) {
+      return const SizedBox.shrink();
+    }
+
+    // Listen to keybinding changes, selected index changes, and component changes
     return ValueListenableBuilder<int>(
       valueListenable: KeyBindingService.instance.changeNotifier,
-      builder: (context, _, __) => ValueListenableBuilder<DialogState?>(
-        valueListenable: widget.handler.dialogState,
-        builder: (context, state, child) {
-          if (state == null) {
-            return const SizedBox.shrink();
-          }
+      builder: (context, _, __) => ValueListenableBuilder<int>(
+        valueListenable: widget.handler.selectedIndexNotifier,
+        builder: (context, selectedIndex, __) => StreamBuilder<Change>(
+          stream: widget.world.componentChanges.onEntityOnComponent<ActiveDialog>(player.id),
+          builder: (context, snapshot) {
+            final active = player.get<ActiveDialog>();
+            if (active == null) {
+              return const SizedBox.shrink();
+            }
 
-          final result = state.result;
-          if (result is! DialogAwaitingChoice) {
-            return const SizedBox.shrink();
-          }
+            // Get speaker name from NPC entity
+            final npcEntity = widget.world.getEntity(active.npcEntityId);
+            final speakerName = npcEntity.get<Name>()?.name ?? 'Unknown';
 
-          return _buildDialogUI(context, state, result);
-        },
+            // Get dialog node
+            final nodeEntity = widget.world.getEntity(active.currentNodeId);
+            final dialogNode = nodeEntity.get<DialogNode>();
+            if (dialogNode == null) {
+              return const SizedBox.shrink();
+            }
+
+            return _buildDialogUI(
+              context,
+              player,
+              npcEntity,
+              speakerName,
+              dialogNode,
+              active.currentNodeId,
+              selectedIndex,
+            );
+          },
+        ),
       ),
     );
   }
 
   Widget _buildDialogUI(
     BuildContext context,
-    DialogState state,
-    DialogAwaitingChoice result,
+    Entity player,
+    Entity npc,
+    String speakerName,
+    DialogNode dialogNode,
+    int currentNodeId,
+    int selectedIndex,
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -167,13 +209,13 @@ class _DialogOverlayState extends State<DialogOverlay> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         // NPC text section
-                        _buildNpcTextSection(colorScheme, state, result),
+                        _buildNpcTextSection(colorScheme, player, npc, speakerName, dialogNode),
 
                         // Divider
                         Divider(height: 1, color: colorScheme.outlineVariant),
 
                         // Player choices section
-                        _buildChoicesSection(colorScheme, state, result),
+                        _buildChoicesSection(colorScheme, dialogNode, currentNodeId, selectedIndex),
 
                         // Hint footer
                         _buildHintFooter(colorScheme),
@@ -191,8 +233,10 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
   Widget _buildNpcTextSection(
     ColorScheme colorScheme,
-    DialogState state,
-    DialogAwaitingChoice result,
+    Entity player,
+    Entity npc,
+    String speakerName,
+    DialogNode dialogNode,
   ) {
     return Container(
       padding: const EdgeInsets.all(kSpacingXL),
@@ -203,7 +247,7 @@ class _DialogOverlayState extends State<DialogOverlay> {
         children: [
           // Speaker name
           Text(
-            result.speakerName.isNotEmpty ? result.speakerName : state.npcName,
+            speakerName,
             style: TextStyle(
               color: colorScheme.primary,
               fontSize: 14,
@@ -218,8 +262,8 @@ class _DialogOverlayState extends State<DialogOverlay> {
               controller: _textScrollController,
               child: Text(
                 TextTemplateService.instance.resolve(
-                  result.text,
-                  context: TemplateContext(player: state.player, npc: state.npc),
+                  dialogNode.text,
+                  context: TemplateContext(player: player, npc: npc),
                 ),
                 style: TextStyle(
                   color: colorScheme.onSurface,
@@ -236,8 +280,9 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
   Widget _buildChoicesSection(
     ColorScheme colorScheme,
-    DialogState state,
-    DialogAwaitingChoice result,
+    DialogNode dialogNode,
+    int currentNodeId,
+    int selectedIndex,
   ) {
     return Container(
       constraints: const BoxConstraints(maxHeight: kPanelMaxHeight),
@@ -245,12 +290,17 @@ class _DialogOverlayState extends State<DialogOverlay> {
         controller: _choicesScrollController,
         shrinkWrap: true,
         padding: const EdgeInsets.symmetric(vertical: kSpacingM),
-        itemCount: result.choices.length,
+        itemCount: dialogNode.choices.length,
         itemBuilder: (context, index) {
-          final choice = result.choices[index];
-          // Check if this choice was previously visited (only for actual choices, not "(done)")
-          final isVisited = choice.choiceIndex != -1 && state.isChoiceVisited(choice.choiceIndex);
-          return _buildChoiceItem(colorScheme, state, choice, index, isVisited);
+          final choice = dialogNode.choices[index];
+          final isVisited = widget.handler.isChoiceVisited(currentNodeId, index);
+          return _buildChoiceItem(
+            colorScheme,
+            choice,
+            index,
+            selectedIndex,
+            isVisited,
+          );
         },
       ),
     );
@@ -285,20 +335,16 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
   Widget _buildChoiceItem(
     ColorScheme colorScheme,
-    DialogState state,
     DialogChoice choice,
     int index,
+    int selectedIndex,
     bool isVisited,
   ) {
-    final isSelected = index == state.selectedIndex;
-    final isAvailable = choice.isAvailable;
+    final isSelected = index == selectedIndex;
 
     // Determine text color based on state
-    // Visited choices are dimmed slightly to indicate they've been selected before
     Color textColor;
-    if (!isAvailable) {
-      textColor = colorScheme.onSurface.withValues(alpha: 0.4);
-    } else if (isSelected) {
+    if (isSelected) {
       textColor = colorScheme.onPrimaryContainer;
     } else if (isVisited) {
       textColor = colorScheme.onSurface.withValues(alpha: 0.6);
@@ -307,12 +353,10 @@ class _DialogOverlayState extends State<DialogOverlay> {
     }
 
     return InkWell(
-      onTap: isAvailable
-          ? () => widget.handler.selectChoice(index)
-          : null,
+      onTap: () => widget.handler.selectChoice(index),
       onHover: (hovering) {
-        if (hovering && isAvailable) {
-          widget.handler.dialogState.value = state.copyWith(selectedIndex: index);
+        if (hovering) {
+          widget.handler.selectedIndexNotifier.value = index;
         }
       },
       child: Container(
@@ -340,52 +384,26 @@ class _DialogOverlayState extends State<DialogOverlay> {
 
             // Choice content
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
+              child: Row(
                 children: [
-                  // Condition label (if unavailable)
-                  if (choice.conditionLabel != null) ...[
-                    Text(
-                      choice.conditionLabel!,
+                  // Visited checkmark
+                  if (isVisited) ...[
+                    Icon(
+                      Icons.check,
+                      size: 14,
+                      color: textColor.withValues(alpha: 0.5),
+                    ),
+                    const SizedBox(width: kSpacingS),
+                  ],
+                  Expanded(
+                    child: Text(
+                      choice.text,
                       style: TextStyle(
-                        color: isAvailable
-                            ? colorScheme.secondary
-                            : colorScheme.error.withValues(alpha: 0.7),
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
+                        color: textColor,
+                        fontSize: 14,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                       ),
                     ),
-                    const SizedBox(height: kSpacingXS),
-                  ],
-
-                  // Choice text with visited indicator
-                  Row(
-                    children: [
-                      // Visited checkmark
-                      if (isVisited) ...[
-                        Icon(
-                          Icons.check,
-                          size: 14,
-                          color: textColor.withValues(alpha: 0.5),
-                        ),
-                        const SizedBox(width: kSpacingS),
-                      ],
-                      Expanded(
-                        child: Text(
-                          TextTemplateService.instance.resolve(
-                            choice.text,
-                            context: TemplateContext(player: state.player, npc: state.npc),
-                          ),
-                          style: TextStyle(
-                            color: textColor,
-                            fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                            fontStyle: isAvailable ? FontStyle.normal : FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    ],
                   ),
                 ],
               ),

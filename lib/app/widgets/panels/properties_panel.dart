@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+
 import 'package:rogueverse/ecs/ecs.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_registry.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/component_section.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/inherited_component_section.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/add_component_button.dart';
+import 'package:rogueverse/app/widgets/overlays/inspector/entity_navigator.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/save_as_template_button.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/section_headers.dart';
 import 'package:rogueverse/app/widgets/overlays/inspector/direct_component_section.dart';
@@ -63,50 +65,61 @@ class _PropertiesPanelState extends State<PropertiesPanel> {
   }
 
   Widget _buildMainContent(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: _showTransient,
-      builder: (context, showTransientValue, _) {
-        return Column(
-          children: [
-            // Section header
-            _buildSectionHeader(context, showTransientValue),
-            // Component list
-            Expanded(
-              child: ValueListenableBuilder<Entity?>(
-                valueListenable: widget.entityNotifier,
-                builder: (context, entity, _) {
-                  if (entity == null) {
-                    return _buildEmptyState(context);
-                  }
+    return EntityNavigator(
+      onNavigateToEntity: _navigateToEntity,
+      child: ValueListenableBuilder<bool>(
+        valueListenable: _showTransient,
+        builder: (context, showTransientValue, _) {
+          return Column(
+            children: [
+              // Section header
+              _buildSectionHeader(context, showTransientValue),
+              // Component list
+              Expanded(
+                child: ValueListenableBuilder<Entity?>(
+                  valueListenable: widget.entityNotifier,
+                  builder: (context, entity, _) {
+                    if (entity == null) {
+                      return _buildEmptyState(context);
+                    }
 
-                  return StreamBuilder<Change>(
-                    stream: entity.parentCell.componentChanges.onEntityChange(entity.id),
-                    builder: (context, snapshot) {
-                      // Check if entity has a template
-                      final hasTemplate = entity.getTemplateEntity() != null;
+                    return StreamBuilder<Change>(
+                      stream: entity.parentCell.componentChanges.onEntityChange(entity.id),
+                      builder: (context, snapshot) {
+                        // Check if entity has a template
+                        final hasTemplate = entity.getTemplateEntity() != null;
 
-                      if (hasTemplate) {
-                        return _buildSplitView(
-                          context,
-                          entity,
-                          showTransientValue,
-                        );
-                      } else {
-                        return _buildFlatView(
-                          context,
-                          entity,
-                          showTransientValue,
-                        );
-                      }
-                    },
-                  );
-                },
+                        if (hasTemplate) {
+                          return _buildSplitView(
+                            context,
+                            entity,
+                            showTransientValue,
+                          );
+                        } else {
+                          return _buildFlatView(
+                            context,
+                            entity,
+                            showTransientValue,
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
+  }
+
+  /// Navigate to a specific entity by selecting it in the inspector.
+  void _navigateToEntity(Entity entity) {
+    // Set the entity in both notifiers - selectedEntitiesNotifier takes precedence
+    // in some listeners, so we need to include the entity there too
+    widget.selectedEntitiesNotifier?.value = {entity};
+    widget.entityNotifier.value = entity;
   }
 
   /// Builds the flat view for entities without templates (original behavior).

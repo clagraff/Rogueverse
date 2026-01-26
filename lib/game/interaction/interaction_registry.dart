@@ -32,7 +32,7 @@ class InteractionRegistry {
       actionVerb: 'Talking',
       genericLabel: 'NPC',
       range: 1, // Adjacent only
-      isAvailable: (e) => e.has<Dialog>(),
+      isAvailable: (e) => e.has<DialogRef>(),
       createIntent: (e) => TalkIntent(targetEntityId: e.id),
     ),
 

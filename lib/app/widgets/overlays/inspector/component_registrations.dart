@@ -78,7 +78,12 @@ void registerAllComponents() {
   ComponentRegistry.register(BehaviorMetadata());
 
   // Dialog components
-  ComponentRegistry.register(DialogMetadata());
+  ComponentRegistry.register(DialogRefMetadata());
+  ComponentRegistry.register(DialogNodeMetadata());
+  ComponentRegistry.register(ActiveDialogMetadata());
+  ComponentRegistry.register(TalkIntentMetadata());
+  ComponentRegistry.register(DialogAdvanceIntentMetadata());
+  ComponentRegistry.register(DialogExitIntentMetadata());
 
   // Transient event components (for debugging)
   ComponentRegistry.register(MoveByIntentMetadata());

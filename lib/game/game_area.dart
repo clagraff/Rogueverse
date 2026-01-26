@@ -165,6 +165,7 @@ class GameArea extends FlameGame
       CombatSystem(),
       DeathSystem(), // Process deaths and spawn loot (after CombatSystem)
       OpenableSystem(),
+      DialogSystem(), // Process dialog intents (TalkIntent, DialogAdvanceIntent, DialogExitIntent)
       SaveSystem(), // Periodic saves (runs last, priority 200)
     ];
 

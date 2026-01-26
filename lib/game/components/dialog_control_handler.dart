@@ -4,92 +4,19 @@ import 'package:flutter/widgets.dart';
 import 'package:logging/logging.dart';
 
 import 'package:rogueverse/ecs/components.dart' hide Component;
-import 'package:rogueverse/ecs/dialog/dialog.dart';
 import 'package:rogueverse/ecs/entity.dart';
 import 'package:rogueverse/ecs/world.dart';
 import 'package:rogueverse/game/game_area.dart';
 
-/// State for the dialog overlay.
-class DialogState {
-  /// The player entity.
-  final Entity player;
-
-  /// The NPC entity being talked to.
-  final Entity npc;
-
-  /// The NPC's name (from Name component or fallback).
-  final String npcName;
-
-  /// Current position in the dialog tree.
-  final DialogNode currentNode;
-
-  /// The current result (what to display).
-  final DialogResult result;
-
-  /// Selected choice index in the UI.
-  int selectedIndex;
-
-  /// Node ID registry for GotoNode lookups.
-  final NodeIdRegistry nodeRegistry;
-
-  /// Set of choice IDs that have been selected during this dialog session.
-  /// Choice IDs are formatted as "${nodeHashCode}_${choiceIndex}".
-  final Set<String> selectedChoiceIds;
-
-  DialogState({
-    required this.player,
-    required this.npc,
-    required this.npcName,
-    required this.currentNode,
-    required this.result,
-    required this.nodeRegistry,
-    this.selectedIndex = 0,
-    Set<String>? selectedChoiceIds,
-  }) : selectedChoiceIds = selectedChoiceIds ?? {};
-
-  /// Creates a copy with updated fields.
-  DialogState copyWith({
-    DialogNode? currentNode,
-    DialogResult? result,
-    int? selectedIndex,
-    Set<String>? selectedChoiceIds,
-  }) {
-    return DialogState(
-      player: player,
-      npc: npc,
-      npcName: npcName,
-      currentNode: currentNode ?? this.currentNode,
-      result: result ?? this.result,
-      nodeRegistry: nodeRegistry,
-      selectedIndex: selectedIndex ?? this.selectedIndex,
-      selectedChoiceIds: selectedChoiceIds ?? this.selectedChoiceIds,
-    );
-  }
-
-  /// Generates a unique ID for a choice based on the source node's ID and choice index.
-  /// Uses sourceNodeId from DialogAwaitingChoice to correctly track choices even
-  /// when navigating through GotoNodes.
-  String generateChoiceId(int choiceIndex) {
-    final r = result;
-    if (r is DialogAwaitingChoice) {
-      return '${r.sourceNodeId}_$choiceIndex';
-    }
-    return '${currentNode.id}_$choiceIndex';
-  }
-
-  /// Checks if a choice has been previously selected at the current node.
-  bool isChoiceVisited(int choiceIndex) {
-    return selectedChoiceIds.contains(generateChoiceId(choiceIndex));
-  }
-}
-
 /// Handles dialog interactions with NPCs.
 ///
-/// When a dialog is started, this component:
-/// 1. Shows the dialog overlay
-/// 2. Handles keyboard navigation through choices
-/// 3. Executes effects when choices are made
-/// 4. Closes the dialog when ended or dismissed
+/// Uses intent-based flow:
+/// - TalkIntent: Start dialog (adds ActiveDialog to player)
+/// - DialogAdvanceIntent: Select a choice (advances to next node)
+/// - DialogExitIntent: Exit dialog early
+///
+/// Local UI state (selectedIndex) is kept here for navigation.
+/// Actual dialog state is stored in the player's ActiveDialog component.
 class DialogControlHandler extends PositionComponent with KeyboardHandler {
   final ValueNotifier<Entity?> selectedEntityNotifier;
   final World world;
@@ -98,8 +25,14 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
   /// Whether this handler is enabled. Disabled in editing mode.
   bool isEnabled = true;
 
-  /// Current dialog state for the overlay.
-  final ValueNotifier<DialogState?> dialogState = ValueNotifier(null);
+  /// Selected choice index for UI highlight (local state, not ECS).
+  /// Uses a ValueNotifier so the UI can rebuild when selection changes.
+  final ValueNotifier<int> selectedIndexNotifier = ValueNotifier(0);
+
+  /// Set of choice IDs that have been selected during this dialog session.
+  /// Used to show visited choices in the UI.
+  /// Choice IDs are formatted as "${nodeId}_${choiceIndex}".
+  final Set<String> selectedChoiceIds = {};
 
   DialogControlHandler({
     required this.selectedEntityNotifier,
@@ -108,7 +41,7 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
 
   /// Starts a dialog with an NPC entity.
   ///
-  /// The NPC must have a Dialog component.
+  /// The NPC must have a DialogRef component pointing to a valid dialog node.
   void startDialog(Entity npcEntity) {
     final playerEntity = selectedEntityNotifier.value;
     if (playerEntity == null) {
@@ -116,39 +49,16 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
       return;
     }
 
-    final dialogComponent = npcEntity.get<Dialog>();
-    if (dialogComponent == null) {
-      _logger.warning('NPC has no Dialog component');
+    final dialogRef = npcEntity.get<DialogRef>();
+    if (dialogRef == null) {
+      _logger.warning('NPC has no DialogRef component');
       return;
     }
 
-    // Reset the dialog tree to start fresh
-    dialogComponent.root.reset();
-
-    // Build the node ID registry for GotoNode lookups
-    final nodeRegistry = dialogComponent.buildNodeIdRegistry();
-
-    // Get NPC name
-    final npcName = npcEntity.get<Name>()?.name ?? 'Unknown';
-
-    // Advance to get the first result
-    final result = dialogComponent.root.advance(playerEntity, npcEntity, nodeRegistry);
-
-    // Check if dialog ended immediately
-    if (result is DialogEnded) {
-      _logger.info('Dialog ended immediately');
-      return;
-    }
-
-    // Set up dialog state
-    dialogState.value = DialogState(
-      player: playerEntity,
-      npc: npcEntity,
-      npcName: npcName,
-      currentNode: dialogComponent.root,
-      result: result,
-      nodeRegistry: nodeRegistry,
-    );
+    // Use TalkIntent to start dialog (will be processed by DialogSystem)
+    playerEntity.upsert(TalkIntent(targetEntityId: npcEntity.id));
+    selectedIndexNotifier.value = 0;
+    selectedChoiceIds.clear();
 
     // Show the overlay
     final game = findGame() as GameArea?;
@@ -159,62 +69,48 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
 
   /// Selects a choice by index.
   void selectChoice(int choiceIndex) {
-    final state = dialogState.value;
-    if (state == null) return;
+    final playerEntity = selectedEntityNotifier.value;
+    if (playerEntity == null) return;
 
-    final result = state.result;
-    if (result is! DialogAwaitingChoice) return;
+    final active = playerEntity.get<ActiveDialog>();
+    if (active == null) return;
 
-    // Find the choice in the result
-    if (choiceIndex < 0 || choiceIndex >= result.choices.length) return;
-    final choice = result.choices[choiceIndex];
+    final nodeEntity = world.getEntity(active.currentNodeId);
+    final dialogNode = nodeEntity.get<DialogNode>();
+    if (dialogNode == null) return;
 
-    // Skip unavailable choices
-    if (!choice.isAvailable) return;
+    // Validate choice index
+    if (choiceIndex < 0 || choiceIndex >= dialogNode.choices.length) return;
 
-    // Handle "(done)" option
-    if (choice.choiceIndex == -1) {
-      endDialog();
-      return;
-    }
+    final choice = dialogNode.choices[choiceIndex];
 
     // Track that this choice was selected (for UI indication)
-    final choiceId = state.generateChoiceId(choice.choiceIndex);
-    final updatedSelectedIds = Set<String>.from(state.selectedChoiceIds)..add(choiceId);
+    final choiceId = '${active.currentNodeId}_$choiceIndex';
+    selectedChoiceIds.add(choiceId);
 
-    // Get the source node that generated the choices.
-    // This may differ from currentNode if we arrived here via a GotoNode.
-    final sourceNode = state.nodeRegistry[result.sourceNodeId] ?? state.currentNode;
+    // Use DialogAdvanceIntent (will be processed by DialogSystem)
+    playerEntity.upsert(DialogAdvanceIntent(choiceIndex: choiceIndex));
+    selectedIndexNotifier.value = 0;
 
-    // Get the next node from the source node (not currentNode)
-    final nextNode = sourceNode.selectChoice(choice.choiceIndex);
-    if (nextNode == null) {
-      endDialog();
-      return;
+    // Close overlay if dialog will end
+    if (choice.targetNodeId == null) {
+      _closeOverlay();
     }
-
-    // Advance the dialog with node registry
-    final nextResult = nextNode.advance(state.player, state.npc, state.nodeRegistry);
-
-    // Check if dialog ended
-    if (nextResult is DialogEnded) {
-      endDialog();
-      return;
-    }
-
-    // Update state
-    dialogState.value = state.copyWith(
-      currentNode: nextNode,
-      result: nextResult,
-      selectedIndex: 0,
-      selectedChoiceIds: updatedSelectedIds,
-    );
   }
 
   /// Ends the dialog and closes the overlay.
   void endDialog() {
-    dialogState.value = null;
+    final playerEntity = selectedEntityNotifier.value;
+    if (playerEntity == null) return;
 
+    // Use DialogExitIntent (will be processed by DialogSystem)
+    playerEntity.upsert(DialogExitIntent());
+    selectedChoiceIds.clear();
+
+    _closeOverlay();
+  }
+
+  void _closeOverlay() {
     final game = findGame() as GameArea?;
     if (game != null) {
       game.overlays.remove('dialogOverlay');
@@ -223,38 +119,51 @@ class DialogControlHandler extends PositionComponent with KeyboardHandler {
 
   /// Moves selection up.
   void moveSelectionUp() {
-    final state = dialogState.value;
-    if (state == null) return;
+    final playerEntity = selectedEntityNotifier.value;
+    if (playerEntity == null) return;
 
-    final result = state.result;
-    if (result is! DialogAwaitingChoice) return;
+    final active = playerEntity.get<ActiveDialog>();
+    if (active == null) return;
 
-    final newIndex = (state.selectedIndex - 1).clamp(0, result.choices.length - 1);
-    dialogState.value = state.copyWith(selectedIndex: newIndex);
+    final nodeEntity = world.getEntity(active.currentNodeId);
+    final dialogNode = nodeEntity.get<DialogNode>();
+    if (dialogNode == null) return;
+
+    final newIndex = (selectedIndexNotifier.value - 1).clamp(0, dialogNode.choices.length - 1);
+    selectedIndexNotifier.value = newIndex;
   }
 
   /// Moves selection down.
   void moveSelectionDown() {
-    final state = dialogState.value;
-    if (state == null) return;
+    final playerEntity = selectedEntityNotifier.value;
+    if (playerEntity == null) return;
 
-    final result = state.result;
-    if (result is! DialogAwaitingChoice) return;
+    final active = playerEntity.get<ActiveDialog>();
+    if (active == null) return;
 
-    final newIndex = (state.selectedIndex + 1).clamp(0, result.choices.length - 1);
-    dialogState.value = state.copyWith(selectedIndex: newIndex);
+    final nodeEntity = world.getEntity(active.currentNodeId);
+    final dialogNode = nodeEntity.get<DialogNode>();
+    if (dialogNode == null) return;
+
+    final newIndex = (selectedIndexNotifier.value + 1).clamp(0, dialogNode.choices.length - 1);
+    selectedIndexNotifier.value = newIndex;
   }
 
   /// Confirms the current selection.
   void confirmSelection() {
-    final state = dialogState.value;
-    if (state == null) return;
-
-    selectChoice(state.selectedIndex);
+    selectChoice(selectedIndexNotifier.value);
   }
 
   /// Whether a dialog is currently active.
-  bool get isDialogActive => dialogState.value != null;
+  bool get isDialogActive {
+    final playerEntity = selectedEntityNotifier.value;
+    return playerEntity?.get<ActiveDialog>() != null;
+  }
+
+  /// Checks if a choice has been previously selected at the given node.
+  bool isChoiceVisited(int nodeId, int choiceIndex) {
+    return selectedChoiceIds.contains('${nodeId}_$choiceIndex');
+  }
 
   @override
   bool onKeyEvent(KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {

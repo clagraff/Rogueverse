@@ -1,6 +1,5 @@
 import 'package:dart_mappable/dart_mappable.dart';
 import 'package:rogueverse/ecs/ai/nodes.dart';
-import 'package:rogueverse/ecs/dialog/dialog.dart';
 
 part 'components.mapper.dart';
 
@@ -991,52 +990,59 @@ class DidClose extends BeforeTick with DidCloseMappable implements Component {
 // Dialog System Components
 // ============================================================================
 
-/// Component that stores a dialog tree for an NPC.
+/// NPC references their starting dialog node.
 ///
 /// Entities with this component can be talked to by the player.
-/// The dialog tree defines the conversation flow, including branching
-/// choices, conditions, and effects.
+/// The rootNodeId points to an entity with a DialogNode component.
 @MappableClass()
-class Dialog with DialogMappable implements Component {
-  /// The root node of the dialog tree.
-  final DialogNode root;
+class DialogRef with DialogRefMappable implements Component {
+  /// Entity ID of the dialog node to start at.
+  final int rootNodeId;
 
-  Dialog(this.root);
+  DialogRef({required this.rootNodeId});
 
   @override
-  String get componentType => "Dialog";
+  String get componentType => "DialogRef";
+}
 
-  /// Builds a registry mapping node IDs to their nodes.
-  ///
-  /// Walks the entire dialog tree and collects all nodes.
-  /// If duplicate IDs exist, the first match (depth-first) wins.
-  NodeIdRegistry buildNodeIdRegistry() {
-    final registry = <String, DialogNode>{};
-    _collectNodes(root, registry);
-    return registry;
-  }
+/// A dialog node - what the speaker says and player's choices.
+///
+/// Dialog nodes are independent entities that form a graph structure.
+/// Each node has text (what the NPC says) and choices (player responses).
+/// Speaker name comes from the NPC entity's Name component.
+@MappableClass()
+class DialogNode with DialogNodeMappable implements Component {
+  /// What the speaker says.
+  final String text;
 
-  void _collectNodes(DialogNode node, Map<String, DialogNode> registry) {
-    // Add this node if the ID isn't already taken
-    if (!registry.containsKey(node.id)) {
-      registry[node.id] = node;
-    }
+  /// Player's available responses.
+  final List<DialogChoice> choices;
 
-    // Recurse into children
-    if (node is SpeakNode) {
-      for (final choice in node.choices) {
-        _collectNodes(choice.child, registry);
-      }
-    } else if (node is TextNode && node.next != null) {
-      _collectNodes(node.next!, registry);
-    } else if (node is EffectNode) {
-      _collectNodes(node.next, registry);
-    } else if (node is ConditionalNode) {
-      _collectNodes(node.onPass, registry);
-      _collectNodes(node.onFail, registry);
-    }
-    // EndNode and GotoNode have no children to recurse into
-  }
+  DialogNode({
+    required this.text,
+    required this.choices,
+  });
+
+  @override
+  String get componentType => "DialogNode";
+}
+
+/// A single choice in a dialog.
+///
+/// Each choice has text shown to the player and optionally points
+/// to the next dialog node. If targetNodeId is null, the dialog ends.
+@MappableClass()
+class DialogChoice with DialogChoiceMappable {
+  /// Text shown to player for this option.
+  final String text;
+
+  /// Entity ID of next node, or null to end dialog.
+  final int? targetNodeId;
+
+  DialogChoice({
+    required this.text,
+    this.targetNodeId,
+  });
 }
 
 /// Intent to start a dialog with an NPC.
@@ -1048,6 +1054,52 @@ class TalkIntent extends IntentComponent with TalkIntentMappable {
 
   @override
   String get componentType => "TalkIntent";
+}
+
+/// Intent to advance dialog by selecting a choice.
+///
+/// The choiceIndex is relative to the current node in ActiveDialog.
+/// This intent triggers a game tick when processed.
+@MappableClass()
+class DialogAdvanceIntent extends IntentComponent
+    with DialogAdvanceIntentMappable {
+  final int choiceIndex;
+
+  DialogAdvanceIntent({required this.choiceIndex});
+
+  @override
+  String get componentType => "DialogAdvanceIntent";
+}
+
+/// Intent to exit dialog early.
+///
+/// Used when player presses Escape or otherwise exits before completion.
+/// This intent triggers a game tick when processed.
+@MappableClass()
+class DialogExitIntent extends IntentComponent with DialogExitIntentMappable {
+  @override
+  String get componentType => "DialogExitIntent";
+}
+
+/// Active dialog state on an entity (typically the player).
+///
+/// Tracks which NPC we're talking to and the current dialog node.
+/// Removed when dialog ends (either by choice or exit intent).
+@MappableClass()
+class ActiveDialog with ActiveDialogMappable implements Component {
+  /// Entity ID of the NPC we're talking to.
+  final int npcEntityId;
+
+  /// Entity ID of the current dialog node.
+  final int currentNodeId;
+
+  ActiveDialog({
+    required this.npcEntityId,
+    required this.currentNodeId,
+  });
+
+  @override
+  String get componentType => "ActiveDialog";
 }
 
 // ============================================================================

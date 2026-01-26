@@ -258,7 +258,11 @@ class _GameScreenWrapperState extends State<GameScreenWrapper> {
                       if (handler == null) {
                         return const SizedBox.shrink();
                       }
-                      return DialogOverlay(handler: handler);
+                      return DialogOverlay(
+                        handler: handler,
+                        world: _game.currentWorld,
+                        player: _game.selectedEntity.value,
+                      );
                     },
                   },
                 ),

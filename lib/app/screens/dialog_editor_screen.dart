@@ -1,19 +1,18 @@
-import 'package:flutter/material.dart' hide Dialog;
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import 'package:rogueverse/ecs/components.dart' show Dialog, Name;
-import 'package:rogueverse/ecs/dialog/dialog.dart';
+import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
-import 'package:rogueverse/app/screens/game/template_variables_screen.dart';
-import 'package:rogueverse/app/widgets/overlays/dialog_editor/dialog_tree_view.dart';
-import 'package:rogueverse/app/widgets/overlays/dialog_editor/dialog_node_editor.dart';
+import 'package:rogueverse/ecs/world.dart';
+import 'package:rogueverse/app/ui_constants.dart';
 
-/// Full-screen editor for dialog trees attached to NPC entities.
+/// Full-screen editor for dialog graphs attached to NPC entities.
 ///
-/// Uses a tree + side panel layout:
-/// - Left panel: Tree view showing dialog structure
-/// - Right panel: Properties editor for selected node
+/// Dialog nodes are now independent entities with DialogNode components.
+/// This editor shows the graph starting from an NPC's DialogRef and allows
+/// creating/editing dialog node entities.
 class DialogEditorScreen extends StatefulWidget {
+  /// The NPC entity with a DialogRef component.
   final Entity entity;
 
   const DialogEditorScreen({
@@ -26,313 +25,91 @@ class DialogEditorScreen extends StatefulWidget {
 }
 
 class _DialogEditorScreenState extends State<DialogEditorScreen> {
-  /// Working copy of the dialog tree (edited, not yet saved).
-  DialogNode? _rootNode;
+  /// Currently selected dialog node entity ID.
+  int? _selectedNodeId;
 
-  /// Path to the currently selected node in the tree.
-  /// Each int represents an index into children at that level.
-  List<int> _selectedPath = [];
+  /// Set of node IDs discovered in the graph.
+  Set<int> _discoveredNodes = {};
 
-  /// Whether changes have been made since opening.
-  bool _hasChanges = false;
-
-  /// Node ID registry for validation and lookups.
-  NodeIdRegistry _nodeRegistry = {};
+  World get _world => widget.entity.parentCell;
 
   @override
   void initState() {
     super.initState();
-    // Clone the dialog tree for editing
-    final dialog = widget.entity.get<Dialog>();
-    _rootNode = dialog?.root;
-    _rebuildRegistry();
+    _discoverGraph();
   }
 
-  /// Rebuilds the node ID registry from the current root node.
-  void _rebuildRegistry() {
-    _nodeRegistry = {};
-    if (_rootNode != null) {
-      _collectNodeIds(_rootNode!, _nodeRegistry);
-    }
+  /// Discovers all nodes reachable from the NPC's DialogRef.
+  void _discoverGraph() {
+    _discoveredNodes = {};
+
+    final dialogRef = widget.entity.get<DialogRef>();
+    if (dialogRef == null) return;
+
+    _discoverFromNode(dialogRef.rootNodeId);
+    _selectedNodeId ??= dialogRef.rootNodeId;
   }
 
-  /// Recursively collects all node IDs into the registry.
-  void _collectNodeIds(DialogNode node, NodeIdRegistry registry) {
-    registry[node.id] = node;
+  void _discoverFromNode(int nodeId) {
+    if (_discoveredNodes.contains(nodeId)) return;
 
-    if (node is SpeakNode) {
-      for (final choice in node.choices) {
-        _collectNodeIds(choice.child, registry);
+    final nodeEntity = _world.getEntity(nodeId);
+    final dialogNode = nodeEntity.get<DialogNode>();
+    if (dialogNode == null) return;
+
+    _discoveredNodes.add(nodeId);
+
+    // Follow choice targets
+    for (final choice in dialogNode.choices) {
+      if (choice.targetNodeId != null) {
+        _discoverFromNode(choice.targetNodeId!);
       }
-    } else if (node is TextNode) {
-      if (node.next != null) {
-        _collectNodeIds(node.next!, registry);
-      }
-    } else if (node is EffectNode) {
-      _collectNodeIds(node.next, registry);
-    } else if (node is ConditionalNode) {
-      _collectNodeIds(node.onPass, registry);
-      _collectNodeIds(node.onFail, registry);
     }
-    // GotoNode and EndNode have no children
-  }
-
-  /// Gets the node at the current selection path.
-  DialogNode? get _selectedNode {
-    if (_rootNode == null) return null;
-    if (_selectedPath.isEmpty) return _rootNode;
-
-    DialogNode? current = _rootNode;
-    for (final index in _selectedPath) {
-      current = _getChildAt(current, index);
-      if (current == null) return null;
-    }
-    return current;
-  }
-
-  /// Gets a child node at the given index.
-  DialogNode? _getChildAt(DialogNode? node, int index) {
-    if (node == null) return null;
-
-    if (node is SpeakNode) {
-      if (index < node.choices.length) {
-        return node.choices[index].child;
-      }
-    } else if (node is TextNode) {
-      if (index == 0) return node.next;
-    } else if (node is EffectNode) {
-      if (index == 0) return node.next;
-    } else if (node is ConditionalNode) {
-      if (index == 0) return node.onPass;
-      if (index == 1) return node.onFail;
-    }
-    return null;
   }
 
   void _handleClose() {
-    if (_hasChanges) {
-      _showDiscardConfirmation();
-    } else {
-      Navigator.of(context).pop();
-    }
-  }
-
-  Future<void> _showDiscardConfirmation() async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Discard changes?'),
-        content: const Text('You have unsaved changes. Discard them?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Discard'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true && mounted) {
-      Navigator.of(context).pop();
-    }
-  }
-
-  void _saveAndClose() {
-    if (_rootNode != null) {
-      widget.entity.upsert(Dialog(_rootNode!));
-    } else {
-      widget.entity.remove<Dialog>();
-    }
     Navigator.of(context).pop();
   }
 
-  void _onSelectNode(List<int> path) {
+  void _createNewNode() async {
+    // Create a new dialog node entity
+    final newEntity = _world.add([
+      DialogNode(
+        text: 'New dialog text',
+        choices: [DialogChoice(text: 'Continue')],
+      ),
+      Name(name: 'Dialog Node'),
+    ]);
+
     setState(() {
-      _selectedPath = path;
+      _discoveredNodes.add(newEntity.id);
+      _selectedNodeId = newEntity.id;
     });
   }
 
-  void _onUpdateNode(List<int> path, DialogNode? newNode) {
+  void _setAsRootNode(int nodeId) {
+    widget.entity.upsert(DialogRef(rootNodeId: nodeId));
     setState(() {
-      _hasChanges = true;
-
-      // Get the old node's ID for detecting ID changes
-      final oldNode = path.isEmpty ? _rootNode : _selectedNode;
-      final oldId = oldNode?.id;
-      final newId = newNode?.id;
-
-      // Update the node in the tree
-      if (path.isEmpty) {
-        _rootNode = newNode;
-      } else {
-        _rootNode = _updateNodeAtPath(_rootNode, path, newNode);
-      }
-
-      // If the node ID changed, update all GotoNode references
-      if (oldId != null && newId != null && oldId != newId && _rootNode != null) {
-        _rootNode = _updateGotoTargets(_rootNode!, oldId, newId);
-      }
-
-      // Rebuild registry after any tree modification
-      _rebuildRegistry();
+      _discoverGraph();
     });
   }
 
-  /// Recursively updates a node at the given path.
-  DialogNode? _updateNodeAtPath(
-    DialogNode? current,
-    List<int> path,
-    DialogNode? newNode,
-  ) {
-    if (current == null) return null;
-    if (path.isEmpty) return newNode;
-
-    final index = path.first;
-    final remainingPath = path.sublist(1);
-
-    if (current is SpeakNode) {
-      final newChoices = List<Choice>.from(current.choices);
-      if (index < newChoices.length) {
-        final choice = newChoices[index];
-        final updatedChild = remainingPath.isEmpty
-            ? newNode
-            : _updateNodeAtPath(choice.child, remainingPath, newNode);
-        newChoices[index] = Choice(
-          text: choice.text,
-          condition: choice.condition,
-          conditionLabel: choice.conditionLabel,
-          showWhenUnavailable: choice.showWhenUnavailable,
-          child: updatedChild ?? EndNode(id: generateNodeId()),
-        );
-      }
-      return SpeakNode(
-        id: current.id,
-        speakerName: current.speakerName,
-        text: current.text,
-        choices: newChoices,
-        effects: current.effects,
+  void _deleteNode(int nodeId) {
+    // Don't delete if it's the root node
+    final dialogRef = widget.entity.get<DialogRef>();
+    if (dialogRef?.rootNodeId == nodeId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cannot delete root node')),
       );
-    } else if (current is TextNode) {
-      if (index == 0) {
-        final updatedNext = remainingPath.isEmpty
-            ? newNode
-            : _updateNodeAtPath(current.next, remainingPath, newNode);
-        return TextNode(
-          id: current.id,
-          speakerName: current.speakerName,
-          text: current.text,
-          next: updatedNext,
-          effects: current.effects,
-        );
-      }
-    } else if (current is EffectNode) {
-      if (index == 0) {
-        final updatedNext = remainingPath.isEmpty
-            ? newNode
-            : _updateNodeAtPath(current.next, remainingPath, newNode);
-        return EffectNode(
-          id: current.id,
-          effects: current.effects,
-          next: updatedNext ?? EndNode(id: generateNodeId()),
-        );
-      }
-    } else if (current is ConditionalNode) {
-      if (index == 0) {
-        final updatedPass = remainingPath.isEmpty
-            ? newNode
-            : _updateNodeAtPath(current.onPass, remainingPath, newNode);
-        return ConditionalNode(
-          id: current.id,
-          condition: current.condition,
-          onPass: updatedPass ?? EndNode(id: generateNodeId()),
-          onFail: current.onFail,
-        );
-      } else if (index == 1) {
-        final updatedFail = remainingPath.isEmpty
-            ? newNode
-            : _updateNodeAtPath(current.onFail, remainingPath, newNode);
-        return ConditionalNode(
-          id: current.id,
-          condition: current.condition,
-          onPass: current.onPass,
-          onFail: updatedFail ?? EndNode(id: generateNodeId()),
-        );
-      }
+      return;
     }
 
-    return current;
-  }
-
-  /// Recursively updates all GotoNode targetIds from oldId to newId.
-  DialogNode _updateGotoTargets(DialogNode node, String oldId, String newId) {
-    if (node is GotoNode) {
-      if (node.targetId == oldId) {
-        return GotoNode(id: node.id, targetId: newId);
-      }
-      return node;
-    } else if (node is SpeakNode) {
-      final newChoices = node.choices.map((choice) {
-        return Choice(
-          text: choice.text,
-          condition: choice.condition,
-          conditionLabel: choice.conditionLabel,
-          showWhenUnavailable: choice.showWhenUnavailable,
-          child: _updateGotoTargets(choice.child, oldId, newId),
-        );
-      }).toList();
-      return SpeakNode(
-        id: node.id,
-        speakerName: node.speakerName,
-        text: node.text,
-        choices: newChoices,
-        effects: node.effects,
-      );
-    } else if (node is TextNode) {
-      return TextNode(
-        id: node.id,
-        speakerName: node.speakerName,
-        text: node.text,
-        next: node.next != null ? _updateGotoTargets(node.next!, oldId, newId) : null,
-        effects: node.effects,
-      );
-    } else if (node is EffectNode) {
-      return EffectNode(
-        id: node.id,
-        effects: node.effects,
-        next: _updateGotoTargets(node.next, oldId, newId),
-      );
-    } else if (node is ConditionalNode) {
-      return ConditionalNode(
-        id: node.id,
-        condition: node.condition,
-        onPass: _updateGotoTargets(node.onPass, oldId, newId),
-        onFail: _updateGotoTargets(node.onFail, oldId, newId),
-      );
-    }
-    // EndNode has no children
-    return node;
-  }
-
-  void _onAddRootNode() {
+    _world.remove(nodeId);
     setState(() {
-      _hasChanges = true;
-      _rootNode = SpeakNode(
-        id: generateNodeId(),
-        speakerName: 'Speaker',
-        text: 'Hello!',
-        choices: [
-          Choice(
-            text: 'Goodbye',
-            child: EndNode(id: generateNodeId()),
-          ),
-        ],
-      );
-      _selectedPath = [];
-      _rebuildRegistry();
+      _discoveredNodes.remove(nodeId);
+      if (_selectedNodeId == nodeId) {
+        _selectedNodeId = _discoveredNodes.firstOrNull;
+      }
     });
   }
 
@@ -341,6 +118,7 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final npcName = widget.entity.get<Name>()?.name ?? 'Unknown';
+    final dialogRef = widget.entity.get<DialogRef>();
 
     return Scaffold(
       appBar: AppBar(
@@ -354,28 +132,13 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
             const Icon(Icons.chat),
             const SizedBox(width: 8),
             Text('Dialog Editor - $npcName'),
-            if (_hasChanges) ...[
-              const SizedBox(width: 8),
-              Text(
-                '(unsaved)',
-                style: TextStyle(
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                ),
-              ),
-            ],
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: _handleClose,
-            child: const Text('Cancel'),
-          ),
-          const SizedBox(width: 8),
-          FilledButton(
-            onPressed: _saveAndClose,
-            child: const Text('Save & Close'),
+          TextButton.icon(
+            onPressed: _createNewNode,
+            icon: const Icon(Icons.add),
+            label: const Text('New Node'),
           ),
           const SizedBox(width: 16),
         ],
@@ -388,73 +151,396 @@ class _DialogEditorScreenState extends State<DialogEditorScreen> {
               _handleClose();
               return KeyEventResult.handled;
             }
-            if (event.logicalKey == LogicalKeyboardKey.keyS &&
-                HardwareKeyboard.instance.isControlPressed) {
-              _saveAndClose();
-              return KeyEventResult.handled;
-            }
           }
           return KeyEventResult.ignored;
         },
-        child: DialogTreeContext(
-          registry: _nodeRegistry,
-          child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Left panel - Tree view
-                SizedBox(
-                  width: 350,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border(
-                        right: BorderSide(color: colorScheme.outlineVariant),
+        child: dialogRef == null
+            ? _buildNoDialogRef(colorScheme)
+            : Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Left panel - Node list
+                  SizedBox(
+                    width: 300,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          right: BorderSide(color: colorScheme.outlineVariant),
+                        ),
+                      ),
+                      child: _buildNodeList(colorScheme, dialogRef.rootNodeId),
+                    ),
+                  ),
+
+                  // Right panel - Node editor
+                  Expanded(
+                    child: _selectedNodeId != null
+                        ? _buildNodeEditor(colorScheme, _selectedNodeId!)
+                        : _buildNoSelection(colorScheme),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildNoDialogRef(ColorScheme colorScheme) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 64,
+            color: colorScheme.onSurface.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: kSpacingL),
+          Text(
+            'No DialogRef on this entity',
+            style: TextStyle(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+          const SizedBox(height: kSpacingL),
+          FilledButton.icon(
+            onPressed: () {
+              // Create a root dialog node and set the DialogRef
+              final rootNode = _world.add([
+                DialogNode(
+                  text: 'Hello!',
+                  choices: [DialogChoice(text: 'Goodbye')],
+                ),
+                Name(name: 'Root Dialog'),
+              ]);
+              widget.entity.upsert(DialogRef(rootNodeId: rootNode.id));
+              setState(() {
+                _discoverGraph();
+              });
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Create Dialog'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNoSelection(ColorScheme colorScheme) {
+    return Center(
+      child: Text(
+        'Select a node to edit',
+        style: TextStyle(
+          color: colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNodeList(ColorScheme colorScheme, int rootNodeId) {
+    final sortedNodes = _discoveredNodes.toList()
+      ..sort((a, b) => a == rootNodeId ? -1 : (b == rootNodeId ? 1 : a.compareTo(b)));
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(kSpacingM),
+      itemCount: sortedNodes.length,
+      itemBuilder: (context, index) {
+        final nodeId = sortedNodes[index];
+        final nodeEntity = _world.getEntity(nodeId);
+        final dialogNode = nodeEntity.get<DialogNode>();
+        final nodeName = nodeEntity.get<Name>()?.name ?? 'Node #$nodeId';
+        final isRoot = nodeId == rootNodeId;
+        final isSelected = nodeId == _selectedNodeId;
+
+        return Card(
+          color: isSelected ? colorScheme.primaryContainer : null,
+          child: InkWell(
+            onTap: () => setState(() => _selectedNodeId = nodeId),
+            child: Padding(
+              padding: const EdgeInsets.all(kSpacingM),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      if (isRoot) ...[
+                        Icon(
+                          Icons.star,
+                          size: 16,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: kSpacingXS),
+                      ],
+                      Expanded(
+                        child: Text(
+                          nodeName,
+                          style: TextStyle(
+                            fontWeight: isRoot ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '#$nodeId',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: colorScheme.onSurface.withValues(alpha: 0.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (dialogNode != null) ...[
+                    const SizedBox(height: kSpacingXS),
+                    Text(
+                      dialogNode.text.length > 50
+                          ? '${dialogNode.text.substring(0, 50)}...'
+                          : dialogNode.text,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurface.withValues(alpha: 0.7),
                       ),
                     ),
-                    child: DialogTreeView(
-                      root: _rootNode,
-                      selectedPath: _selectedPath,
-                      onSelect: _onSelectNode,
-                      onUpdate: _onUpdateNode,
-                      onAddRootNode: _onAddRootNode,
+                    const SizedBox(height: kSpacingXS),
+                    Text(
+                      '${dialogNode.choices.length} choice(s)',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: colorScheme.onSurface.withValues(alpha: 0.5),
+                      ),
                     ),
-                  ),
-                ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
 
-                // Right panel - Node editor
-                Expanded(
-                  child: DialogNodeEditor(
-                    node: _selectedNode,
-                    path: _selectedPath,
-                    onUpdate: (newNode) => _onUpdateNode(_selectedPath, newNode),
-                    onNavigateToChild: (childIndex) {
-                      setState(() {
-                        _selectedPath = [..._selectedPath, childIndex];
-                      });
-                    },
-                    onNavigateUp: () {
-                      if (_selectedPath.isNotEmpty) {
-                        setState(() {
-                          _selectedPath = _selectedPath.sublist(
-                              0, _selectedPath.length - 1);
-                        });
-                      }
-                    },
-                  ),
+  Widget _buildNodeEditor(ColorScheme colorScheme, int nodeId) {
+    final nodeEntity = _world.getEntity(nodeId);
+    final dialogNode = nodeEntity.get<DialogNode>();
+    final dialogRef = widget.entity.get<DialogRef>();
+    final isRoot = dialogRef?.rootNodeId == nodeId;
+
+    if (dialogNode == null) {
+      return Center(
+        child: Text(
+          'Node #$nodeId has no DialogNode component',
+          style: TextStyle(color: colorScheme.error),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(kSpacingL),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            children: [
+              Text(
+                'Node #$nodeId',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              if (isRoot) ...[
+                const SizedBox(width: kSpacingM),
+                Chip(
+                  label: const Text('Root'),
+                  backgroundColor: colorScheme.primaryContainer,
+                ),
+              ],
+              const Spacer(),
+              if (!isRoot)
+                TextButton.icon(
+                  onPressed: () => _setAsRootNode(nodeId),
+                  icon: const Icon(Icons.star_outline),
+                  label: const Text('Set as Root'),
+                ),
+              if (!isRoot)
+                TextButton.icon(
+                  onPressed: () => _deleteNode(nodeId),
+                  icon: Icon(Icons.delete, color: colorScheme.error),
+                  label: Text('Delete', style: TextStyle(color: colorScheme.error)),
+                ),
+            ],
+          ),
+          const SizedBox(height: kSpacingL),
+
+          // Name field
+          TextFormField(
+            key: ValueKey('name_$nodeId'),
+            initialValue: nodeEntity.get<Name>()?.name ?? '',
+            decoration: const InputDecoration(
+              labelText: 'Node Name (for editor)',
+              border: OutlineInputBorder(),
+            ),
+            onFieldSubmitted: (value) {
+              if (value.isNotEmpty) {
+                nodeEntity.upsert(Name(name: value));
+              } else {
+                nodeEntity.remove<Name>();
+              }
+            },
+          ),
+          const SizedBox(height: kSpacingL),
+
+          // Dialog text field
+          TextFormField(
+            key: ValueKey('text_$nodeId'),
+            initialValue: dialogNode.text,
+            decoration: const InputDecoration(
+              labelText: 'Dialog Text',
+              border: OutlineInputBorder(),
+              hintText: 'What the NPC says...',
+            ),
+            maxLines: 4,
+            onFieldSubmitted: (value) {
+              nodeEntity.upsert(DialogNode(
+                text: value,
+                choices: dialogNode.choices,
+              ));
+            },
+          ),
+          const SizedBox(height: kSpacingL),
+
+          // Choices section
+          Text(
+            'Choices',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: kSpacingM),
+
+          ...dialogNode.choices.asMap().entries.map((entry) {
+            final index = entry.key;
+            final choice = entry.value;
+            return _buildChoiceEditor(nodeEntity, dialogNode, index, choice, colorScheme);
+          }),
+
+          // Add choice button
+          TextButton.icon(
+            onPressed: () {
+              final newChoices = [...dialogNode.choices, DialogChoice(text: 'New choice')];
+              nodeEntity.upsert(DialogNode(
+                text: dialogNode.text,
+                choices: newChoices,
+              ));
+              setState(() {});
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Choice'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildChoiceEditor(
+    Entity nodeEntity,
+    DialogNode dialogNode,
+    int index,
+    DialogChoice choice,
+    ColorScheme colorScheme,
+  ) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: kSpacingM),
+      child: Padding(
+        padding: const EdgeInsets.all(kSpacingM),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text(
+                  'Choice ${index + 1}',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const Spacer(),
+                IconButton(
+                  icon: const Icon(Icons.delete, size: 18),
+                  onPressed: dialogNode.choices.length > 1
+                      ? () {
+                          final newChoices = [...dialogNode.choices]..removeAt(index);
+                          nodeEntity.upsert(DialogNode(
+                            text: dialogNode.text,
+                            choices: newChoices,
+                          ));
+                          setState(() {});
+                        }
+                      : null,
+                  tooltip: 'Delete choice',
                 ),
               ],
             ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.small(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const TemplateVariablesScreen(),
+            const SizedBox(height: kSpacingS),
+
+            // Choice text
+            TextFormField(
+              key: ValueKey('choice_${nodeEntity.id}_$index'),
+              initialValue: choice.text,
+              decoration: const InputDecoration(
+                labelText: 'Choice Text',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              onFieldSubmitted: (value) {
+                final newChoices = [...dialogNode.choices];
+                newChoices[index] = DialogChoice(
+                  text: value,
+                  targetNodeId: choice.targetNodeId,
+                );
+                nodeEntity.upsert(DialogNode(
+                  text: dialogNode.text,
+                  choices: newChoices,
+                ));
+              },
             ),
-          );
-        },
-        tooltip: 'Template Variables',
-        child: const Icon(Icons.data_object),
+            const SizedBox(height: kSpacingS),
+
+            // Target node
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    key: ValueKey('target_${nodeEntity.id}_$index'),
+                    initialValue: choice.targetNodeId?.toString() ?? '',
+                    decoration: InputDecoration(
+                      labelText: 'Target Node ID',
+                      border: const OutlineInputBorder(),
+                      isDense: true,
+                      helperText: choice.targetNodeId == null ? 'Empty = end dialog' : null,
+                    ),
+                    keyboardType: TextInputType.number,
+                    onFieldSubmitted: (value) {
+                      final newChoices = [...dialogNode.choices];
+                      newChoices[index] = DialogChoice(
+                        text: choice.text,
+                        targetNodeId: value.isEmpty ? null : int.tryParse(value),
+                      );
+                      nodeEntity.upsert(DialogNode(
+                        text: dialogNode.text,
+                        choices: newChoices,
+                      ));
+                      setState(() {
+                        _discoverGraph();
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(width: kSpacingS),
+                if (choice.targetNodeId != null)
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _selectedNodeId = choice.targetNodeId;
+                      });
+                    },
+                    child: const Text('Go to'),
+                  ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

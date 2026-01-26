@@ -221,6 +221,19 @@ class World with WorldMappable implements IWorldView {
 
   @override
   Map<int, C> get<C extends Component>() {
+    final result = <int, C>{};
+    for (final entity in entities()) {
+      final component = entity.get<C>();
+      if (component != null) {
+        result[entity.id] = component;
+      }
+    }
+    return result;
+  }
+
+  /// Get entities with component C stored directly (no template resolution).
+  /// Use this when you need only direct components, not inherited ones.
+  Map<int, C> getDirect<C extends Component>() {
     return _storage.get<C>();
   }
 
