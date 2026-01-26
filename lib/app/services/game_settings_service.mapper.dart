@@ -58,6 +58,56 @@ extension InteractionMacroModeMapperExtension on InteractionMacroMode {
   }
 }
 
+class DialogPositionMapper extends EnumMapper<DialogPosition> {
+  DialogPositionMapper._();
+
+  static DialogPositionMapper? _instance;
+  static DialogPositionMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DialogPositionMapper._());
+    }
+    return _instance!;
+  }
+
+  static DialogPosition fromValue(dynamic value) {
+    ensureInitialized();
+    return MapperContainer.globals.fromValue(value);
+  }
+
+  @override
+  DialogPosition decode(dynamic value) {
+    switch (value) {
+      case r'bottom':
+        return DialogPosition.bottom;
+      case r'center':
+        return DialogPosition.center;
+      case r'top':
+        return DialogPosition.top;
+      default:
+        throw MapperException.unknownEnumValue(value);
+    }
+  }
+
+  @override
+  dynamic encode(DialogPosition self) {
+    switch (self) {
+      case DialogPosition.bottom:
+        return r'bottom';
+      case DialogPosition.center:
+        return r'center';
+      case DialogPosition.top:
+        return r'top';
+    }
+  }
+}
+
+extension DialogPositionMapperExtension on DialogPosition {
+  String toValue() {
+    DialogPositionMapper.ensureInitialized();
+    return MapperContainer.globals.toValue<DialogPosition>(this) as String;
+  }
+}
+
 class GameSettingsMapper extends ClassMapperBase<GameSettings> {
   GameSettingsMapper._();
 
@@ -66,6 +116,7 @@ class GameSettingsMapper extends ClassMapperBase<GameSettings> {
     if (_instance == null) {
       MapperContainer.globals.use(_instance = GameSettingsMapper._());
       InteractionMacroModeMapper.ensureInitialized();
+      DialogPositionMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -89,17 +140,26 @@ class GameSettingsMapper extends ClassMapperBase<GameSettings> {
     opt: true,
     def: InteractionMacroMode.lookBack,
   );
+  static DialogPosition _$dialogPosition(GameSettings v) => v.dialogPosition;
+  static const Field<GameSettings, DialogPosition> _f$dialogPosition = Field(
+    'dialogPosition',
+    _$dialogPosition,
+    opt: true,
+    def: DialogPosition.bottom,
+  );
 
   @override
   final MappableFields<GameSettings> fields = const {
     #alwaysShowHealthBars: _f$alwaysShowHealthBars,
     #interactionMacroMode: _f$interactionMacroMode,
+    #dialogPosition: _f$dialogPosition,
   };
 
   static GameSettings _instantiate(DecodingData data) {
     return GameSettings(
       alwaysShowHealthBars: data.dec(_f$alwaysShowHealthBars),
       interactionMacroMode: data.dec(_f$interactionMacroMode),
+      dialogPosition: data.dec(_f$dialogPosition),
     );
   }
 
@@ -168,6 +228,7 @@ abstract class GameSettingsCopyWith<$R, $In extends GameSettings, $Out>
   $R call({
     bool? alwaysShowHealthBars,
     InteractionMacroMode? interactionMacroMode,
+    DialogPosition? dialogPosition,
   });
   GameSettingsCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
 }
@@ -184,12 +245,14 @@ class _GameSettingsCopyWithImpl<$R, $Out>
   $R call({
     bool? alwaysShowHealthBars,
     InteractionMacroMode? interactionMacroMode,
+    DialogPosition? dialogPosition,
   }) => $apply(
     FieldCopyWithData({
       if (alwaysShowHealthBars != null)
         #alwaysShowHealthBars: alwaysShowHealthBars,
       if (interactionMacroMode != null)
         #interactionMacroMode: interactionMacroMode,
+      if (dialogPosition != null) #dialogPosition: dialogPosition,
     }),
   );
   @override
@@ -202,6 +265,7 @@ class _GameSettingsCopyWithImpl<$R, $Out>
       #interactionMacroMode,
       or: $value.interactionMacroMode,
     ),
+    dialogPosition: data.get(#dialogPosition, or: $value.dialogPosition),
   );
 
   @override

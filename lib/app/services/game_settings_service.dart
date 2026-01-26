@@ -21,6 +21,19 @@ enum InteractionMacroMode {
   remainFacing,
 }
 
+/// Where to display the dialog overlay on screen.
+@MappableEnum()
+enum DialogPosition {
+  /// Dialog anchored near bottom of screen (default).
+  bottom,
+
+  /// Dialog centered vertically on screen.
+  center,
+
+  /// Dialog anchored near top of screen.
+  top,
+}
+
 /// General game settings that can be persisted.
 @MappableClass()
 class GameSettings with GameSettingsMappable {
@@ -30,9 +43,13 @@ class GameSettings with GameSettingsMappable {
   /// How to handle interactions with entities remembered from vision memory.
   final InteractionMacroMode interactionMacroMode;
 
+  /// Where to display the dialog overlay on screen.
+  final DialogPosition dialogPosition;
+
   GameSettings({
     this.alwaysShowHealthBars = false,
     this.interactionMacroMode = InteractionMacroMode.lookBack,
+    this.dialogPosition = DialogPosition.bottom,
   });
 }
 
@@ -74,11 +91,15 @@ class GameSettingsService {
   /// How to handle interactions with entities remembered from vision memory.
   InteractionMacroMode get interactionMacroMode => _settings.interactionMacroMode;
 
+  /// Where to display the dialog overlay on screen.
+  DialogPosition get dialogPosition => _settings.dialogPosition;
+
   /// Sets whether to always show health bars.
   Future<void> setAlwaysShowHealthBars(bool value) async {
     _settings = GameSettings(
       alwaysShowHealthBars: value,
       interactionMacroMode: _settings.interactionMacroMode,
+      dialogPosition: _settings.dialogPosition,
     );
     _notifyChange();
     await _persist();
@@ -89,6 +110,18 @@ class GameSettingsService {
     _settings = GameSettings(
       alwaysShowHealthBars: _settings.alwaysShowHealthBars,
       interactionMacroMode: value,
+      dialogPosition: _settings.dialogPosition,
+    );
+    _notifyChange();
+    await _persist();
+  }
+
+  /// Sets where to display the dialog overlay on screen.
+  Future<void> setDialogPosition(DialogPosition value) async {
+    _settings = GameSettings(
+      alwaysShowHealthBars: _settings.alwaysShowHealthBars,
+      interactionMacroMode: _settings.interactionMacroMode,
+      dialogPosition: value,
     );
     _notifyChange();
     await _persist();

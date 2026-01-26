@@ -126,6 +126,22 @@ class _GeneralSettingsEditorState extends State<GeneralSettingsEditor> {
         value: settings.alwaysShowHealthBars,
         onChanged: (value) => settings.setAlwaysShowHealthBars(value),
       ),
+      _EnumSettingItem<DialogPosition>(
+        title: 'Dialog position',
+        value: settings.dialogPosition,
+        options: DialogPosition.values,
+        labelBuilder: (position) => switch (position) {
+          DialogPosition.bottom => 'Bottom',
+          DialogPosition.center => 'Center',
+          DialogPosition.top => 'Top',
+        },
+        descriptionBuilder: (position) => switch (position) {
+          DialogPosition.bottom => 'Show dialog at bottom of screen',
+          DialogPosition.center => 'Show dialog in center of screen',
+          DialogPosition.top => 'Show dialog at top of screen',
+        },
+        onChanged: (value) => settings.setDialogPosition(value),
+      ),
       _EnumSettingItem<InteractionMacroMode>(
         title: 'Interaction macro',
         value: settings.interactionMacroMode,
@@ -147,7 +163,7 @@ class _GeneralSettingsEditorState extends State<GeneralSettingsEditor> {
   }
 
   /// Index where the "Gameplay" section starts.
-  int get _gameplaySectionStart => 1;
+  int get _gameplaySectionStart => 2;
 
   void _returnToParent() {
     widget.parentFocusNode?.requestFocus();

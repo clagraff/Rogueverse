@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'package:rogueverse/app/services/game_settings_service.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
 import 'package:rogueverse/app/services/text_template_service.dart';
@@ -172,63 +173,89 @@ class _DialogOverlayState extends State<DialogOverlay> {
   ) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Stack(
-      children: [
-        // Semi-transparent backdrop
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: widget.handler.endDialog,
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.3),
-            ),
-          ),
-        ),
+    return ValueListenableBuilder<int>(
+      valueListenable: GameSettingsService.instance.changeNotifier,
+      builder: (context, _, __) {
+        final dialogPosition = GameSettingsService.instance.dialogPosition;
 
-        // Dialog box centered at bottom
-        Positioned(
-          left: kSpacingMax,
-          right: kSpacingMax,
-          bottom: kSpacingMax,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: kDialogMaxWidth),
-              child: AutoFocusKeyboardListener(
-                onKeyEvent: _handleKeyEvent,
-                child: Material(
-                  elevation: kElevationHigh,
-                  borderRadius: BorderRadius.circular(kRadiusL),
-                  color: colorScheme.surface,
-                  child: Container(
-                    constraints: const BoxConstraints(
-                      maxHeight: kDialogMaxHeight,
-                      minHeight: 100,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // NPC text section
-                        _buildNpcTextSection(colorScheme, player, npc, speakerName, dialogNode),
+        final dialogBox = ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: kDialogMaxWidth),
+          child: AutoFocusKeyboardListener(
+            onKeyEvent: _handleKeyEvent,
+            child: Material(
+              elevation: kElevationHigh,
+              borderRadius: BorderRadius.circular(kRadiusL),
+              color: colorScheme.surface,
+              child: Container(
+                constraints: const BoxConstraints(
+                  maxHeight: kDialogMaxHeight,
+                  minHeight: 100,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // NPC text section
+                    _buildNpcTextSection(colorScheme, player, npc, speakerName, dialogNode),
 
-                        // Divider
-                        Divider(height: 1, color: colorScheme.outlineVariant),
+                    // Divider
+                    Divider(height: 1, color: colorScheme.outlineVariant),
 
-                        // Player choices section
-                        _buildChoicesSection(colorScheme, dialogNode, currentNodeId, selectedIndex),
+                    // Player choices section
+                    _buildChoicesSection(colorScheme, dialogNode, currentNodeId, selectedIndex),
 
-                        // Hint footer
-                        _buildHintFooter(colorScheme),
-                      ],
-                    ),
-                  ),
+                    // Hint footer
+                    _buildHintFooter(colorScheme),
+                  ],
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        );
+
+        return Stack(
+          children: [
+            // Semi-transparent backdrop
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: widget.handler.endDialog,
+                child: Container(
+                  color: Colors.black.withValues(alpha: 0.3),
+                ),
+              ),
+            ),
+
+            // Dialog box with dynamic positioning
+            _buildPositionedDialog(dialogBox, dialogPosition),
+          ],
+        );
+      },
     );
+  }
+
+  Widget _buildPositionedDialog(Widget dialogBox, DialogPosition position) {
+    return switch (position) {
+      DialogPosition.bottom => Positioned(
+          left: kSpacingMax,
+          right: kSpacingMax,
+          bottom: kSpacingMax,
+          child: Center(child: dialogBox),
+        ),
+      DialogPosition.center => Positioned(
+          left: kSpacingMax,
+          right: kSpacingMax,
+          top: 0,
+          bottom: 0,
+          child: Center(child: dialogBox),
+        ),
+      DialogPosition.top => Positioned(
+          left: kSpacingMax,
+          right: kSpacingMax,
+          top: kSpacingMax,
+          child: Center(child: dialogBox),
+        ),
+    };
   }
 
   Widget _buildNpcTextSection(
