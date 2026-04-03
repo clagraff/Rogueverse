@@ -187,6 +187,28 @@ dart tools/barrel_generator.dart
 dart run build_runner build
 ```
 
+### Bundled Assets & Developer Saves
+
+The game ships with a base world state and optional developer saves bundled as Flutter assets in `assets/saves/`. On first launch, these are copied into the user's app support directory.
+
+**How it works:**
+- `assets/saves/initial.json` — The base game state (all templates, authored world content). This is the foundation every save builds on.
+- `assets/saves/*.patch.json` — Save patches bundled with the app. On first launch, they're seeded into the user's saves directory if not already present.
+
+**Developer saves** use a dot-prefix naming convention (e.g., `.vision-test.patch.json`). This distinguishes them from player saves in the Load Game screen, where they appear in a separate "Developer Saves" section with a restore-to-default option.
+
+**To create a new developer save:**
+1. Start a new game in the app and build your test scenario (place entities, configure the scene)
+2. The save auto-persists to your app support `saves/` directory
+3. Copy the `.patch.json` file from there into `assets/saves/`, renaming it with a `.` prefix (e.g., `.combat-test.patch.json`)
+4. The save will now ship with the app on future builds
+
+**To update `initial.json`:**
+1. Edit the world in-game using the editor (editing the "initial" target)
+2. Copy the `initial.json` from your app support directory into `assets/saves/`
+
+Player saves cannot start with a dot — the New Game dialog enforces this to prevent collisions with the developer save convention.
+
 ---
 
 ## Contributing

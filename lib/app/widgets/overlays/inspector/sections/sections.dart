@@ -27,3 +27,4 @@ export 'renderable_section.dart';
 export 'template_sections.dart';
 export 'vision_sections.dart';
 export 'dialog_section.dart';
+export 'crafting_sections.dart';

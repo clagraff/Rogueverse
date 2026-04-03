@@ -62,6 +62,8 @@ class ControlHandlerCoordinator extends Component {
       world: world,
     );
     parent!.add(inventoryHandler);
+    // Store reference in GameArea for interaction handler access
+    game.inventoryHandler = inventoryHandler;
 
     // Create interaction control handler (E key for interactions)
     interactionHandler = InteractionControlHandler(

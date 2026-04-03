@@ -121,7 +121,9 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
         label: 'Quit to Menu',
         onTap: () async {
           Navigator.pop(context);
-          await Persistence.writeSavePatch(widget.worldGetter());
+          if (!Persistence.isCurrentSaveDeveloper) {
+            await Persistence.writeSavePatch(widget.worldGetter());
+          }
           widget.onQuitToMenu();
         },
       ),
@@ -130,7 +132,9 @@ class _NavigationDrawerContentState extends State<NavigationDrawerContent> {
         label: 'Quit to Desktop',
         onTap: () async {
           Navigator.pop(context);
-          await Persistence.writeSavePatch(widget.worldGetter());
+          if (!Persistence.isCurrentSaveDeveloper) {
+            await Persistence.writeSavePatch(widget.worldGetter());
+          }
           exit(0);
         },
       ),

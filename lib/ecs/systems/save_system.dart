@@ -26,6 +26,7 @@ class SaveSystem extends System with SaveSystemMappable {
   @override
   void update(World world) {
     if (world.tickId % saveIntervalTicks == 0) {
+      if (Persistence.isCurrentSaveDeveloper) return;
       _logger.fine("periodic save triggered", {"tickId": world.tickId});
       Persistence.writeSavePatch(world);
     }

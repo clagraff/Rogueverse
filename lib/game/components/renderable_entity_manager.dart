@@ -50,20 +50,11 @@ class RenderableEntityManager extends Component {
     // Listen to viewedParentId changes to filter rendered entities
     viewedParentNotifier.addListener(_onViewedParentChanged);
 
-    // Spawn all existing renderable entities
-    world
-        .entities()
-        .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
-        .forEach((entity) {
-      _spawnRenderableEntity(world.getEntity(entity.id));
-    });
+    // Re-sync all sprites when the world is bulk-reloaded
+    world.onReload.add(_onWorldReloaded);
 
-    // Trigger final vision update now that all components (including Agents) are spawned.
-    // This ensures VisibleEntities is populated and Agent opacity is correct on initial load.
-    if (observerEntityIdNotifier.value != null) {
-      final visionSystem = world.systems.whereType<VisionSystem>().firstOrNull;
-      visionSystem?.updateVisionForObserver(world, observerEntityIdNotifier.value!);
-    }
+    // Spawn all existing renderable entities
+    _spawnAllRenderableEntities();
   }
 
   void _onViewedParentChanged() {
@@ -71,10 +62,41 @@ class RenderableEntityManager extends Component {
     _updateRenderedEntities();
   }
 
+  void _onWorldReloaded() {
+    _logger.info('world reloaded, re-syncing all sprites');
+    _removeAllSprites();
+    _spawnAllRenderableEntities();
+  }
+
+  void _removeAllSprites() {
+    final spritesToRemove = parent!.children.whereType<EntitySprite>().toList();
+    for (final sprite in spritesToRemove) {
+      sprite.removeFromParent();
+    }
+    _renderedEntities.clear();
+  }
+
+  void _spawnAllRenderableEntities() {
+    world
+        .entities()
+        .where((e) => e.has<LocalPosition>() && e.has<Renderable>())
+        .forEach((entity) {
+      _spawnRenderableEntity(world.getEntity(entity.id));
+    });
+
+    // Trigger vision update so VisibleEntities is populated and opacity is correct
+    if (observerEntityIdNotifier.value != null) {
+      final visionSystem = world.systems.whereType<VisionSystem>().firstOrNull;
+      visionSystem?.updateVisionForObserver(
+          world, observerEntityIdNotifier.value!);
+    }
+  }
+
   @override
   void onRemove() {
     _spawnListener?.cancel();
     viewedParentNotifier.removeListener(_onViewedParentChanged);
+    world.onReload.remove(_onWorldReloaded);
   }
 
   /// Determines if an entity should be rendered based on the viewed parent filter.

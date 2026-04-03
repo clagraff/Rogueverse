@@ -15,6 +15,8 @@ import 'package:window_manager/window_manager.dart';
 
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   loggerSetup();
   initializeMappers(); // Required for the dart_mappable de/serialization.
 
@@ -23,9 +25,9 @@ void main() async {
   await GameSettingsService.instance.load();
   registerAllComponents();
 
-  // Migrate existing save.json to initial.json if needed (layered save system)
   if (!kIsWeb) {
     await Persistence.migrateIfNeeded();
+    await Persistence.seedBundledAssets();
   }
 
   if (!kIsWeb) {
@@ -76,8 +78,6 @@ void loggerSetup() {
 
 /// Setup the desktop (non-web) window so it is centered and has a default size.
 Future<void> setupWindow() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  // Must add this line.
   await windowManager.ensureInitialized();
 
   WindowOptions windowOptions = WindowOptions(

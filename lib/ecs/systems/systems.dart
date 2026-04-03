@@ -17,3 +17,5 @@ export 'openable_system.dart';
 export 'portal_system.dart';
 export 'dialog_system.dart';
 export 'save_system.dart';
+export 'crafting_system.dart';
+export 'processing_system.dart';

@@ -1,0 +1,239 @@
+{
+	"systems": [
+		{
+			"__type": "BehaviorSystem"
+		},
+		{
+			"__type": "ControlSystem"
+		},
+		{
+			"__type": "CollisionSystem"
+		},
+		{
+			"__type": "MovementSystem"
+		},
+		{
+			"__type": "DirectionSystem"
+		},
+		{
+			"__type": "PortalSystem"
+		},
+		{
+			"__type": "VisionSystem"
+		},
+		{
+			"__type": "InventorySystem"
+		},
+		{
+			"__type": "CraftingSystem"
+		},
+		{
+			"__type": "ProcessingSystem"
+		},
+		{
+			"__type": "CombatSystem"
+		},
+		{
+			"__type": "DeathSystem"
+		},
+		{
+			"__type": "OpenableSystem"
+		},
+		{
+			"__type": "DialogSystem"
+		},
+		{
+			"__type": "SaveSystem"
+		}
+	],
+	"components": {
+		"IsTemplate": {
+			"0": {
+				"displayName": "Wall",
+				"__type": "IsTemplate"
+			},
+			"1": {
+				"displayName": "H Door",
+				"__type": "IsTemplate"
+			},
+			"2": {
+				"displayName": "V Door",
+				"__type": "IsTemplate"
+			},
+			"3": {
+				"displayName": "Character",
+				"__type": "IsTemplate"
+			},
+			"4": {
+				"displayName": "Player",
+				"__type": "IsTemplate"
+			},
+			"5": {
+				"displayName": "Ship",
+				"__type": "IsTemplate"
+			}
+		},
+		"Name": {
+			"0": {
+				"name": "Wall",
+				"__type": "Name"
+			},
+			"1": {
+				"name": "H Door",
+				"__type": "Name"
+			},
+			"2": {
+				"name": "V Door",
+				"__type": "Name"
+			},
+			"3": {
+				"name": "Character",
+				"__type": "Name"
+			},
+			"4": {
+				"name": "Player",
+				"__type": "Name"
+			},
+			"5": {
+				"name": "Ship",
+				"__type": "Name"
+			}
+		},
+		"Renderable": {
+			"0": {
+				"asset": {
+					"svgAssetPath": "images/wall.svg",
+					"flipHorizontal": false,
+					"flipVertical": false,
+					"rotationDegrees": 0.0,
+					"__type": "ImageAsset"
+				},
+				"__type": "Renderable"
+			},
+			"1": {
+				"asset": {
+					"svgAssetPath": "images/hdoor_closed.svg",
+					"flipHorizontal": false,
+					"flipVertical": false,
+					"rotationDegrees": 0.0,
+					"__type": "ImageAsset"
+				},
+				"__type": "Renderable"
+			},
+			"2": {
+				"asset": {
+					"svgAssetPath": "images/hdoor_closed.svg",
+					"flipHorizontal": false,
+					"flipVertical": false,
+					"rotationDegrees": 0.0,
+					"__type": "ImageAsset"
+				},
+				"__type": "Renderable"
+			},
+			"3": {
+				"asset": {
+					"svgAssetPath": "images/player.svg",
+					"flipHorizontal": false,
+					"flipVertical": false,
+					"rotationDegrees": 0.0,
+					"__type": "ImageAsset"
+				},
+				"__type": "Renderable"
+			}
+		},
+		"BlocksMovement": {
+			"0": {
+				"__type": "BlocksMovement"
+			},
+			"1": {
+				"__type": "BlocksMovement"
+			},
+			"2": {
+				"__type": "BlocksMovement"
+			}
+		},
+		"BlocksSight": {
+			"0": {
+				"__type": "BlocksSight"
+			},
+			"1": {
+				"__type": "BlocksSight"
+			},
+			"2": {
+				"__type": "BlocksSight"
+			}
+		},
+		"Openable": {
+			"1": {
+				"isOpen": false,
+				"openRenderablePath": "images/hdoor_opened.svg",
+				"closedRenderablePath": "",
+				"blocksMovementWhenClosed": true,
+				"blocksVisionWhenClosed": true,
+				"__type": "Openable"
+			},
+			"2": {
+				"isOpen": false,
+				"openRenderablePath": "images/hdoor_opened.svg",
+				"closedRenderablePath": "",
+				"blocksMovementWhenClosed": true,
+				"blocksVisionWhenClosed": true,
+				"__type": "Openable"
+			}
+		},
+		"Health": {
+			"3": {
+				"current": 10,
+				"max": 10,
+				"__type": "Health"
+			}
+		},
+		"VisionRadius": {
+			"3": {
+				"radius": 5,
+				"fieldOfViewDegrees": 90,
+				"__type": "VisionRadius"
+			}
+		},
+		"VisionMemory": {
+			"3": {
+				"lastSeenPositions": {},
+				"__type": "VisionMemory"
+			}
+		},
+		"VisibleEntities": {
+			"3": {
+				"entityIds": [],
+				"visibleTiles": [],
+				"__type": "VisibleEntities"
+			}
+		},
+		"Direction": {
+			"3": {
+				"facing": "south",
+				"allowDiagonal": false,
+				"__type": "Direction"
+			}
+		},
+		"Inventory": {
+			"3": {
+				"items": [],
+				"__type": "Inventory"
+			}
+		},
+		"FromTemplate": {
+			"4": {
+				"templateEntityId": 3,
+				"excludedTypes": [],
+				"__type": "FromTemplate"
+			}
+		},
+		"Player": {
+			"4": {
+				"__type": "Player"
+			}
+		}
+	},
+	"tickId": 0,
+	"lastId": 6
+}

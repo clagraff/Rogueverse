@@ -44,6 +44,7 @@ dependencies:
   xml: ^6.6.1
   path_provider: ^2.1.5
   json_patch: ^3.0.0
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +76,7 @@ flutter:
   assets:
     - assets/images/
     - assets/sprites/
+    - assets/saves/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

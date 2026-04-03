@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:flutter/services.dart';
 import 'package:json_patch/json_patch.dart';
 import 'package:logging/logging.dart';
 import 'package:path_provider/path_provider.dart';
@@ -29,6 +30,14 @@ class Persistence {
 
   /// Gets the current save patch path. Returns null if no save is loaded.
   static String? get currentSavePatchPath => _currentSavePatchPath;
+
+  /// Whether the current save is a developer save (name starts with '.').
+  /// Developer saves do not persist gameplay changes.
+  static bool get isCurrentSaveDeveloper {
+    if (_currentSavePatchPath == null) return false;
+    final fileName = _currentSavePatchPath!.split('/').last.split('\\').last;
+    return fileName.startsWith('.');
+  }
 
   /// Sets the current save patch path for this game session.
   static void setCurrentSavePath(String? path) {
@@ -281,6 +290,59 @@ class Persistence {
     await writeInitialState(world, indent);
   }
 
+  /// Seeds bundled assets (initial.json and developer saves) into the user's
+  /// save directory on first launch. Idempotent - never overwrites existing files.
+  static Future<void> seedBundledAssets() async {
+    final supportDir = await getApplicationSupportDirectory();
+
+    // Seed initial.json
+    final initialFile = File('${supportDir.path}/initial.json');
+    if (!initialFile.existsSync()) {
+      _logger.info('seeding initial.json from bundled asset');
+      final content = await rootBundle.loadString('assets/saves/initial.json');
+      await initialFile.writeAsString(content);
+    }
+
+    // Seed developer saves
+    final savesDir = await getSavesDirectory();
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    final bundledSaves = manifest
+        .listAssets()
+        .where((key) =>
+            key.startsWith('assets/saves/') && key.endsWith('.patch.json'));
+
+    for (final assetKey in bundledSaves) {
+      final fileName = assetKey.split('/').last;
+      final targetFile = File('${savesDir.path}/$fileName');
+      if (!targetFile.existsSync()) {
+        _logger.info('seeding bundled save', {'asset': assetKey});
+        final content = await rootBundle.loadString(assetKey);
+        await targetFile.writeAsString(content);
+      }
+    }
+  }
+
+  /// Resets a developer save to its bundled state by re-copying from assets.
+  static Future<void> resetDeveloperSave(String saveName) async {
+    final assetKey = 'assets/saves/$saveName.patch.json';
+    final content = await rootBundle.loadString(assetKey);
+    final savesDir = await getSavesDirectory();
+    final targetFile = File('${savesDir.path}/$saveName.patch.json');
+    _logger.info('resetting developer save to bundled state', {'name': saveName});
+    await targetFile.writeAsString(content);
+  }
+
+  /// Lists saves split into player saves and developer saves.
+  /// Developer saves have names starting with '.'.
+  static Future<({List<SaveFileInfo> playerSaves, List<SaveFileInfo> developerSaves})>
+      listSavesCategorized() async {
+    final all = await listSaves();
+    return (
+      playerSaves: all.where((s) => !s.isDeveloper).toList(),
+      developerSaves: all.where((s) => s.isDeveloper).toList(),
+    );
+  }
+
   /// Gets (and creates if needed) the saves directory.
   static Future<Directory> getSavesDirectory() async {
     var supportDir = await getApplicationSupportDirectory();
@@ -354,6 +416,12 @@ class SaveFileInfo {
     required this.path,
     required this.lastModified,
   });
+
+  /// Whether this is a developer/debug save (name starts with '.').
+  bool get isDeveloper => name.startsWith('.');
+
+  /// Display name with the developer prefix stripped.
+  String get displayName => isDeveloper ? name.substring(1) : name;
 }
 
 /// Backward compatibility alias - use [Persistence] instead.

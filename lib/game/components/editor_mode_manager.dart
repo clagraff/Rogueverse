@@ -59,14 +59,26 @@ class EditorModeManager {
   Future<void> _onEnterEditorMode() async {
     tickScheduler.pause();
 
+    final isDeveloperSave = Persistence.isCurrentSaveDeveloper;
+
     if (editTargetNotifier.value == EditTarget.initial) {
-      // Editing initial state: save current progress as patch, reload pure initial
-      await Persistence.writeSavePatch(world);
+      // Save gameplay progress before switching to initial (skip for developer saves)
+      if (!isDeveloperSave) {
+        await Persistence.writeSavePatch(world);
+      }
+      // Load pure initial state for editing
       world.loadFrom(Persistence.initialState);
     } else {
-      // Editing save state: save patch to preserve progress, keep current state
-      await Persistence.writeSavePatch(world);
-      // World already contains initial + patch, so no reload needed
+      if (isDeveloperSave) {
+        // Developer save: discard gameplay changes, reload initial + patch from disk
+        var clean = await Persistence.loadSaveWithPatch(savePatchPath);
+        if (clean != null) {
+          world.loadFrom(clean.toMap());
+        }
+      } else {
+        // Player save: persist gameplay progress, keep current state
+        await Persistence.writeSavePatch(world);
+      }
     }
 
     // Clear selections since we may have reloaded the world
@@ -140,7 +152,7 @@ class EditorModeManager {
   /// Finds the Player entity and restores selection, observer, and view to it.
   void _restorePlayerControl() {
     final playerEntity = world.entities().firstWhereOrNull(
-          (e) => e.has<Player>(),
+          (e) => e.has<Player>() && !e.has<IsTemplate>(),
         );
 
     if (playerEntity != null) {

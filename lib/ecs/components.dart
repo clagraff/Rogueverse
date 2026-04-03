@@ -1218,3 +1218,226 @@ class LootTable with LootTableMappable implements Component {
   @override
   String get componentType => "LootTable";
 }
+
+// ============================================================================
+// Crafting System Components
+// ============================================================================
+
+/// A single ingredient required by a recipe.
+@MappableClass()
+class RecipeIngredient with RecipeIngredientMappable {
+  /// Item template ID required.
+  final int templateId;
+
+  /// How many of this item are needed.
+  final int quantity;
+
+  RecipeIngredient({required this.templateId, this.quantity = 1});
+}
+
+/// A single output produced by a recipe.
+@MappableClass()
+class RecipeOutput with RecipeOutputMappable {
+  /// Item template ID produced.
+  final int templateId;
+
+  /// How many of this item are produced.
+  final int quantity;
+
+  RecipeOutput({required this.templateId, this.quantity = 1});
+}
+
+/// Defines a crafting recipe on a template entity.
+///
+/// Recipe entities should also have:
+/// - [Name] for display in recipe lists
+/// - [IsTemplate] to mark as template
+/// - Optionally [Description] for flavor text
+///
+/// The recipe's display icon can be derived from the primary output's Renderable.
+@MappableClass()
+class Recipe with RecipeMappable implements Component {
+  /// Required ingredients for this recipe.
+  final List<RecipeIngredient> inputs;
+
+  /// All items produced by this recipe.
+  final List<RecipeOutput> outputs;
+
+  /// Required station capabilities (e.g., {"smelting"}).
+  /// Empty set means inventory crafting (no station needed).
+  final Set<String> requiredCapabilities;
+
+  /// Crafting duration in game ticks. 1 = instant, >1 = time-based.
+  final int craftingTicks;
+
+  Recipe({
+    required this.inputs,
+    required this.outputs,
+    this.requiredCapabilities = const {},
+    this.craftingTicks = 1,
+  });
+
+  @override
+  String get componentType => "Recipe";
+}
+
+/// Defines a crafting station that can process recipes.
+///
+/// Stations have capabilities that determine which recipes they can craft.
+/// A station can craft a recipe if the station's capabilities are a superset
+/// of the recipe's requiredCapabilities.
+@MappableClass()
+class CraftingStation with CraftingStationMappable implements Component {
+  /// Capabilities this station provides (e.g., {"smelting", "heating"}).
+  final Set<String> capabilities;
+
+  /// Whether the initiator must be adjacent for processing to tick.
+  /// - false (e.g., furnace): processes every game tick autonomously
+  /// - true (e.g., cooking pot): only ticks when initiator is adjacent
+  final bool requiresPresence;
+
+  CraftingStation({
+    required this.capabilities,
+    this.requiresPresence = false,
+  });
+
+  @override
+  String get componentType => "CraftingStation";
+}
+
+/// Tracks in-progress time-based crafting.
+///
+/// Added to stations for station-based crafting, or to the crafter
+/// for time-based inventory crafting.
+@MappableClass()
+class Processing with ProcessingMappable implements Component {
+  /// Recipe template being crafted.
+  final int recipeTemplateId;
+
+  /// Remaining ticks until completion. 0 = ready to produce outputs.
+  final int ticksRemaining;
+
+  /// Entity ID of who started this craft (for notifications).
+  final int initiatorEntityId;
+
+  /// True if processing is done but outputs can't fit in inventory.
+  final bool awaitingSpace;
+
+  Processing({
+    required this.recipeTemplateId,
+    required this.ticksRemaining,
+    required this.initiatorEntityId,
+    this.awaitingSpace = false,
+  });
+
+  @override
+  String get componentType => "Processing";
+}
+
+/// Marks an entity as busy with an activity.
+///
+/// When present, other systems should skip processing intents
+/// for this entity (movement, attacks, etc.). Used for time-based
+/// inventory crafting.
+@MappableClass()
+class Busy with BusyMappable implements Component {
+  /// Description of the activity (e.g., "crafting").
+  final String activity;
+
+  Busy({required this.activity});
+
+  @override
+  String get componentType => "Busy";
+}
+
+/// Intent to craft directly from inventory (no station).
+@MappableClass()
+class CraftIntent extends IntentComponent with CraftIntentMappable {
+  /// Recipe template to craft.
+  final int recipeTemplateId;
+
+  CraftIntent({required this.recipeTemplateId});
+
+  @override
+  String get componentType => "CraftIntent";
+}
+
+/// Intent to craft using a station.
+@MappableClass()
+class StationCraftIntent extends IntentComponent with StationCraftIntentMappable {
+  /// Station entity to use for crafting.
+  final int stationEntityId;
+
+  /// Recipe template to craft.
+  final int recipeTemplateId;
+
+  StationCraftIntent({
+    required this.stationEntityId,
+    required this.recipeTemplateId,
+  });
+
+  @override
+  String get componentType => "StationCraftIntent";
+}
+
+/// Event fired when crafting starts.
+@MappableClass()
+class DidStartCrafting extends BeforeTick
+    with DidStartCraftingMappable
+    implements Component {
+  final int recipeTemplateId;
+  final bool isInstant;
+
+  DidStartCrafting({
+    required this.recipeTemplateId,
+    required this.isInstant,
+  }) : super(1);
+
+  @override
+  String get componentType => "DidStartCrafting";
+}
+
+/// Event fired when crafting completes.
+@MappableClass()
+class DidCompleteCrafting extends BeforeTick
+    with DidCompleteCraftingMappable
+    implements Component {
+  final int recipeTemplateId;
+  final List<int> producedEntityIds;
+
+  DidCompleteCrafting({
+    required this.recipeTemplateId,
+    required this.producedEntityIds,
+  }) : super(1);
+
+  @override
+  String get componentType => "DidCompleteCrafting";
+}
+
+/// Reasons why crafting might fail.
+@MappableEnum()
+enum CraftingFailureReason {
+  missingIngredients,
+  wrongStationType,
+  stationRequired,
+  inventoryFull,
+  stationBusy,
+  recipeNotFound,
+}
+
+/// Event fired when crafting fails.
+@MappableClass()
+class CraftingFailed extends BeforeTick
+    with CraftingFailedMappable
+    implements Component {
+  final int recipeTemplateId;
+  final CraftingFailureReason reason;
+
+  CraftingFailed({
+    required this.recipeTemplateId,
+    required this.reason,
+  }) : super(1);
+
+  @override
+  String get componentType => "CraftingFailed";
+}

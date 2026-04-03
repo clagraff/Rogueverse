@@ -38,6 +38,9 @@ class _NewGameDialogState extends State<NewGameDialog> {
     if (invalidChars.hasMatch(value)) {
       return 'Name contains invalid characters';
     }
+    if (value.startsWith('.')) {
+      return 'Name cannot start with a dot';
+    }
     if (value.length > 50) {
       return 'Name is too long (max 50 characters)';
     }

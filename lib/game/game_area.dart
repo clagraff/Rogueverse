@@ -15,6 +15,7 @@ import 'package:rogueverse/ecs/systems/death_system.dart';
 import 'package:rogueverse/game/components/camera_controller.dart';
 import 'package:rogueverse/game/components/dialog_control_handler.dart';
 import 'package:rogueverse/game/components/interaction_control_handler.dart';
+import 'package:rogueverse/game/components/inventory_control_handler.dart';
 import 'package:rogueverse/game/components/editor_mode_manager.dart';
 import 'package:rogueverse/game/mixins/scroll_callback.dart';
 import 'package:rogueverse/game/tick_scheduler.dart';
@@ -98,6 +99,10 @@ class GameArea extends FlameGame
   /// Set by GameScreen during initialization.
   DialogControlHandler? dialogHandler;
 
+  /// Reference to the inventory control handler for crafting UI access.
+  /// Set by ControlHandlerCoordinator during initialization.
+  InventoryControlHandler? inventoryHandler;
+
   /// Reference to the camera controller for notifying manual camera movements.
   /// Set by GameScreen during initialization.
   CameraController? cameraController;
@@ -162,6 +167,8 @@ class GameArea extends FlameGame
       PortalSystem(), // Execute portaling (after movement)
       VisionSystem(), // Calculate vision AFTER movement/portaling (sees new position/direction)
       InventorySystem(),
+      CraftingSystem(),
+      ProcessingSystem(),
       CombatSystem(),
       DeathSystem(), // Process deaths and spawn loot (after CombatSystem)
       OpenableSystem(),

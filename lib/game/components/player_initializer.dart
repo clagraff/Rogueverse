@@ -42,7 +42,7 @@ class PlayerInitializer extends Component {
     // and select the controlled entity instead (e.g., when piloting a ship). Could also
     // persist the "currently controlled entity ID" in the save file.
     final playerEntity = world.entities().firstWhereOrNull(
-          (e) => e.has<Player>(),
+          (e) => e.has<Player>() && !e.has<IsTemplate>(),
         );
 
     if (playerEntity != null) {

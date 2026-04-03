@@ -103,4 +103,15 @@ void registerAllComponents() {
   // Template components
   ComponentRegistry.register(IsTemplateMetadata());
   ComponentRegistry.register(FromTemplateMetadata());
+
+  // Crafting components
+  ComponentRegistry.register(RecipeMetadata());
+  ComponentRegistry.register(CraftingStationMetadata());
+  ComponentRegistry.register(ProcessingMetadata());
+  ComponentRegistry.register(BusyMetadata());
+  ComponentRegistry.register(CraftIntentMetadata());
+  ComponentRegistry.register(StationCraftIntentMetadata());
+  ComponentRegistry.register(DidStartCraftingMetadata());
+  ComponentRegistry.register(DidCompleteCraftingMetadata());
+  ComponentRegistry.register(CraftingFailedMetadata());
 }

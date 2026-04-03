@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:logging/logging.dart';
 
 import 'package:rogueverse/app/services/keybinding_service.dart';
-import 'package:rogueverse/ecs/components.dart' show Player, HasParent;
+import 'package:rogueverse/ecs/components.dart' show Player, HasParent, IsTemplate;
 import 'package:rogueverse/game/game_area.dart';
 
 /// A Flame component that toggles between gameplay and editing modes.
@@ -48,7 +48,7 @@ class GameModeToggle extends Component with KeyboardHandler {
   /// Finds the Player entity and restores selection, observer, and view to it.
   void _restorePlayerControl(GameArea game) {
     final playerEntity = game.currentWorld.entities().firstWhereOrNull(
-          (e) => e.has<Player>(),
+          (e) => e.has<Player>() && !e.has<IsTemplate>(),
         );
 
     if (playerEntity != null) {

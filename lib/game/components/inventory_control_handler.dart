@@ -62,7 +62,7 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
   }
 
   /// Shows the character screen overlay for the given entity.
-  void _showInventoryOverlay(Entity entity, FlameGame game) {
+  void _showInventoryOverlay(Entity entity, FlameGame game, {CharacterTab? initialTab, Entity? station}) {
     final sourceContext = game.buildContext!;
     final itemIds = entity.get<Inventory>()?.items ?? [];
     final items = itemIds.map((id) => world.getEntity(id)).toList();
@@ -71,7 +71,11 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
         game: game,
         sourceContext: sourceContext,
         child: CharacterScreenOverlay(
+          world: world,
+          player: entity,
           inventory: items,
+          initialTab: initialTab,
+          station: station,
           onClose: () {
             // Call the toggle function to actually close the overlay,
             // then clear the reference.
@@ -79,5 +83,16 @@ class InventoryControlHandler extends PositionComponent with KeyboardHandler {
             _toggleInventoryOverlay = null;
           },
         ));
+  }
+
+  /// Shows the character screen overlay on the crafting tab.
+  /// Used by the "Craft" self-action and station "Use" interactions.
+  void showCraftingTab(Entity entity, FlameGame game, {Entity? station}) {
+    if (_toggleInventoryOverlay != null) {
+      // Close existing overlay first
+      _toggleInventoryOverlay!();
+      _toggleInventoryOverlay = null;
+    }
+    _showInventoryOverlay(entity, game, initialTab: CharacterTab.crafting, station: station);
   }
 }

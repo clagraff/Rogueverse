@@ -46,6 +46,18 @@ class InteractionRegistry {
       createIntent: (e) => PickupIntent(e.id),
     ),
 
+    // Crafting station interaction
+    // Note: This is handled specially in InteractionControlHandler to open the station UI
+    InteractionDefinition(
+      actionName: 'Use',
+      actionVerb: 'Using',
+      genericLabel: 'Station',
+      range: 1, // Adjacent only
+      isAvailable: (e) => e.has<CraftingStation>(),
+      // Placeholder intent - actual handling opens station UI
+      createIntent: (e) => WaitIntent(),
+    ),
+
     // Future interactions (commented out for initial implementation):
     // InteractionDefinition(
     //   actionName: 'Take control',
@@ -60,6 +72,17 @@ class InteractionRegistry {
   /// Self-actions that don't target another entity.
   /// These are always available and shown in the menu.
   static final List<InteractionDefinition> selfInteractions = [
+    // Crafting self-action (opens crafting tab)
+    // Note: This is handled specially in InteractionControlHandler to open the crafting UI
+    InteractionDefinition(
+      actionName: 'Craft',
+      actionVerb: 'Crafting',
+      isSelfAction: true,
+      sortOrder: 50,
+      isAvailable: (e) => e.has<Inventory>(),
+      // Placeholder intent - actual handling opens crafting UI
+      createIntent: (_) => WaitIntent(),
+    ),
     InteractionDefinition(
       actionName: 'Wait',
       actionVerb: 'Waiting',

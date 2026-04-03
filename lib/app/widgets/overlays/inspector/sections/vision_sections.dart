@@ -88,6 +88,19 @@ class VisibleEntitiesMetadata extends ComponentMetadata {
                   style: const TextStyle(fontSize: 12)),
               Text('Visible Tiles: ${visible.visibleTiles.length}',
                   style: const TextStyle(fontSize: 11, color: Colors.grey)),
+              if (visible.entityIds.isNotEmpty || visible.visibleTiles.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.clear_all, size: 14),
+                    label: const Text('Clear', style: TextStyle(fontSize: 11)),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    onPressed: () => entity.upsert(VisibleEntities()),
+                  ),
+                ),
             ],
           ),
         );
@@ -130,6 +143,19 @@ class VisionMemoryMetadata extends ComponentMetadata {
                       '  Entity ${e.key} at (${e.value.x}, ${e.value.y})',
                       style: const TextStyle(fontSize: 11, color: Colors.grey),
                     )),
+              if (memory.lastSeenPositions.isNotEmpty)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    icon: const Icon(Icons.clear_all, size: 14),
+                    label: const Text('Clear', style: TextStyle(fontSize: 11)),
+                    style: TextButton.styleFrom(
+                      visualDensity: VisualDensity.compact,
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    onPressed: () => entity.upsert(VisionMemory()),
+                  ),
+                ),
             ],
           ),
         );

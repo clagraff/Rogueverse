@@ -4,13 +4,17 @@ import 'package:flutter/services.dart';
 import 'package:rogueverse/app/services/keybinding_service.dart';
 import 'package:rogueverse/app/widgets/keyboard/auto_focus_keyboard_listener.dart';
 import 'package:rogueverse/app/ui_constants.dart';
+import 'package:rogueverse/app/widgets/overlays/character_screen/crafting_tab.dart';
 import 'package:rogueverse/app/widgets/overlays/character_screen/inventory_tab.dart';
 import 'package:rogueverse/app/widgets/overlays/character_screen/settings_tab.dart';
+import 'package:rogueverse/ecs/components.dart';
 import 'package:rogueverse/ecs/entity.dart';
+import 'package:rogueverse/ecs/world.dart';
 
 /// Character screen tabs.
 enum CharacterTab {
   inventory,
+  crafting,
   settings,
 }
 
@@ -22,16 +26,32 @@ class CharacterScreenOverlay extends StatefulWidget {
   /// The overlay name used to register and toggle this overlay.
   static const String overlayName = 'characterScreen';
 
+  /// The game world.
+  final World world;
+
+  /// The player entity.
+  final Entity player;
+
   /// The player's inventory items.
   final List<Entity> inventory;
 
   /// Callback when the overlay is closed.
   final VoidCallback? onClose;
 
+  /// Initial tab to display.
+  final CharacterTab? initialTab;
+
+  /// Optional crafting station entity for station crafting.
+  final Entity? station;
+
   const CharacterScreenOverlay({
     super.key,
+    required this.world,
+    required this.player,
     required this.inventory,
     this.onClose,
+    this.initialTab,
+    this.station,
   });
 
   @override
@@ -41,7 +61,13 @@ class CharacterScreenOverlay extends StatefulWidget {
 class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
   final _keybindings = KeyBindingService.instance;
   final _focusNode = FocusNode();
-  CharacterTab _selectedTab = CharacterTab.inventory;
+  late CharacterTab _selectedTab;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedTab = widget.initialTab ?? CharacterTab.inventory;
+  }
 
   @override
   void dispose() {
@@ -178,6 +204,13 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
           const SizedBox(width: kSpacingM),
           _buildTabButton(
             colorScheme,
+            tab: CharacterTab.crafting,
+            icon: Icons.construction_outlined,
+            label: 'Crafting',
+          ),
+          const SizedBox(width: kSpacingM),
+          _buildTabButton(
+            colorScheme,
             tab: CharacterTab.settings,
             icon: Icons.settings_outlined,
             label: 'Settings',
@@ -238,10 +271,23 @@ class _CharacterScreenOverlayState extends State<CharacterScreenOverlay> {
     );
   }
 
+  /// Resolves the current inventory from the player entity.
+  List<Entity> _resolveInventory() {
+    final itemIds = widget.player.get<Inventory>()?.items ?? [];
+    return itemIds.map((id) => widget.world.getEntity(id)).toList();
+  }
+
   Widget _buildContent() {
     switch (_selectedTab) {
       case CharacterTab.inventory:
-        return InventoryTabContent(inventory: widget.inventory);
+        return InventoryTabContent(inventory: _resolveInventory());
+      case CharacterTab.crafting:
+        return CraftingTabContent(
+          world: widget.world,
+          player: widget.player,
+          parentFocusNode: _focusNode,
+          station: widget.station,
+        );
       case CharacterTab.settings:
         return SettingsTabContent(parentFocusNode: _focusNode);
     }

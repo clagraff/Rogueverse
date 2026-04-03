@@ -240,6 +240,26 @@ class InteractionControlHandler extends PositionComponent
       return;
     }
 
+    // Special handling for Craft self-action - opens crafting tab
+    if (interaction.actionName == 'Craft' && interaction.isSelfAction) {
+      dismissMenu();
+      final game = findGame() as GameArea?;
+      if (game?.inventoryHandler != null) {
+        game!.inventoryHandler!.showCraftingTab(entity, game);
+      }
+      return;
+    }
+
+    // Special handling for Use (CraftingStation) - opens station crafting tab
+    if (interaction.actionName == 'Use' && target != null) {
+      dismissMenu();
+      final game = findGame() as GameArea?;
+      if (game?.inventoryHandler != null) {
+        game!.inventoryHandler!.showCraftingTab(entity, game, station: target);
+      }
+      return;
+    }
+
     // Check if this is a memory-based interaction requiring a macro
     if (target != null && interactable?.source == EntitySource.memory) {
       dismissMenu();

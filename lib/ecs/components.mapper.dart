@@ -147,6 +147,69 @@ extension PortalFailureReasonMapperExtension on PortalFailureReason {
   }
 }
 
+class CraftingFailureReasonMapper extends EnumMapper<CraftingFailureReason> {
+  CraftingFailureReasonMapper._();
+
+  static CraftingFailureReasonMapper? _instance;
+  static CraftingFailureReasonMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CraftingFailureReasonMapper._());
+    }
+    return _instance!;
+  }
+
+  static CraftingFailureReason fromValue(dynamic value) {
+    ensureInitialized();
+    return MapperContainer.globals.fromValue(value);
+  }
+
+  @override
+  CraftingFailureReason decode(dynamic value) {
+    switch (value) {
+      case r'missingIngredients':
+        return CraftingFailureReason.missingIngredients;
+      case r'wrongStationType':
+        return CraftingFailureReason.wrongStationType;
+      case r'stationRequired':
+        return CraftingFailureReason.stationRequired;
+      case r'inventoryFull':
+        return CraftingFailureReason.inventoryFull;
+      case r'stationBusy':
+        return CraftingFailureReason.stationBusy;
+      case r'recipeNotFound':
+        return CraftingFailureReason.recipeNotFound;
+      default:
+        throw MapperException.unknownEnumValue(value);
+    }
+  }
+
+  @override
+  dynamic encode(CraftingFailureReason self) {
+    switch (self) {
+      case CraftingFailureReason.missingIngredients:
+        return r'missingIngredients';
+      case CraftingFailureReason.wrongStationType:
+        return r'wrongStationType';
+      case CraftingFailureReason.stationRequired:
+        return r'stationRequired';
+      case CraftingFailureReason.inventoryFull:
+        return r'inventoryFull';
+      case CraftingFailureReason.stationBusy:
+        return r'stationBusy';
+      case CraftingFailureReason.recipeNotFound:
+        return r'recipeNotFound';
+    }
+  }
+}
+
+extension CraftingFailureReasonMapperExtension on CraftingFailureReason {
+  String toValue() {
+    CraftingFailureReasonMapper.ensureInitialized();
+    return MapperContainer.globals.toValue<CraftingFailureReason>(this)
+        as String;
+  }
+}
+
 class ComponentMapper extends ClassMapperBase<Component> {
   ComponentMapper._();
 
@@ -206,6 +269,13 @@ class ComponentMapper extends ClassMapperBase<Component> {
       ItemMapper.ensureInitialized();
       DescriptionMapper.ensureInitialized();
       LootTableMapper.ensureInitialized();
+      RecipeMapper.ensureInitialized();
+      CraftingStationMapper.ensureInitialized();
+      ProcessingMapper.ensureInitialized();
+      BusyMapper.ensureInitialized();
+      DidStartCraftingMapper.ensureInitialized();
+      DidCompleteCraftingMapper.ensureInitialized();
+      CraftingFailedMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -523,6 +593,9 @@ class BeforeTickMapper extends SubClassMapperBase<BeforeTick> {
       FailedToPortalMapper.ensureInitialized();
       DidOpenMapper.ensureInitialized();
       DidCloseMapper.ensureInitialized();
+      DidStartCraftingMapper.ensureInitialized();
+      DidCompleteCraftingMapper.ensureInitialized();
+      CraftingFailedMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -786,6 +859,8 @@ class IntentComponentMapper extends SubClassMapperBase<IntentComponent> {
       TalkIntentMapper.ensureInitialized();
       DialogAdvanceIntentMapper.ensureInitialized();
       DialogExitIntentMapper.ensureInitialized();
+      CraftIntentMapper.ensureInitialized();
+      StationCraftIntentMapper.ensureInitialized();
     }
     return _instance!;
   }
@@ -9773,5 +9848,1649 @@ class _LootTableCopyWithImpl<$R, $Out>
   LootTableCopyWith<$R2, LootTable, $Out2> $chain<$R2, $Out2>(
     Then<$Out2, $R2> t,
   ) => _LootTableCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class RecipeIngredientMapper extends ClassMapperBase<RecipeIngredient> {
+  RecipeIngredientMapper._();
+
+  static RecipeIngredientMapper? _instance;
+  static RecipeIngredientMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = RecipeIngredientMapper._());
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'RecipeIngredient';
+
+  static int _$templateId(RecipeIngredient v) => v.templateId;
+  static const Field<RecipeIngredient, int> _f$templateId = Field(
+    'templateId',
+    _$templateId,
+  );
+  static int _$quantity(RecipeIngredient v) => v.quantity;
+  static const Field<RecipeIngredient, int> _f$quantity = Field(
+    'quantity',
+    _$quantity,
+    opt: true,
+    def: 1,
+  );
+
+  @override
+  final MappableFields<RecipeIngredient> fields = const {
+    #templateId: _f$templateId,
+    #quantity: _f$quantity,
+  };
+
+  static RecipeIngredient _instantiate(DecodingData data) {
+    return RecipeIngredient(
+      templateId: data.dec(_f$templateId),
+      quantity: data.dec(_f$quantity),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static RecipeIngredient fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<RecipeIngredient>(map);
+  }
+
+  static RecipeIngredient fromJson(String json) {
+    return ensureInitialized().decodeJson<RecipeIngredient>(json);
+  }
+}
+
+mixin RecipeIngredientMappable {
+  String toJson() {
+    return RecipeIngredientMapper.ensureInitialized()
+        .encodeJson<RecipeIngredient>(this as RecipeIngredient);
+  }
+
+  Map<String, dynamic> toMap() {
+    return RecipeIngredientMapper.ensureInitialized()
+        .encodeMap<RecipeIngredient>(this as RecipeIngredient);
+  }
+
+  RecipeIngredientCopyWith<RecipeIngredient, RecipeIngredient, RecipeIngredient>
+  get copyWith =>
+      _RecipeIngredientCopyWithImpl<RecipeIngredient, RecipeIngredient>(
+        this as RecipeIngredient,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return RecipeIngredientMapper.ensureInitialized().stringifyValue(
+      this as RecipeIngredient,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return RecipeIngredientMapper.ensureInitialized().equalsValue(
+      this as RecipeIngredient,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return RecipeIngredientMapper.ensureInitialized().hashValue(
+      this as RecipeIngredient,
+    );
+  }
+}
+
+extension RecipeIngredientValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, RecipeIngredient, $Out> {
+  RecipeIngredientCopyWith<$R, RecipeIngredient, $Out>
+  get $asRecipeIngredient =>
+      $base.as((v, t, t2) => _RecipeIngredientCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class RecipeIngredientCopyWith<$R, $In extends RecipeIngredient, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  $R call({int? templateId, int? quantity});
+  RecipeIngredientCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _RecipeIngredientCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, RecipeIngredient, $Out>
+    implements RecipeIngredientCopyWith<$R, RecipeIngredient, $Out> {
+  _RecipeIngredientCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<RecipeIngredient> $mapper =
+      RecipeIngredientMapper.ensureInitialized();
+  @override
+  $R call({int? templateId, int? quantity}) => $apply(
+    FieldCopyWithData({
+      if (templateId != null) #templateId: templateId,
+      if (quantity != null) #quantity: quantity,
+    }),
+  );
+  @override
+  RecipeIngredient $make(CopyWithData data) => RecipeIngredient(
+    templateId: data.get(#templateId, or: $value.templateId),
+    quantity: data.get(#quantity, or: $value.quantity),
+  );
+
+  @override
+  RecipeIngredientCopyWith<$R2, RecipeIngredient, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _RecipeIngredientCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class RecipeOutputMapper extends ClassMapperBase<RecipeOutput> {
+  RecipeOutputMapper._();
+
+  static RecipeOutputMapper? _instance;
+  static RecipeOutputMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = RecipeOutputMapper._());
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'RecipeOutput';
+
+  static int _$templateId(RecipeOutput v) => v.templateId;
+  static const Field<RecipeOutput, int> _f$templateId = Field(
+    'templateId',
+    _$templateId,
+  );
+  static int _$quantity(RecipeOutput v) => v.quantity;
+  static const Field<RecipeOutput, int> _f$quantity = Field(
+    'quantity',
+    _$quantity,
+    opt: true,
+    def: 1,
+  );
+
+  @override
+  final MappableFields<RecipeOutput> fields = const {
+    #templateId: _f$templateId,
+    #quantity: _f$quantity,
+  };
+
+  static RecipeOutput _instantiate(DecodingData data) {
+    return RecipeOutput(
+      templateId: data.dec(_f$templateId),
+      quantity: data.dec(_f$quantity),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static RecipeOutput fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<RecipeOutput>(map);
+  }
+
+  static RecipeOutput fromJson(String json) {
+    return ensureInitialized().decodeJson<RecipeOutput>(json);
+  }
+}
+
+mixin RecipeOutputMappable {
+  String toJson() {
+    return RecipeOutputMapper.ensureInitialized().encodeJson<RecipeOutput>(
+      this as RecipeOutput,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return RecipeOutputMapper.ensureInitialized().encodeMap<RecipeOutput>(
+      this as RecipeOutput,
+    );
+  }
+
+  RecipeOutputCopyWith<RecipeOutput, RecipeOutput, RecipeOutput> get copyWith =>
+      _RecipeOutputCopyWithImpl<RecipeOutput, RecipeOutput>(
+        this as RecipeOutput,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return RecipeOutputMapper.ensureInitialized().stringifyValue(
+      this as RecipeOutput,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return RecipeOutputMapper.ensureInitialized().equalsValue(
+      this as RecipeOutput,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return RecipeOutputMapper.ensureInitialized().hashValue(
+      this as RecipeOutput,
+    );
+  }
+}
+
+extension RecipeOutputValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, RecipeOutput, $Out> {
+  RecipeOutputCopyWith<$R, RecipeOutput, $Out> get $asRecipeOutput =>
+      $base.as((v, t, t2) => _RecipeOutputCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class RecipeOutputCopyWith<$R, $In extends RecipeOutput, $Out>
+    implements ClassCopyWith<$R, $In, $Out> {
+  $R call({int? templateId, int? quantity});
+  RecipeOutputCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _RecipeOutputCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, RecipeOutput, $Out>
+    implements RecipeOutputCopyWith<$R, RecipeOutput, $Out> {
+  _RecipeOutputCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<RecipeOutput> $mapper =
+      RecipeOutputMapper.ensureInitialized();
+  @override
+  $R call({int? templateId, int? quantity}) => $apply(
+    FieldCopyWithData({
+      if (templateId != null) #templateId: templateId,
+      if (quantity != null) #quantity: quantity,
+    }),
+  );
+  @override
+  RecipeOutput $make(CopyWithData data) => RecipeOutput(
+    templateId: data.get(#templateId, or: $value.templateId),
+    quantity: data.get(#quantity, or: $value.quantity),
+  );
+
+  @override
+  RecipeOutputCopyWith<$R2, RecipeOutput, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _RecipeOutputCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class RecipeMapper extends SubClassMapperBase<Recipe> {
+  RecipeMapper._();
+
+  static RecipeMapper? _instance;
+  static RecipeMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = RecipeMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+      RecipeIngredientMapper.ensureInitialized();
+      RecipeOutputMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Recipe';
+
+  static List<RecipeIngredient> _$inputs(Recipe v) => v.inputs;
+  static const Field<Recipe, List<RecipeIngredient>> _f$inputs = Field(
+    'inputs',
+    _$inputs,
+  );
+  static List<RecipeOutput> _$outputs(Recipe v) => v.outputs;
+  static const Field<Recipe, List<RecipeOutput>> _f$outputs = Field(
+    'outputs',
+    _$outputs,
+  );
+  static Set<String> _$requiredCapabilities(Recipe v) => v.requiredCapabilities;
+  static const Field<Recipe, Set<String>> _f$requiredCapabilities = Field(
+    'requiredCapabilities',
+    _$requiredCapabilities,
+    opt: true,
+    def: const {},
+  );
+  static int _$craftingTicks(Recipe v) => v.craftingTicks;
+  static const Field<Recipe, int> _f$craftingTicks = Field(
+    'craftingTicks',
+    _$craftingTicks,
+    opt: true,
+    def: 1,
+  );
+
+  @override
+  final MappableFields<Recipe> fields = const {
+    #inputs: _f$inputs,
+    #outputs: _f$outputs,
+    #requiredCapabilities: _f$requiredCapabilities,
+    #craftingTicks: _f$craftingTicks,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Recipe';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Recipe _instantiate(DecodingData data) {
+    return Recipe(
+      inputs: data.dec(_f$inputs),
+      outputs: data.dec(_f$outputs),
+      requiredCapabilities: data.dec(_f$requiredCapabilities),
+      craftingTicks: data.dec(_f$craftingTicks),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Recipe fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Recipe>(map);
+  }
+
+  static Recipe fromJson(String json) {
+    return ensureInitialized().decodeJson<Recipe>(json);
+  }
+}
+
+mixin RecipeMappable {
+  String toJson() {
+    return RecipeMapper.ensureInitialized().encodeJson<Recipe>(this as Recipe);
+  }
+
+  Map<String, dynamic> toMap() {
+    return RecipeMapper.ensureInitialized().encodeMap<Recipe>(this as Recipe);
+  }
+
+  RecipeCopyWith<Recipe, Recipe, Recipe> get copyWith =>
+      _RecipeCopyWithImpl<Recipe, Recipe>(this as Recipe, $identity, $identity);
+  @override
+  String toString() {
+    return RecipeMapper.ensureInitialized().stringifyValue(this as Recipe);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return RecipeMapper.ensureInitialized().equalsValue(this as Recipe, other);
+  }
+
+  @override
+  int get hashCode {
+    return RecipeMapper.ensureInitialized().hashValue(this as Recipe);
+  }
+}
+
+extension RecipeValueCopy<$R, $Out> on ObjectCopyWith<$R, Recipe, $Out> {
+  RecipeCopyWith<$R, Recipe, $Out> get $asRecipe =>
+      $base.as((v, t, t2) => _RecipeCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class RecipeCopyWith<$R, $In extends Recipe, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  ListCopyWith<
+    $R,
+    RecipeIngredient,
+    RecipeIngredientCopyWith<$R, RecipeIngredient, RecipeIngredient>
+  >
+  get inputs;
+  ListCopyWith<
+    $R,
+    RecipeOutput,
+    RecipeOutputCopyWith<$R, RecipeOutput, RecipeOutput>
+  >
+  get outputs;
+  @override
+  $R call({
+    List<RecipeIngredient>? inputs,
+    List<RecipeOutput>? outputs,
+    Set<String>? requiredCapabilities,
+    int? craftingTicks,
+  });
+  RecipeCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _RecipeCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Recipe, $Out>
+    implements RecipeCopyWith<$R, Recipe, $Out> {
+  _RecipeCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Recipe> $mapper = RecipeMapper.ensureInitialized();
+  @override
+  ListCopyWith<
+    $R,
+    RecipeIngredient,
+    RecipeIngredientCopyWith<$R, RecipeIngredient, RecipeIngredient>
+  >
+  get inputs => ListCopyWith(
+    $value.inputs,
+    (v, t) => v.copyWith.$chain(t),
+    (v) => call(inputs: v),
+  );
+  @override
+  ListCopyWith<
+    $R,
+    RecipeOutput,
+    RecipeOutputCopyWith<$R, RecipeOutput, RecipeOutput>
+  >
+  get outputs => ListCopyWith(
+    $value.outputs,
+    (v, t) => v.copyWith.$chain(t),
+    (v) => call(outputs: v),
+  );
+  @override
+  $R call({
+    List<RecipeIngredient>? inputs,
+    List<RecipeOutput>? outputs,
+    Set<String>? requiredCapabilities,
+    int? craftingTicks,
+  }) => $apply(
+    FieldCopyWithData({
+      if (inputs != null) #inputs: inputs,
+      if (outputs != null) #outputs: outputs,
+      if (requiredCapabilities != null)
+        #requiredCapabilities: requiredCapabilities,
+      if (craftingTicks != null) #craftingTicks: craftingTicks,
+    }),
+  );
+  @override
+  Recipe $make(CopyWithData data) => Recipe(
+    inputs: data.get(#inputs, or: $value.inputs),
+    outputs: data.get(#outputs, or: $value.outputs),
+    requiredCapabilities: data.get(
+      #requiredCapabilities,
+      or: $value.requiredCapabilities,
+    ),
+    craftingTicks: data.get(#craftingTicks, or: $value.craftingTicks),
+  );
+
+  @override
+  RecipeCopyWith<$R2, Recipe, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _RecipeCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class CraftingStationMapper extends SubClassMapperBase<CraftingStation> {
+  CraftingStationMapper._();
+
+  static CraftingStationMapper? _instance;
+  static CraftingStationMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CraftingStationMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'CraftingStation';
+
+  static Set<String> _$capabilities(CraftingStation v) => v.capabilities;
+  static const Field<CraftingStation, Set<String>> _f$capabilities = Field(
+    'capabilities',
+    _$capabilities,
+  );
+  static bool _$requiresPresence(CraftingStation v) => v.requiresPresence;
+  static const Field<CraftingStation, bool> _f$requiresPresence = Field(
+    'requiresPresence',
+    _$requiresPresence,
+    opt: true,
+    def: false,
+  );
+
+  @override
+  final MappableFields<CraftingStation> fields = const {
+    #capabilities: _f$capabilities,
+    #requiresPresence: _f$requiresPresence,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'CraftingStation';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static CraftingStation _instantiate(DecodingData data) {
+    return CraftingStation(
+      capabilities: data.dec(_f$capabilities),
+      requiresPresence: data.dec(_f$requiresPresence),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static CraftingStation fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<CraftingStation>(map);
+  }
+
+  static CraftingStation fromJson(String json) {
+    return ensureInitialized().decodeJson<CraftingStation>(json);
+  }
+}
+
+mixin CraftingStationMappable {
+  String toJson() {
+    return CraftingStationMapper.ensureInitialized()
+        .encodeJson<CraftingStation>(this as CraftingStation);
+  }
+
+  Map<String, dynamic> toMap() {
+    return CraftingStationMapper.ensureInitialized().encodeMap<CraftingStation>(
+      this as CraftingStation,
+    );
+  }
+
+  CraftingStationCopyWith<CraftingStation, CraftingStation, CraftingStation>
+  get copyWith =>
+      _CraftingStationCopyWithImpl<CraftingStation, CraftingStation>(
+        this as CraftingStation,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return CraftingStationMapper.ensureInitialized().stringifyValue(
+      this as CraftingStation,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return CraftingStationMapper.ensureInitialized().equalsValue(
+      this as CraftingStation,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return CraftingStationMapper.ensureInitialized().hashValue(
+      this as CraftingStation,
+    );
+  }
+}
+
+extension CraftingStationValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, CraftingStation, $Out> {
+  CraftingStationCopyWith<$R, CraftingStation, $Out> get $asCraftingStation =>
+      $base.as((v, t, t2) => _CraftingStationCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class CraftingStationCopyWith<$R, $In extends CraftingStation, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({Set<String>? capabilities, bool? requiresPresence});
+  CraftingStationCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _CraftingStationCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, CraftingStation, $Out>
+    implements CraftingStationCopyWith<$R, CraftingStation, $Out> {
+  _CraftingStationCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<CraftingStation> $mapper =
+      CraftingStationMapper.ensureInitialized();
+  @override
+  $R call({Set<String>? capabilities, bool? requiresPresence}) => $apply(
+    FieldCopyWithData({
+      if (capabilities != null) #capabilities: capabilities,
+      if (requiresPresence != null) #requiresPresence: requiresPresence,
+    }),
+  );
+  @override
+  CraftingStation $make(CopyWithData data) => CraftingStation(
+    capabilities: data.get(#capabilities, or: $value.capabilities),
+    requiresPresence: data.get(#requiresPresence, or: $value.requiresPresence),
+  );
+
+  @override
+  CraftingStationCopyWith<$R2, CraftingStation, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _CraftingStationCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class ProcessingMapper extends SubClassMapperBase<Processing> {
+  ProcessingMapper._();
+
+  static ProcessingMapper? _instance;
+  static ProcessingMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = ProcessingMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Processing';
+
+  static int _$recipeTemplateId(Processing v) => v.recipeTemplateId;
+  static const Field<Processing, int> _f$recipeTemplateId = Field(
+    'recipeTemplateId',
+    _$recipeTemplateId,
+  );
+  static int _$ticksRemaining(Processing v) => v.ticksRemaining;
+  static const Field<Processing, int> _f$ticksRemaining = Field(
+    'ticksRemaining',
+    _$ticksRemaining,
+  );
+  static int _$initiatorEntityId(Processing v) => v.initiatorEntityId;
+  static const Field<Processing, int> _f$initiatorEntityId = Field(
+    'initiatorEntityId',
+    _$initiatorEntityId,
+  );
+  static bool _$awaitingSpace(Processing v) => v.awaitingSpace;
+  static const Field<Processing, bool> _f$awaitingSpace = Field(
+    'awaitingSpace',
+    _$awaitingSpace,
+    opt: true,
+    def: false,
+  );
+
+  @override
+  final MappableFields<Processing> fields = const {
+    #recipeTemplateId: _f$recipeTemplateId,
+    #ticksRemaining: _f$ticksRemaining,
+    #initiatorEntityId: _f$initiatorEntityId,
+    #awaitingSpace: _f$awaitingSpace,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Processing';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Processing _instantiate(DecodingData data) {
+    return Processing(
+      recipeTemplateId: data.dec(_f$recipeTemplateId),
+      ticksRemaining: data.dec(_f$ticksRemaining),
+      initiatorEntityId: data.dec(_f$initiatorEntityId),
+      awaitingSpace: data.dec(_f$awaitingSpace),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Processing fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Processing>(map);
+  }
+
+  static Processing fromJson(String json) {
+    return ensureInitialized().decodeJson<Processing>(json);
+  }
+}
+
+mixin ProcessingMappable {
+  String toJson() {
+    return ProcessingMapper.ensureInitialized().encodeJson<Processing>(
+      this as Processing,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return ProcessingMapper.ensureInitialized().encodeMap<Processing>(
+      this as Processing,
+    );
+  }
+
+  ProcessingCopyWith<Processing, Processing, Processing> get copyWith =>
+      _ProcessingCopyWithImpl<Processing, Processing>(
+        this as Processing,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return ProcessingMapper.ensureInitialized().stringifyValue(
+      this as Processing,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return ProcessingMapper.ensureInitialized().equalsValue(
+      this as Processing,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return ProcessingMapper.ensureInitialized().hashValue(this as Processing);
+  }
+}
+
+extension ProcessingValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, Processing, $Out> {
+  ProcessingCopyWith<$R, Processing, $Out> get $asProcessing =>
+      $base.as((v, t, t2) => _ProcessingCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class ProcessingCopyWith<$R, $In extends Processing, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({
+    int? recipeTemplateId,
+    int? ticksRemaining,
+    int? initiatorEntityId,
+    bool? awaitingSpace,
+  });
+  ProcessingCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _ProcessingCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, Processing, $Out>
+    implements ProcessingCopyWith<$R, Processing, $Out> {
+  _ProcessingCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Processing> $mapper =
+      ProcessingMapper.ensureInitialized();
+  @override
+  $R call({
+    int? recipeTemplateId,
+    int? ticksRemaining,
+    int? initiatorEntityId,
+    bool? awaitingSpace,
+  }) => $apply(
+    FieldCopyWithData({
+      if (recipeTemplateId != null) #recipeTemplateId: recipeTemplateId,
+      if (ticksRemaining != null) #ticksRemaining: ticksRemaining,
+      if (initiatorEntityId != null) #initiatorEntityId: initiatorEntityId,
+      if (awaitingSpace != null) #awaitingSpace: awaitingSpace,
+    }),
+  );
+  @override
+  Processing $make(CopyWithData data) => Processing(
+    recipeTemplateId: data.get(#recipeTemplateId, or: $value.recipeTemplateId),
+    ticksRemaining: data.get(#ticksRemaining, or: $value.ticksRemaining),
+    initiatorEntityId: data.get(
+      #initiatorEntityId,
+      or: $value.initiatorEntityId,
+    ),
+    awaitingSpace: data.get(#awaitingSpace, or: $value.awaitingSpace),
+  );
+
+  @override
+  ProcessingCopyWith<$R2, Processing, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _ProcessingCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class BusyMapper extends SubClassMapperBase<Busy> {
+  BusyMapper._();
+
+  static BusyMapper? _instance;
+  static BusyMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = BusyMapper._());
+      ComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'Busy';
+
+  static String _$activity(Busy v) => v.activity;
+  static const Field<Busy, String> _f$activity = Field('activity', _$activity);
+
+  @override
+  final MappableFields<Busy> fields = const {#activity: _f$activity};
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'Busy';
+  @override
+  late final ClassMapperBase superMapper = ComponentMapper.ensureInitialized();
+
+  static Busy _instantiate(DecodingData data) {
+    return Busy(activity: data.dec(_f$activity));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static Busy fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<Busy>(map);
+  }
+
+  static Busy fromJson(String json) {
+    return ensureInitialized().decodeJson<Busy>(json);
+  }
+}
+
+mixin BusyMappable {
+  String toJson() {
+    return BusyMapper.ensureInitialized().encodeJson<Busy>(this as Busy);
+  }
+
+  Map<String, dynamic> toMap() {
+    return BusyMapper.ensureInitialized().encodeMap<Busy>(this as Busy);
+  }
+
+  BusyCopyWith<Busy, Busy, Busy> get copyWith =>
+      _BusyCopyWithImpl<Busy, Busy>(this as Busy, $identity, $identity);
+  @override
+  String toString() {
+    return BusyMapper.ensureInitialized().stringifyValue(this as Busy);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return BusyMapper.ensureInitialized().equalsValue(this as Busy, other);
+  }
+
+  @override
+  int get hashCode {
+    return BusyMapper.ensureInitialized().hashValue(this as Busy);
+  }
+}
+
+extension BusyValueCopy<$R, $Out> on ObjectCopyWith<$R, Busy, $Out> {
+  BusyCopyWith<$R, Busy, $Out> get $asBusy =>
+      $base.as((v, t, t2) => _BusyCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class BusyCopyWith<$R, $In extends Busy, $Out>
+    implements ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({String? activity});
+  BusyCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _BusyCopyWithImpl<$R, $Out> extends ClassCopyWithBase<$R, Busy, $Out>
+    implements BusyCopyWith<$R, Busy, $Out> {
+  _BusyCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<Busy> $mapper = BusyMapper.ensureInitialized();
+  @override
+  $R call({String? activity}) =>
+      $apply(FieldCopyWithData({if (activity != null) #activity: activity}));
+  @override
+  Busy $make(CopyWithData data) =>
+      Busy(activity: data.get(#activity, or: $value.activity));
+
+  @override
+  BusyCopyWith<$R2, Busy, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _BusyCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class CraftIntentMapper extends SubClassMapperBase<CraftIntent> {
+  CraftIntentMapper._();
+
+  static CraftIntentMapper? _instance;
+  static CraftIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CraftIntentMapper._());
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'CraftIntent';
+
+  static int _$recipeTemplateId(CraftIntent v) => v.recipeTemplateId;
+  static const Field<CraftIntent, int> _f$recipeTemplateId = Field(
+    'recipeTemplateId',
+    _$recipeTemplateId,
+  );
+  static int _$lifetime(CraftIntent v) => v.lifetime;
+  static const Field<CraftIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<CraftIntent> fields = const {
+    #recipeTemplateId: _f$recipeTemplateId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'CraftIntent';
+  @override
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
+
+  static CraftIntent _instantiate(DecodingData data) {
+    return CraftIntent(recipeTemplateId: data.dec(_f$recipeTemplateId));
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static CraftIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<CraftIntent>(map);
+  }
+
+  static CraftIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<CraftIntent>(json);
+  }
+}
+
+mixin CraftIntentMappable {
+  String toJson() {
+    return CraftIntentMapper.ensureInitialized().encodeJson<CraftIntent>(
+      this as CraftIntent,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return CraftIntentMapper.ensureInitialized().encodeMap<CraftIntent>(
+      this as CraftIntent,
+    );
+  }
+
+  CraftIntentCopyWith<CraftIntent, CraftIntent, CraftIntent> get copyWith =>
+      _CraftIntentCopyWithImpl<CraftIntent, CraftIntent>(
+        this as CraftIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return CraftIntentMapper.ensureInitialized().stringifyValue(
+      this as CraftIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return CraftIntentMapper.ensureInitialized().equalsValue(
+      this as CraftIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return CraftIntentMapper.ensureInitialized().hashValue(this as CraftIntent);
+  }
+}
+
+extension CraftIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, CraftIntent, $Out> {
+  CraftIntentCopyWith<$R, CraftIntent, $Out> get $asCraftIntent =>
+      $base.as((v, t, t2) => _CraftIntentCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class CraftIntentCopyWith<$R, $In extends CraftIntent, $Out>
+    implements IntentComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? recipeTemplateId});
+  CraftIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(Then<$Out2, $R2> t);
+}
+
+class _CraftIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, CraftIntent, $Out>
+    implements CraftIntentCopyWith<$R, CraftIntent, $Out> {
+  _CraftIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<CraftIntent> $mapper =
+      CraftIntentMapper.ensureInitialized();
+  @override
+  $R call({int? recipeTemplateId}) => $apply(
+    FieldCopyWithData({
+      if (recipeTemplateId != null) #recipeTemplateId: recipeTemplateId,
+    }),
+  );
+  @override
+  CraftIntent $make(CopyWithData data) => CraftIntent(
+    recipeTemplateId: data.get(#recipeTemplateId, or: $value.recipeTemplateId),
+  );
+
+  @override
+  CraftIntentCopyWith<$R2, CraftIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _CraftIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class StationCraftIntentMapper extends SubClassMapperBase<StationCraftIntent> {
+  StationCraftIntentMapper._();
+
+  static StationCraftIntentMapper? _instance;
+  static StationCraftIntentMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = StationCraftIntentMapper._());
+      IntentComponentMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'StationCraftIntent';
+
+  static int _$stationEntityId(StationCraftIntent v) => v.stationEntityId;
+  static const Field<StationCraftIntent, int> _f$stationEntityId = Field(
+    'stationEntityId',
+    _$stationEntityId,
+  );
+  static int _$recipeTemplateId(StationCraftIntent v) => v.recipeTemplateId;
+  static const Field<StationCraftIntent, int> _f$recipeTemplateId = Field(
+    'recipeTemplateId',
+    _$recipeTemplateId,
+  );
+  static int _$lifetime(StationCraftIntent v) => v.lifetime;
+  static const Field<StationCraftIntent, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<StationCraftIntent> fields = const {
+    #stationEntityId: _f$stationEntityId,
+    #recipeTemplateId: _f$recipeTemplateId,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'StationCraftIntent';
+  @override
+  late final ClassMapperBase superMapper =
+      IntentComponentMapper.ensureInitialized();
+
+  static StationCraftIntent _instantiate(DecodingData data) {
+    return StationCraftIntent(
+      stationEntityId: data.dec(_f$stationEntityId),
+      recipeTemplateId: data.dec(_f$recipeTemplateId),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static StationCraftIntent fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<StationCraftIntent>(map);
+  }
+
+  static StationCraftIntent fromJson(String json) {
+    return ensureInitialized().decodeJson<StationCraftIntent>(json);
+  }
+}
+
+mixin StationCraftIntentMappable {
+  String toJson() {
+    return StationCraftIntentMapper.ensureInitialized()
+        .encodeJson<StationCraftIntent>(this as StationCraftIntent);
+  }
+
+  Map<String, dynamic> toMap() {
+    return StationCraftIntentMapper.ensureInitialized()
+        .encodeMap<StationCraftIntent>(this as StationCraftIntent);
+  }
+
+  StationCraftIntentCopyWith<
+    StationCraftIntent,
+    StationCraftIntent,
+    StationCraftIntent
+  >
+  get copyWith =>
+      _StationCraftIntentCopyWithImpl<StationCraftIntent, StationCraftIntent>(
+        this as StationCraftIntent,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return StationCraftIntentMapper.ensureInitialized().stringifyValue(
+      this as StationCraftIntent,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return StationCraftIntentMapper.ensureInitialized().equalsValue(
+      this as StationCraftIntent,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return StationCraftIntentMapper.ensureInitialized().hashValue(
+      this as StationCraftIntent,
+    );
+  }
+}
+
+extension StationCraftIntentValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, StationCraftIntent, $Out> {
+  StationCraftIntentCopyWith<$R, StationCraftIntent, $Out>
+  get $asStationCraftIntent => $base.as(
+    (v, t, t2) => _StationCraftIntentCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class StationCraftIntentCopyWith<
+  $R,
+  $In extends StationCraftIntent,
+  $Out
+>
+    implements IntentComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? stationEntityId, int? recipeTemplateId});
+  StationCraftIntentCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _StationCraftIntentCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, StationCraftIntent, $Out>
+    implements StationCraftIntentCopyWith<$R, StationCraftIntent, $Out> {
+  _StationCraftIntentCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<StationCraftIntent> $mapper =
+      StationCraftIntentMapper.ensureInitialized();
+  @override
+  $R call({int? stationEntityId, int? recipeTemplateId}) => $apply(
+    FieldCopyWithData({
+      if (stationEntityId != null) #stationEntityId: stationEntityId,
+      if (recipeTemplateId != null) #recipeTemplateId: recipeTemplateId,
+    }),
+  );
+  @override
+  StationCraftIntent $make(CopyWithData data) => StationCraftIntent(
+    stationEntityId: data.get(#stationEntityId, or: $value.stationEntityId),
+    recipeTemplateId: data.get(#recipeTemplateId, or: $value.recipeTemplateId),
+  );
+
+  @override
+  StationCraftIntentCopyWith<$R2, StationCraftIntent, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _StationCraftIntentCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DidStartCraftingMapper extends SubClassMapperBase<DidStartCrafting> {
+  DidStartCraftingMapper._();
+
+  static DidStartCraftingMapper? _instance;
+  static DidStartCraftingMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DidStartCraftingMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DidStartCrafting';
+
+  static int _$recipeTemplateId(DidStartCrafting v) => v.recipeTemplateId;
+  static const Field<DidStartCrafting, int> _f$recipeTemplateId = Field(
+    'recipeTemplateId',
+    _$recipeTemplateId,
+  );
+  static bool _$isInstant(DidStartCrafting v) => v.isInstant;
+  static const Field<DidStartCrafting, bool> _f$isInstant = Field(
+    'isInstant',
+    _$isInstant,
+  );
+  static int _$lifetime(DidStartCrafting v) => v.lifetime;
+  static const Field<DidStartCrafting, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DidStartCrafting> fields = const {
+    #recipeTemplateId: _f$recipeTemplateId,
+    #isInstant: _f$isInstant,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DidStartCrafting';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static DidStartCrafting _instantiate(DecodingData data) {
+    return DidStartCrafting(
+      recipeTemplateId: data.dec(_f$recipeTemplateId),
+      isInstant: data.dec(_f$isInstant),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DidStartCrafting fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DidStartCrafting>(map);
+  }
+
+  static DidStartCrafting fromJson(String json) {
+    return ensureInitialized().decodeJson<DidStartCrafting>(json);
+  }
+}
+
+mixin DidStartCraftingMappable {
+  String toJson() {
+    return DidStartCraftingMapper.ensureInitialized()
+        .encodeJson<DidStartCrafting>(this as DidStartCrafting);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DidStartCraftingMapper.ensureInitialized()
+        .encodeMap<DidStartCrafting>(this as DidStartCrafting);
+  }
+
+  DidStartCraftingCopyWith<DidStartCrafting, DidStartCrafting, DidStartCrafting>
+  get copyWith =>
+      _DidStartCraftingCopyWithImpl<DidStartCrafting, DidStartCrafting>(
+        this as DidStartCrafting,
+        $identity,
+        $identity,
+      );
+  @override
+  String toString() {
+    return DidStartCraftingMapper.ensureInitialized().stringifyValue(
+      this as DidStartCrafting,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DidStartCraftingMapper.ensureInitialized().equalsValue(
+      this as DidStartCrafting,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DidStartCraftingMapper.ensureInitialized().hashValue(
+      this as DidStartCrafting,
+    );
+  }
+}
+
+extension DidStartCraftingValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DidStartCrafting, $Out> {
+  DidStartCraftingCopyWith<$R, DidStartCrafting, $Out>
+  get $asDidStartCrafting =>
+      $base.as((v, t, t2) => _DidStartCraftingCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class DidStartCraftingCopyWith<$R, $In extends DidStartCrafting, $Out>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? recipeTemplateId, bool? isInstant});
+  DidStartCraftingCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _DidStartCraftingCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DidStartCrafting, $Out>
+    implements DidStartCraftingCopyWith<$R, DidStartCrafting, $Out> {
+  _DidStartCraftingCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DidStartCrafting> $mapper =
+      DidStartCraftingMapper.ensureInitialized();
+  @override
+  $R call({int? recipeTemplateId, bool? isInstant}) => $apply(
+    FieldCopyWithData({
+      if (recipeTemplateId != null) #recipeTemplateId: recipeTemplateId,
+      if (isInstant != null) #isInstant: isInstant,
+    }),
+  );
+  @override
+  DidStartCrafting $make(CopyWithData data) => DidStartCrafting(
+    recipeTemplateId: data.get(#recipeTemplateId, or: $value.recipeTemplateId),
+    isInstant: data.get(#isInstant, or: $value.isInstant),
+  );
+
+  @override
+  DidStartCraftingCopyWith<$R2, DidStartCrafting, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _DidStartCraftingCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class DidCompleteCraftingMapper
+    extends SubClassMapperBase<DidCompleteCrafting> {
+  DidCompleteCraftingMapper._();
+
+  static DidCompleteCraftingMapper? _instance;
+  static DidCompleteCraftingMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = DidCompleteCraftingMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'DidCompleteCrafting';
+
+  static int _$recipeTemplateId(DidCompleteCrafting v) => v.recipeTemplateId;
+  static const Field<DidCompleteCrafting, int> _f$recipeTemplateId = Field(
+    'recipeTemplateId',
+    _$recipeTemplateId,
+  );
+  static List<int> _$producedEntityIds(DidCompleteCrafting v) =>
+      v.producedEntityIds;
+  static const Field<DidCompleteCrafting, List<int>> _f$producedEntityIds =
+      Field('producedEntityIds', _$producedEntityIds);
+  static int _$lifetime(DidCompleteCrafting v) => v.lifetime;
+  static const Field<DidCompleteCrafting, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<DidCompleteCrafting> fields = const {
+    #recipeTemplateId: _f$recipeTemplateId,
+    #producedEntityIds: _f$producedEntityIds,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'DidCompleteCrafting';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static DidCompleteCrafting _instantiate(DecodingData data) {
+    return DidCompleteCrafting(
+      recipeTemplateId: data.dec(_f$recipeTemplateId),
+      producedEntityIds: data.dec(_f$producedEntityIds),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static DidCompleteCrafting fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<DidCompleteCrafting>(map);
+  }
+
+  static DidCompleteCrafting fromJson(String json) {
+    return ensureInitialized().decodeJson<DidCompleteCrafting>(json);
+  }
+}
+
+mixin DidCompleteCraftingMappable {
+  String toJson() {
+    return DidCompleteCraftingMapper.ensureInitialized()
+        .encodeJson<DidCompleteCrafting>(this as DidCompleteCrafting);
+  }
+
+  Map<String, dynamic> toMap() {
+    return DidCompleteCraftingMapper.ensureInitialized()
+        .encodeMap<DidCompleteCrafting>(this as DidCompleteCrafting);
+  }
+
+  DidCompleteCraftingCopyWith<
+    DidCompleteCrafting,
+    DidCompleteCrafting,
+    DidCompleteCrafting
+  >
+  get copyWith =>
+      _DidCompleteCraftingCopyWithImpl<
+        DidCompleteCrafting,
+        DidCompleteCrafting
+      >(this as DidCompleteCrafting, $identity, $identity);
+  @override
+  String toString() {
+    return DidCompleteCraftingMapper.ensureInitialized().stringifyValue(
+      this as DidCompleteCrafting,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return DidCompleteCraftingMapper.ensureInitialized().equalsValue(
+      this as DidCompleteCrafting,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return DidCompleteCraftingMapper.ensureInitialized().hashValue(
+      this as DidCompleteCrafting,
+    );
+  }
+}
+
+extension DidCompleteCraftingValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, DidCompleteCrafting, $Out> {
+  DidCompleteCraftingCopyWith<$R, DidCompleteCrafting, $Out>
+  get $asDidCompleteCrafting => $base.as(
+    (v, t, t2) => _DidCompleteCraftingCopyWithImpl<$R, $Out>(v, t, t2),
+  );
+}
+
+abstract class DidCompleteCraftingCopyWith<
+  $R,
+  $In extends DidCompleteCrafting,
+  $Out
+>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  ListCopyWith<$R, int, ObjectCopyWith<$R, int, int>> get producedEntityIds;
+  @override
+  $R call({int? recipeTemplateId, List<int>? producedEntityIds});
+  DidCompleteCraftingCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _DidCompleteCraftingCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, DidCompleteCrafting, $Out>
+    implements DidCompleteCraftingCopyWith<$R, DidCompleteCrafting, $Out> {
+  _DidCompleteCraftingCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<DidCompleteCrafting> $mapper =
+      DidCompleteCraftingMapper.ensureInitialized();
+  @override
+  ListCopyWith<$R, int, ObjectCopyWith<$R, int, int>> get producedEntityIds =>
+      ListCopyWith(
+        $value.producedEntityIds,
+        (v, t) => ObjectCopyWith(v, $identity, t),
+        (v) => call(producedEntityIds: v),
+      );
+  @override
+  $R call({int? recipeTemplateId, List<int>? producedEntityIds}) => $apply(
+    FieldCopyWithData({
+      if (recipeTemplateId != null) #recipeTemplateId: recipeTemplateId,
+      if (producedEntityIds != null) #producedEntityIds: producedEntityIds,
+    }),
+  );
+  @override
+  DidCompleteCrafting $make(CopyWithData data) => DidCompleteCrafting(
+    recipeTemplateId: data.get(#recipeTemplateId, or: $value.recipeTemplateId),
+    producedEntityIds: data.get(
+      #producedEntityIds,
+      or: $value.producedEntityIds,
+    ),
+  );
+
+  @override
+  DidCompleteCraftingCopyWith<$R2, DidCompleteCrafting, $Out2>
+  $chain<$R2, $Out2>(Then<$Out2, $R2> t) =>
+      _DidCompleteCraftingCopyWithImpl<$R2, $Out2>($value, $cast, t);
+}
+
+class CraftingFailedMapper extends SubClassMapperBase<CraftingFailed> {
+  CraftingFailedMapper._();
+
+  static CraftingFailedMapper? _instance;
+  static CraftingFailedMapper ensureInitialized() {
+    if (_instance == null) {
+      MapperContainer.globals.use(_instance = CraftingFailedMapper._());
+      BeforeTickMapper.ensureInitialized().addSubMapper(_instance!);
+      CraftingFailureReasonMapper.ensureInitialized();
+    }
+    return _instance!;
+  }
+
+  @override
+  final String id = 'CraftingFailed';
+
+  static int _$recipeTemplateId(CraftingFailed v) => v.recipeTemplateId;
+  static const Field<CraftingFailed, int> _f$recipeTemplateId = Field(
+    'recipeTemplateId',
+    _$recipeTemplateId,
+  );
+  static CraftingFailureReason _$reason(CraftingFailed v) => v.reason;
+  static const Field<CraftingFailed, CraftingFailureReason> _f$reason = Field(
+    'reason',
+    _$reason,
+  );
+  static int _$lifetime(CraftingFailed v) => v.lifetime;
+  static const Field<CraftingFailed, int> _f$lifetime = Field(
+    'lifetime',
+    _$lifetime,
+    mode: FieldMode.member,
+  );
+
+  @override
+  final MappableFields<CraftingFailed> fields = const {
+    #recipeTemplateId: _f$recipeTemplateId,
+    #reason: _f$reason,
+    #lifetime: _f$lifetime,
+  };
+
+  @override
+  final String discriminatorKey = '__type';
+  @override
+  final dynamic discriminatorValue = 'CraftingFailed';
+  @override
+  late final ClassMapperBase superMapper = BeforeTickMapper.ensureInitialized();
+
+  static CraftingFailed _instantiate(DecodingData data) {
+    return CraftingFailed(
+      recipeTemplateId: data.dec(_f$recipeTemplateId),
+      reason: data.dec(_f$reason),
+    );
+  }
+
+  @override
+  final Function instantiate = _instantiate;
+
+  static CraftingFailed fromMap(Map<String, dynamic> map) {
+    return ensureInitialized().decodeMap<CraftingFailed>(map);
+  }
+
+  static CraftingFailed fromJson(String json) {
+    return ensureInitialized().decodeJson<CraftingFailed>(json);
+  }
+}
+
+mixin CraftingFailedMappable {
+  String toJson() {
+    return CraftingFailedMapper.ensureInitialized().encodeJson<CraftingFailed>(
+      this as CraftingFailed,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return CraftingFailedMapper.ensureInitialized().encodeMap<CraftingFailed>(
+      this as CraftingFailed,
+    );
+  }
+
+  CraftingFailedCopyWith<CraftingFailed, CraftingFailed, CraftingFailed>
+  get copyWith => _CraftingFailedCopyWithImpl<CraftingFailed, CraftingFailed>(
+    this as CraftingFailed,
+    $identity,
+    $identity,
+  );
+  @override
+  String toString() {
+    return CraftingFailedMapper.ensureInitialized().stringifyValue(
+      this as CraftingFailed,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return CraftingFailedMapper.ensureInitialized().equalsValue(
+      this as CraftingFailed,
+      other,
+    );
+  }
+
+  @override
+  int get hashCode {
+    return CraftingFailedMapper.ensureInitialized().hashValue(
+      this as CraftingFailed,
+    );
+  }
+}
+
+extension CraftingFailedValueCopy<$R, $Out>
+    on ObjectCopyWith<$R, CraftingFailed, $Out> {
+  CraftingFailedCopyWith<$R, CraftingFailed, $Out> get $asCraftingFailed =>
+      $base.as((v, t, t2) => _CraftingFailedCopyWithImpl<$R, $Out>(v, t, t2));
+}
+
+abstract class CraftingFailedCopyWith<$R, $In extends CraftingFailed, $Out>
+    implements
+        BeforeTickCopyWith<$R, $In, $Out>,
+        ComponentCopyWith<$R, $In, $Out> {
+  @override
+  $R call({int? recipeTemplateId, CraftingFailureReason? reason});
+  CraftingFailedCopyWith<$R2, $In, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  );
+}
+
+class _CraftingFailedCopyWithImpl<$R, $Out>
+    extends ClassCopyWithBase<$R, CraftingFailed, $Out>
+    implements CraftingFailedCopyWith<$R, CraftingFailed, $Out> {
+  _CraftingFailedCopyWithImpl(super.value, super.then, super.then2);
+
+  @override
+  late final ClassMapperBase<CraftingFailed> $mapper =
+      CraftingFailedMapper.ensureInitialized();
+  @override
+  $R call({int? recipeTemplateId, CraftingFailureReason? reason}) => $apply(
+    FieldCopyWithData({
+      if (recipeTemplateId != null) #recipeTemplateId: recipeTemplateId,
+      if (reason != null) #reason: reason,
+    }),
+  );
+  @override
+  CraftingFailed $make(CopyWithData data) => CraftingFailed(
+    recipeTemplateId: data.get(#recipeTemplateId, or: $value.recipeTemplateId),
+    reason: data.get(#reason, or: $value.reason),
+  );
+
+  @override
+  CraftingFailedCopyWith<$R2, CraftingFailed, $Out2> $chain<$R2, $Out2>(
+    Then<$Out2, $R2> t,
+  ) => _CraftingFailedCopyWithImpl<$R2, $Out2>($value, $cast, t);
 }
 

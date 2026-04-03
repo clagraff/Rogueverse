@@ -1,4 +1,5 @@
 import 'dart:developer';
+import 'dart:ui';
 
 import 'package:collection/collection.dart';
 import 'package:dart_mappable/dart_mappable.dart';
@@ -56,6 +57,9 @@ class World with WorldMappable implements IWorldView {
   /// Event bus for component change notifications.
   /// Not serialized - recreated on world creation.
   final ComponentEventBus _events = ComponentEventBus();
+
+  /// Callbacks invoked after [loadFrom] completes a full world reload.
+  final List<VoidCallback> onReload = [];
 
   @override
   Stream<Change> get componentChanges => _events.changes;
@@ -325,6 +329,11 @@ class World with WorldMappable implements IWorldView {
 
     // Emit change notifications for all affected components
     _emitLoadChanges(oldComponents, components);
+
+    // Notify reload listeners (e.g., RenderableEntityManager)
+    for (final callback in onReload) {
+      callback();
+    }
 
     _logger.info("world state reloaded", {"entityCount": entities().length});
   }
