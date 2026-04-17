@@ -16,6 +16,9 @@ import 'package:rogueverse/ecs/world.dart';
 class Persistence {
   static final Logger _logger = Logger("Persistence");
 
+  /// Cached application support directory to avoid repeated platform calls.
+  static Directory? _supportDir;
+
   /// In-memory copy of the initial state Map, used for computing save diffs.
   /// Set during loadInitialState() or loadSaveWithPatch().
   static Map<String, dynamic>? _cachedInitialState;
@@ -55,10 +58,15 @@ class Persistence {
     return _cachedInitialState!;
   }
 
+  /// Returns the cached application support directory, fetching it once on first call.
+  static Future<Directory> _getSupportDir() async {
+    return _supportDir ??= await getApplicationSupportDirectory();
+  }
+
   /// Migrates existing save files to new structure if needed.
   /// Call this once during app startup before loading.
   static Future<void> migrateIfNeeded() async {
-    var supportDir = await getApplicationSupportDirectory();
+    var supportDir = await _getSupportDir();
 
     // Migration 1: save.json -> initial.json
     var oldSaveFile = File("${supportDir.path}/save.json");
@@ -87,7 +95,7 @@ class Persistence {
     task.start("save: read initial");
 
     try {
-      var supportDir = await getApplicationSupportDirectory();
+      var supportDir = await _getSupportDir();
       var initialFile = File("${supportDir.path}/initial.json");
 
       if (!initialFile.existsSync()) {
@@ -124,7 +132,7 @@ class Persistence {
     task.start("save: load with patch");
 
     try {
-      var supportDir = await getApplicationSupportDirectory();
+      var supportDir = await _getSupportDir();
       var initialFile = File("${supportDir.path}/initial.json");
 
       // Step 1: Load initial state
@@ -191,7 +199,22 @@ class Persistence {
   ///
   /// Uses the cached initial state from loadInitialState/loadSaveWithPatch.
   /// Throws StateError if no initial state is cached or no save path is set.
+  /// Computes the diff between initial state and current world,
+  /// then writes the patch to the specified save file.
+  ///
+  /// Prefer [writeSavePatchFromSnapshot] when calling from a synchronous
+  /// context (e.g., SaveSystem.update) to ensure the world state is captured
+  /// at a deterministic point in time.
   static Future<void> writeSavePatch(World world, [String? savePatchPath]) async {
+    return writeSavePatchFromSnapshot(world.toMap(), savePatchPath);
+  }
+
+  /// Writes a save patch from a pre-computed world state snapshot.
+  ///
+  /// Use this when you need to capture world state synchronously (e.g., during
+  /// a tick) and write it asynchronously afterward.
+  static Future<void> writeSavePatchFromSnapshot(
+      Map<String, dynamic> worldSnapshot, [String? savePatchPath]) async {
     var effectivePath = savePatchPath ?? _currentSavePatchPath;
     if (effectivePath == null) {
       _logger.warning("no save path specified and no current save path set, skipping");
@@ -214,21 +237,15 @@ class Persistence {
 
       var patchFile = File(effectivePath);
 
-      // Get current state as Map
-      var currentState = world.toMap();
-
       // Compute RFC 6902 patch
-      var patchOps = JsonPatch.diff(_cachedInitialState!, currentState);
+      var patchOps = JsonPatch.diff(_cachedInitialState!, worldSnapshot);
 
       // Write patch to file
       _logger.info("writing save patch",
           {"path": patchFile.path, "opCount": patchOps.length});
 
       var patchJson = JsonEncoder.withIndent("\t").convert(patchOps);
-      var writer = patchFile.openWrite();
-      writer.write(patchJson);
-      await writer.flush();
-      await writer.close();
+      await _atomicWrite(patchFile, patchJson);
     } finally {
       _writeLock = false;
       task.finish();
@@ -253,15 +270,12 @@ class Persistence {
       var indentChar = indent ? "\t" : "";
       var worldMap = world.toMap();
       var saveState = JsonEncoder.withIndent(indentChar).convert(worldMap);
-      var supportDir = await getApplicationSupportDirectory();
+      var supportDir = await _getSupportDir();
       var initialFile = File("${supportDir.path}/initial.json");
 
       _logger.info("writing initial state", {"path": initialFile.path});
 
-      var writer = initialFile.openWrite();
-      writer.write(saveState);
-      await writer.flush();
-      await writer.close();
+      await _atomicWrite(initialFile, saveState);
 
       // Update cached initial state (deep copy)
       _cachedInitialState =
@@ -272,11 +286,14 @@ class Persistence {
     }
   }
 
-  /// Clears the save patch file (used when editor changes make patch invalid).
+  /// Clears the current save patch file (used when editor changes make patch invalid).
   static Future<void> clearSavePatch() async {
-    var supportDir = await getApplicationSupportDirectory();
-    var patchFile = File("${supportDir.path}/save.patch.json");
+    if (_currentSavePatchPath == null) {
+      _logger.warning("no current save path set, nothing to clear");
+      return;
+    }
 
+    var patchFile = File(_currentSavePatchPath!);
     if (patchFile.existsSync()) {
       _logger.info("clearing save patch", {"path": patchFile.path});
       await patchFile.delete();
@@ -293,7 +310,7 @@ class Persistence {
   /// Seeds bundled assets (initial.json and developer saves) into the user's
   /// save directory on first launch. Idempotent - never overwrites existing files.
   static Future<void> seedBundledAssets() async {
-    final supportDir = await getApplicationSupportDirectory();
+    final supportDir = await _getSupportDir();
 
     // Seed initial.json
     final initialFile = File('${supportDir.path}/initial.json');
@@ -345,7 +362,7 @@ class Persistence {
 
   /// Gets (and creates if needed) the saves directory.
   static Future<Directory> getSavesDirectory() async {
-    var supportDir = await getApplicationSupportDirectory();
+    var supportDir = await _getSupportDir();
     var savesDir = Directory("${supportDir.path}/saves");
     if (!await savesDir.exists()) {
       await savesDir.create(recursive: true);
@@ -402,6 +419,15 @@ class Persistence {
       await file.delete();
       _logger.info("deleted save", {"path": savePath});
     }
+  }
+
+  /// Writes content to a file atomically by writing to a temporary file first,
+  /// then renaming it to the target path. Prevents corrupted files if the
+  /// process crashes mid-write.
+  static Future<void> _atomicWrite(File targetFile, String content) async {
+    var tempFile = File('${targetFile.path}.tmp');
+    await tempFile.writeAsString(content);
+    await tempFile.rename(targetFile.path);
   }
 }
 

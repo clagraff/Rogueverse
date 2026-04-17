@@ -28,7 +28,12 @@ class SaveSystem extends System with SaveSystemMappable {
     if (world.tickId % saveIntervalTicks == 0) {
       if (Persistence.isCurrentSaveDeveloper) return;
       _logger.fine("periodic save triggered", {"tickId": world.tickId});
-      Persistence.writeSavePatch(world);
+
+      // Snapshot world state synchronously so it matches this exact tick
+      final snapshot = world.toMap();
+      Persistence.writeSavePatchFromSnapshot(snapshot).catchError((error, stackTrace) {
+        _logger.severe("periodic save failed", error, stackTrace);
+      });
     }
   }
 }
